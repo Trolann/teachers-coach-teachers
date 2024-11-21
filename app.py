@@ -12,12 +12,21 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True)
+
 
 # Define the table model
 class MyTable(db.Model):
     __tablename__ = 'mytable'
     uuid = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     data = db.Column(db.String(255))
+
+
+
+@app.route('/', methods=["GET"])
+def home_page():
+    return "Hello World"
 
 
 @app.route('/check-database', methods=['GET'])
@@ -32,6 +41,7 @@ def check_database():
         return jsonify({"message": "Database 'mydatabase' was created"})
 
 
+# be able to call 
 @app.route('/check-table', methods=['GET'])
 def check_table():
     inspector = inspect(db.engine)
