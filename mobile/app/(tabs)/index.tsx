@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_URL } from '../../config/api';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 
 export default function HomeScreen() {
@@ -7,8 +8,9 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const checkDatabase = async () => {
+      console.log('Fetching from:', `${API_URL}/check-database`);
       try {
-        const response = await fetch('http://localhost:5001/check-database');
+        const response = await fetch(`${API_URL}/check-database`);
         if (!response.ok) {
           throw new Error('Failed to fetch database status');
         }
