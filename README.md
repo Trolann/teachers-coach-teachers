@@ -42,17 +42,22 @@ The project structure looks like this:
 ```
 .
 ├── mobile/                       # Expo frontend
-│   ├── Dockerfile                # Dockerfile for Expo
-│   ├── App.js                   # Main Expo app entry
-│   ├── package.json              # Expo dependencies
-│   ├── assets/                   # Static assets (e.g., images)
+│   ├── .expo/                    # Expo-specific configuration (auto-generated)
+│   ├── app/                      # Main application entry
+│   ├── assets/                   # Static assets (e.g., images, fonts)
+│   ├── components/               # Reusable UI components
+│   ├── constants/                # Project constants (e.g., colors, styles)
+│   ├── hooks/                    # Custom React hooks
+│   ├── node_modules/             # Installed dependencies (auto-generated)
+│   ├── scripts/                  # Utility scripts for project setup or deployment
+│   ├── App.js                    # Main Expo app entry point
+│   ├── app.json                  # Expo project configuration
+│   ├── Dockerfile                # Dockerfile for building the Expo app
+│   ├── package.json              # Project dependencies and scripts
 │   └── ...                       # Other Expo files
-├── backend/                      # Flask backend
-│   ├── app.py                    # Main Flask app
-│   ├── requirements.txt          # Python dependencies
-│   └── ...                       # Other backend files
+├── app.py                        # Main Flask app
 ├── docker-compose.yml            # Docker configuration
-└── README.md                     # You are here!
+└── README.md                     # Documentation for the project
 ```
 
 ---
@@ -62,7 +67,7 @@ The project structure looks like this:
 ### **1. Build the Docker Images**
 Use Docker Compose to build the project images:
 ```bash
-docker-compose build
+docker compose build
 ```
 
 ---
@@ -70,7 +75,7 @@ docker-compose build
 ### **3. Start the Containers**
 Start the backend, database, and Expo frontend containers:
 ```bash
-docker-compose up
+docker compose up
 ```
 
 This will:
@@ -136,7 +141,7 @@ If this is your first time using Expo with a simulator, follow this guide to set
 ### **Step 1: Start the Expo Project**
 Ensure the Expo project is running:
 ```bash
-docker-compose up expo-frontend
+docker compose up expo-frontend
 ```
 
 **Simple Solution is to, alternatively, if running locally:**
