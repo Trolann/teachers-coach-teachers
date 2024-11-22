@@ -3,6 +3,20 @@ from flask_sqlalchemy import SQLAlchemy
 from uuid import uuid4
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy import inspect, text
+import logging
+
+from logging.handlers import TimedRotatingFileHandler
+
+file_handler = TimedRotatingFileHandler('app.log', when='midnight', interval=1)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+file_handler.setLevel(logging.INFO)
+logger.addHandler(file_handler)
+
+
+# # Set up the root logger
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logger = logging.getLogger(__name__)
+
 
 app = Flask(__name__)
 
@@ -23,34 +37,36 @@ class MyTable(db.Model):
 @app.route('/check-database', methods=['GET'])
 def check_database():
     try:
-        # Try to execute a simple query to check database existence
         db.session.execute(text('SELECT 1'))
+        logger.info("Checked database connectivity successfully.")
         return jsonify({"message": "Database 'mydatabase' exists and is accessible"})
     except ProgrammingError:
-        # If database doesn't exist, create it
         db.create_all()
+        logger.warning("Database 'mydatabase' was created as it did not exist.")
         return jsonify({"message": "Database 'mydatabase' was created"})
-
 
 @app.route('/check-table', methods=['GET'])
 def check_table():
     inspector = inspect(db.engine)
     if 'mytable' in inspector.get_table_names():
+        logger.info("Table 'mytable' exists.")
         return jsonify({"message": "Table 'mytable' exists"})
     else:
         db.create_all()
+        logger.warning("Table 'mytable' was created as it did not exist.")
         return jsonify({"message": "Table 'mytable' was created"})
-
 
 @app.route('/add-data', methods=['POST'])
 def add_data():
     data = request.json.get('data')
     if not data:
+        logger.error("No data provided in /add-data endpoint.")
         return jsonify({"error": "No data provided"}), 400
 
     new_entry = MyTable(data=data)
     db.session.add(new_entry)
     db.session.commit()
+    logger.info(f"Data added with UUID: {new_entry.uuid}")
 
     return jsonify({
         "message": "Data added successfully",
@@ -58,15 +74,18 @@ def add_data():
         "data": new_entry.data
     })
 
-
 @app.route('/get-all', methods=['GET'])
 def get_all():
     entries = MyTable.query.all()
+    logger.info("Fetched all entries from 'mytable'.")
     return jsonify([{
         "uuid": entry.uuid,
         "data": entry.data
     } for entry in entries])
 
+@app.route('/', methods=['GET'])
+def health_check():
+    return jsonify({"status": "Flask server is running"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
