@@ -4,8 +4,11 @@ from uuid import uuid4
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy import inspect, text
 import logging
-
 from logging.handlers import TimedRotatingFileHandler
+
+# Initialize the logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 file_handler = TimedRotatingFileHandler('app.log', when='midnight', interval=1)
 file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -13,7 +16,7 @@ file_handler.setLevel(logging.INFO)
 logger.addHandler(file_handler)
 
 
-# # Set up the root logger
+# Set up the root logger
 # logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 # logger = logging.getLogger(__name__)
 
