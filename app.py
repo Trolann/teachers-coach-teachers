@@ -10,16 +10,32 @@ from logging.handlers import TimedRotatingFileHandler
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# File handler for all logs
 file_handler = TimedRotatingFileHandler('app.log', when='midnight', interval=1)
 file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 file_handler.setLevel(logging.INFO)
 logger.addHandler(file_handler)
 
+# Stream handler for INFO logs
+info_stream_handler = logging.StreamHandler()
+info_stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+info_stream_handler.setLevel(logging.INFO)
+info_stream_handler.addFilter(logging.Filter('INFO'))
+logger.addHandler(info_stream_handler)
 
-# Set up the root logger
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-# logger = logging.getLogger(__name__)
+# Stream handler for WARN logs
+warn_stream_handler = logging.StreamHandler()
+warn_stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+warn_stream_handler.setLevel(logging.WARNING)
+warn_stream_handler.addFilter(logging.Filter('WARNING'))
+logger.addHandler(warn_stream_handler)
 
+# Stream handler for ERROR logs
+error_stream_handler = logging.StreamHandler()
+error_stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+error_stream_handler.setLevel(logging.ERROR)
+error_stream_handler.addFilter(logging.Filter('ERROR'))
+logger.addHandler(error_stream_handler)
 
 app = Flask(__name__)
 
@@ -88,6 +104,7 @@ def get_all():
 
 @app.route('/', methods=['GET'])
 def health_check():
+    logger.info("Root endpoint '/' was accessed.")
     return jsonify({"status": "Flask server is running"}), 200
 
 if __name__ == '__main__':
