@@ -44,11 +44,8 @@ logger.addHandler(error_stream_handler)
 
 app = Flask(__name__)
 # TODO: delete this if it works and figure out how to put in the env
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://sharanyaudupa@localhost:5432/tct_database'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Smile123!@localhost:5432/tct_database'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 
-#     'postgresql://fallback_username@localhost:5432/tct_database')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy and Migrate
