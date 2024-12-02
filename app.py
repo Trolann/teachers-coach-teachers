@@ -226,12 +226,23 @@ def add_data():
 
 @app.route('/get-all', methods=['GET'])
 def get_all():
+    inspector = inspect(db.engine)
+    
+    # Check if the table exists
+    if 'mytable' not in inspector.get_table_names():
+        logger.warning("'mytable' does not exist. Creating all tables.")
+        db.create_all()
+        logger.info("'mytable' and any other missing tables created.")
+    
+    # Query all entries
     entries = MyTable.query.all()
     logger.info("Fetched all entries from 'mytable'.")
+    
     return jsonify([{
         "uuid": entry.uuid,
         "data": entry.data
     } for entry in entries])
+
 
 @app.route('/', methods=['GET'])
 def health_check():
