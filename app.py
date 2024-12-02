@@ -2,6 +2,7 @@ from sqlite3 import OperationalError
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_cors import CORS
 from uuid import uuid4
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy import inspect, text
@@ -43,11 +44,18 @@ error_stream_handler.addFilter(logging.Filter('ERROR'))
 logger.addHandler(error_stream_handler)
 
 app = Flask(__name__)
+CORS(app)
+
+# Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy and Migrate
 db = SQLAlchemy(app)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True)
+
 migrate = Migrate(app,db)
 
 # Mentor Application Status Enum
@@ -164,6 +172,13 @@ class MyTable(db.Model):
     uuid = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     data = db.Column(db.String(255))
 
+
+
+@app.route('/', methods=["GET"])
+def home_page():
+    return "Hello World"
+
+
 @app.route('/check-database', methods=['GET'])
 def check_database():
     try:
@@ -195,6 +210,7 @@ def check_database():
             "details": str(e)
         }), 500
 
+# be able to call 
 @app.route('/check-table', methods=['GET'])
 def check_table():
     inspector = inspect(db.engine)
