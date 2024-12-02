@@ -6,3 +6,10 @@
 5. Saving files will automatically reload the server
 6. Run `docker compose down` to stop the application
 7. If you need to change packages available in the backend, update the `requirements.txt` file and rebuild the image (down then up)
+
+8. Postgres setup and Troubleshooting
+9. Run `docker ps` to check if your containers are up and running - you should see **tct_database** running. If not, try running `docker compose up -d`
+10. Make sure you POSTGRES_PASSWORD and POSTGRES_USER are correctly configured in `.env` file or Docker Compose file
+11. Run `psql -U postgres -h localhost -d tct_database`
+12. Initializing Migrations for the first time? `flask db init`, `flask db migrate`, & `flask db upgrade`
+13. Run `flask db upgrade` and make sure it completes without errors

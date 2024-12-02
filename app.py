@@ -43,9 +43,7 @@ error_stream_handler.addFilter(logging.Filter('ERROR'))
 logger.addHandler(error_stream_handler)
 
 app = Flask(__name__)
-# TODO: delete this if it works and figure out how to put in the env
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
-
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy and Migrate
@@ -238,7 +236,7 @@ def get_all():
 @app.route('/', methods=['GET'])
 def health_check():
     logger.info("Root endpoint '/' was accessed.")
-    return jsonify({"status": "Flask server is running"}), 200
+    return jsonify({"status": "Flask app with PostgreSQL is running"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
