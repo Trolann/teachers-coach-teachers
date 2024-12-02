@@ -7,6 +7,10 @@
 6. Run `docker compose down` to stop the application
 7. If you need to change packages available in the backend, update the `requirements.txt` file and rebuild the image (down then up)
 8. Postgres setup and Troubleshooting
+9. Environment Variables Setup: 
+- This project uses a .env file to manage sensitive information such as database credentials. An example environment file **.env.example** is provided in the repository. Before starting the application, create a **.env** file by copying the example:
+- `cp .env.example .env`
+- Populate the .env file with your specific values for POSTGRES_USER, POSTGRES_PASSWORD, and other environment variables. Refer to .env.example for guidance.
 9. Run `docker ps` to check if your containers are up and running - you should see **tct_database** running. If not, try running `docker compose up -d`
 10. Make sure you POSTGRES_PASSWORD and POSTGRES_USER are correctly configured in `.env` file or Docker Compose file
 11. Run `psql -U postgres -h localhost -d tct_database`
