@@ -36,7 +36,10 @@ services:
     volumes:
       - ./mobile:/app
       - /app/node_modules
-    command: npx expo start
+      - ./state.json:/.expo/state.json
+    stdin_open: true
+    tty: true
+    command: npx expo start --host lan
     environment:
       - NODE_ENV=development
 

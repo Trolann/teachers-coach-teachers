@@ -118,7 +118,7 @@ If this is your first time using Expo with a simulator, follow this guide to set
    ```
 3. **Verify Simulator Availability**:
    - Open Xcode > Preferences > Components.
-   - Download any additional simulators (e.g., iOS 16.4).
+   - Download any additional simulators
 
 ---
 
