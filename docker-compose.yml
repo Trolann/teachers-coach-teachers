@@ -1,29 +1,45 @@
+version: "3.8"
 services:
   backend:
-    container_name: flask-app
+    container_name: teachers-coach-teachers-backend
     build: .
     ports:
-      - "5000:5000"
+      - "5001:5001"
     volumes:
       - .:/app
     environment:
       - FLASK_APP=app.py
       - FLASK_ENV=development
       - FLASK_DEBUG=1
-      - DATABASE_URL=postgresql://user:password@db:5432/mydatabase
+      - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI}
     depends_on:
       - db
 
   db:
     image: postgres:15
+    container_name: tct_postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=mydatabase
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=tct_database
     ports:
       - "5432:5432"
+
+  expo-frontend:
+    container_name: expo-frontend
+    build:
+      context: ./mobile
+    ports:
+      - "19000:19000"
+      - "8081:8081"
+    volumes:
+      - ./mobile:/app
+      - /app/node_modules
+    command: npx expo start
+    environment:
+      - NODE_ENV=development
 
 volumes:
   postgres_data:
