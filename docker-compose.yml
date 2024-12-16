@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   backend:
     container_name: teachers-coach-teachers-backend
@@ -23,9 +22,7 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=tct_database
-    ports:
-      - "5432:5432"
+      - POSTGRES_DB={$POSTGRES_DB}
 
   expo-frontend:
     container_name: expo-frontend
