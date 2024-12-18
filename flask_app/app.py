@@ -1,5 +1,5 @@
 from flask import Flask
-from extensions.database import db
+from flask_app.extensions.database import db
 from api import create_api_blueprint
 from admin import create_admin_blueprint
 from config import Config
