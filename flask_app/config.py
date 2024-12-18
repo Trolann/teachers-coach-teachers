@@ -8,7 +8,6 @@ class FlaskConfig:
         self.FLASK_RUN_HOST = environ.get('FLASK_RUN_HOST')
         self.DEBUG = False
         self.FLASK_ENV = 'production'
-        print(f'Flask Config: {self.__dict__}')
 
 class CognitoConfig:
     def __init__(self):
