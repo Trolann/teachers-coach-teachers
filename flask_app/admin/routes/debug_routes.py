@@ -1,10 +1,10 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import OperationalError, ProgrammingError
-#from flask_app.extensions.database import db
 from flask_app.models.user import User, MentorProfile, MyTable
 from sqlalchemy import text, inspect
 from flask_app.extensions.logging import logger
 from app import db
+from extensions.cognito import require_auth
 
 debug_bps = Blueprint('debug', __name__)
 
@@ -111,6 +111,7 @@ def add_data():
 
 
 @debug_bps.route('/get-all', methods=['GET'])
+@require_auth
 def get_all():
     inspector = inspect(db.engine)
 

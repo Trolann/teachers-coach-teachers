@@ -1,7 +1,8 @@
 services:
   backend:
     container_name: teachers-coach-teachers-backend
-    env_file: .env
+    env_file:
+      - .env
     build: 
       context: ./flask_app
     ports:
@@ -20,7 +21,6 @@ services:
   db:
     image: postgres:15
     container_name: tct_postgres
-    env_file: .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -30,7 +30,6 @@ services:
 
   expo-frontend:
     container_name: expo-frontend
-    env_file: .env
     build:
       context: ./mobile
     ports:
