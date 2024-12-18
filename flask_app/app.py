@@ -11,9 +11,16 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
 
+# Initialize SQLAlchemy
+db = SQLAlchemy()
+migrate = Migrate()
 
-# Initialize the logger
-logger = logging.getLogger(__name__)
+def create_app():
+    app = Flask(__name__)
+    CORS(app)
+
+    # Initialize the logger
+    logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # File handler for all logs
@@ -43,20 +50,13 @@ error_stream_handler.setLevel(logging.ERROR)
 error_stream_handler.addFilter(logging.Filter('ERROR'))
 logger.addHandler(error_stream_handler)
 
-app = Flask(__name__)
-CORS(app)
+    # Database configuration
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialize SQLAlchemy and Migrate
-db = SQLAlchemy(app)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
-
-migrate = Migrate(app,db)
+    # Initialize extensions
+    db.init_app(app)
+    migrate.init_app(app, db)
 
 # Mentor Application Status Enum
 class MentorStatus(str):
@@ -265,5 +265,8 @@ def health_check():
     logger.info("Root endpoint '/' was accessed.")
     return jsonify({"status": "Flask app with PostgreSQL is running"}), 200
 
+    return app
+
 if __name__ == '__main__':
+    app = create_app()
     app.run(debug=True, host='0.0.0.0')
