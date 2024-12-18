@@ -1,6 +1,6 @@
 from uuid import uuid4
 from datetime import datetime
-from flask_app.extensions.database import db
+from app import db
 from enum import Enum
 
 class MentorStatus(Enum):

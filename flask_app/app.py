@@ -1,11 +1,13 @@
 from flask import Flask
-from flask_app.extensions.database import db
-from api import create_api_blueprint
-from admin import create_admin_blueprint
-from config import Config
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from admin.routes import create_admin_blueprint
+from config import FlaskConfig
 
+db = SQLAlchemy()
+migrate = Migrate()
 
-def create_app(config_class=Config):
+def create_app(config_class=FlaskConfig()):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
@@ -13,7 +15,6 @@ def create_app(config_class=Config):
     db.init_app(app)
 
     # Register blueprints
-    app.register_blueprint(create_api_blueprint(), url_prefix='/api')
     app.register_blueprint(create_admin_blueprint(), url_prefix='/admin')
 
     return app
