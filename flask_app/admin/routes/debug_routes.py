@@ -1,14 +1,13 @@
 from flask import Blueprint, jsonify, request
-from flask_app.extensions.database import db
-from flask_app.models.user import User, MentorProfile
+from sqlalchemy.exc import OperationalError, ProgrammingError
+from extensions.database import db
+from models.user import User, MentorProfile, MyTable
 from sqlalchemy import text, inspect
-import logging
-from uuid import uuid4
+from extensions.logging import logger
 
-bp = Blueprint('debug', __name__)
-logger = logging.getLogger(__name__)
+debug_bps = Blueprint('debug', __name__)
 
-@bp.route('/submit-mentor-application', methods=['POST'])
+@debug_bps.route('/submit-mentor-application', methods=['POST'])
 def submit_mentor_application():
     try:
         data = request.json
@@ -46,14 +45,7 @@ def submit_mentor_application():
         return jsonify({"error": str(e)}), 400
 
 
-# Define the table model
-class MyTable(db.Model):
-    __tablename__ = 'mytable'
-    uuid = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
-    data = db.Column(db.String(255))
-
-
-@bp.route('/check-database', methods=['GET'])
+@debug_bps.route('/check-database', methods=['GET'])
 def check_database():
     try:
         db.session.execute(text('SELECT 1'))
@@ -86,7 +78,7 @@ def check_database():
 
 
 # be able to call
-@bp.route('/check-table', methods=['GET'])
+@debug_bps.route('/check-table', methods=['GET'])
 def check_table():
     inspector = inspect(db.engine)
     if 'mytable' in inspector.get_table_names():
@@ -98,7 +90,7 @@ def check_table():
         return jsonify({"message": "Table 'mytable' was created"})
 
 
-@bp.route('/add-data', methods=['POST'])
+@debug_bps.route('/add-data', methods=['POST'])
 def add_data():
     data = request.json.get('data')
     if not data:
@@ -117,7 +109,7 @@ def add_data():
     })
 
 
-@bp.route('/get-all', methods=['GET'])
+@debug_bps.route('/get-all', methods=['GET'])
 def get_all():
     inspector = inspect(db.engine)
 
@@ -137,7 +129,7 @@ def get_all():
     } for entry in entries])
 
 
-@bp.route('/health', methods=['GET'])
+@debug_bps.route('/health', methods=['GET'])
 def health_check():
     logger.info("Health endpoint was accessed.")
     return jsonify({"status": "Flask app with PostgreSQL is running"}), 200
