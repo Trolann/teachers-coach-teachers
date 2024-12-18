@@ -1,17 +1,20 @@
-version: "3.8"
 services:
   backend:
     container_name: teachers-coach-teachers-backend
-    build: .
+    env_file:
+      - .env
+    build: 
+      context: ./flask_app
     ports:
       - "5001:5001"
     volumes:
       - .:/app
     environment:
-      - FLASK_APP=app.py
+      - FLASK_APP=flask_app/run.py
       - FLASK_ENV=development
       - FLASK_DEBUG=1
       - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI}
+      - PYTHONPATH=/app
     depends_on:
       - db
 
@@ -23,9 +26,7 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=tct_database
-    ports:
-      - "5432:5432"
+      - POSTGRES_DB={$POSTGRES_DB}
 
   expo-frontend:
     container_name: expo-frontend

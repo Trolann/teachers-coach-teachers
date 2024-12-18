@@ -8,9 +8,9 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const checkDatabase = async () => {
-      console.log('Fetching from:', `${API_URL}/check-database`);
+      console.log('Fetching from:', `${API_URL}/admin/debug/check-database`);
       try {
-        const response = await fetch(`${API_URL}/check-database`);
+        const response = await fetch(`${API_URL}/admin/debug/check-database`);
         if (!response.ok) {
           throw new Error('Failed to fetch database status');
         }
