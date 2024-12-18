@@ -15,12 +15,8 @@ import os
 db = SQLAlchemy()
 migrate = Migrate()
 
-def create_app():
-    app = Flask(__name__)
-    CORS(app)
-
-    # Initialize the logger
-    logger = logging.getLogger(__name__)
+# Initialize logger
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # File handler for all logs
@@ -49,6 +45,10 @@ error_stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s
 error_stream_handler.setLevel(logging.ERROR)
 error_stream_handler.addFilter(logging.Filter('ERROR'))
 logger.addHandler(error_stream_handler)
+
+def create_app():
+    app = Flask(__name__)
+    CORS(app)
 
     # Database configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
