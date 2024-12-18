@@ -1,9 +1,14 @@
 from flask import Blueprint, jsonify, request
-from extensions.database import db
+from flask_app.extensions.database import db
+from flask_app.models.user import User, MentorProfile
+from sqlalchemy import text, inspect
+import logging
+from uuid import uuid4
 
+bp = Blueprint('debug', __name__)
+logger = logging.getLogger(__name__)
 
-# Routes for Mentor Application Process
-@app.route('/submit-mentor-application', methods=['POST'])
+@bp.route('/submit-mentor-application', methods=['POST'])
 def submit_mentor_application():
     try:
         data = request.json
@@ -48,12 +53,7 @@ class MyTable(db.Model):
     data = db.Column(db.String(255))
 
 
-@app.route('/', methods=["GET"])
-def home_page():
-    return "Hello World"
-
-
-@app.route('/check-database', methods=['GET'])
+@bp.route('/check-database', methods=['GET'])
 def check_database():
     try:
         db.session.execute(text('SELECT 1'))
@@ -86,7 +86,7 @@ def check_database():
 
 
 # be able to call
-@app.route('/check-table', methods=['GET'])
+@bp.route('/check-table', methods=['GET'])
 def check_table():
     inspector = inspect(db.engine)
     if 'mytable' in inspector.get_table_names():
@@ -98,7 +98,7 @@ def check_table():
         return jsonify({"message": "Table 'mytable' was created"})
 
 
-@app.route('/add-data', methods=['POST'])
+@bp.route('/add-data', methods=['POST'])
 def add_data():
     data = request.json.get('data')
     if not data:
@@ -117,7 +117,7 @@ def add_data():
     })
 
 
-@app.route('/get-all', methods=['GET'])
+@bp.route('/get-all', methods=['GET'])
 def get_all():
     inspector = inspect(db.engine)
 
@@ -137,9 +137,7 @@ def get_all():
     } for entry in entries])
 
 
-@app.route('/', methods=['GET'])
+@bp.route('/health', methods=['GET'])
 def health_check():
-    logger.info("Root endpoint '/' was accessed.")
+    logger.info("Health endpoint was accessed.")
     return jsonify({"status": "Flask app with PostgreSQL is running"}), 200
-
-    return app
