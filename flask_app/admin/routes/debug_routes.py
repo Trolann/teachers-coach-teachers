@@ -1,9 +1,10 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from flask_app.extensions.database import db
+#from flask_app.extensions.database import db
 from flask_app.models.user import User, MentorProfile, MyTable
 from sqlalchemy import text, inspect
 from flask_app.extensions.logging import logger
+from app import db
 
 debug_bps = Blueprint('debug', __name__)
 
