@@ -1,13 +1,14 @@
 services:
   backend:
     container_name: teachers-coach-teachers-backend
-    build: .
+    build: 
+      context: ./flask_app
     ports:
       - "5001:5001"
     volumes:
-      - .:/app
+      - ./flask_app:/app
     environment:
-      - FLASK_APP=app.py
+      - FLASK_APP=run.py
       - FLASK_ENV=development
       - FLASK_DEBUG=1
       - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI}
