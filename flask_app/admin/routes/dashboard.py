@@ -1,16 +1,20 @@
 from flask import render_template, current_app, Blueprint, request, redirect, url_for, flash, session
 from extensions.database import db
 from extensions.cognito import require_auth, CognitoBackendAuthorizer
+from extensions.logging import logger
 from sqlalchemy import text
 from os import path
 
 # Get the current directory path
 current_dir = path.dirname(path.abspath(__file__))
 template_dir = path.join(current_dir, '..', 'templates')
+static_dir = path.join(current_dir, '..', 'static')
 
 # Create blueprint with template folder specified
 admin_dashboard_bp = Blueprint('admin_dashboard', __name__,
-                             template_folder=template_dir)
+                               static_folder=static_dir,
+                               static_url_path='/admin/static',
+                               template_folder=template_dir)
 
 
 @admin_dashboard_bp.route('/', methods=['GET', 'POST'])
@@ -25,7 +29,7 @@ def index():
             
         cognito = CognitoBackendAuthorizer()
         try:
-            response = cognito.login(username, password)
+            response = cognito.login_as_admin(username, password)
             if 'error' in response:
                 logger.warning(f'Login attempt failed for user {username}: {response["error"]}')
                 flash(f'Login failed: {response["error"]}')
