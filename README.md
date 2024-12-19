@@ -38,8 +38,8 @@ cp .env.example .env
   - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
   - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
   - FLASK_ENV should remain as development for local development
-  - ADMIN_USERNAMES must list all admin usernames (user@email.tld) comma separated with no spaces
-  - ---
+
+---
 
 ## **Project Structure**
 
@@ -101,7 +101,7 @@ This will:
 
 ### **3. Confirm Successful Startup**
 After starting the containers, you should see output similar to this:
-```shell
+```bash
 teachers-coach-teachers git:main
 ❯ docker compose up
 [+] Running 4/4
