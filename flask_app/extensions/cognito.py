@@ -112,14 +112,9 @@ class CognitoBackendAuthorizer:
         self.user_pool_id = user_pool_id
         self.client_id = client_id
         self.region = region
-        
+
         # Configure AWS credentials
-        self.client = client(
-            'cognito-idp',
-            region_name=region,
-            aws_access_key_id=config.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY
-        )
+        self.client = client('cognito-idp', region_name=region)
 
 
     def login_as_admin(self, username, password):
@@ -138,20 +133,8 @@ class CognitoBackendAuthorizer:
             # Get the access token
             auth_result = response['AuthenticationResult']
 
-            # Get groups for user
-            groups_response = self.client.admin_list_groups_for_user(
-                Username=username,
-                UserPoolId=self.user_pool_id
-            )
-
-            print(groups_response)
-            
             # Check if user is in admins group
-            is_admin = False
-            for group in groups_response.get('Groups', []):
-                if group['GroupName'] == 'admins':
-                    is_admin = True
-                    break
+            is_admin = False if username.casefold() not in config.ADMIN_USERNAMES else True
             
             if not is_admin:
                 return {"error": "User is not authorized for admin access"}
