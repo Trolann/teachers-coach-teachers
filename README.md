@@ -1,13 +1,3 @@
-
-7. If you need to change packages available in the backend, update the `requirements.txt` file and rebuild the image
-     - Run `docker compose down && docker compose up --build -d`
-8. Run `docker ps` to check if your containers are up and running - you should see **tct_database** running.
-     - View logs with `docker compose logs -f` to view logs for the entire stack
-    - View logs for a specific service with `docker compose logs -f <service_name>` (e.g. `docker compose logs -f tct_database`)
-9. Make sure you POSTGRES_PASSWORD and POSTGRES_USER are correctly configured in `.env` file or Docker Compose file
-11. Run `flask db upgrade` and make sure it completes without errors
-
-
 ### **README: Running an Expo + Flask Backend with Docker for the First Time**
 
 ## **Introduction**
@@ -171,6 +161,24 @@ Or for a single service in the stack with
 docker compose logs -f <service_name>
 ```
 
+### **4. Flask database migrations and management**
+To run database migrations, you can use the following commands:
+```bash
+docker compose exec teachers-coach-teachers-backend flask db init && \
+docker compose exec teachers-coach-teachers-backend flask db migrate && \
+docker compose exec teachers-coach-teachers-backend flask db upgrade
+```
+This will initialize the migrations directory, create an initial migration, and apply the migration to the database.
+A migration is necessary whenever the database models change.
+
+#### _Alternatively_:
+You can completely blow-out the database you have locally and start fresh with:
+```bash
+docker compose down -v --remove-orphans && \
+docker volume rm flaskproject_postgres_data && \
+docker compose up --build -d
+```
+**THIS WILL DELETE ALL DATA IN THE DATABASE**
 
 ## **Running the Application**
 

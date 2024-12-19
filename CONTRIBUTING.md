@@ -28,12 +28,7 @@ flask_app/
 
 ## Development Environment
 
-1. Clone the repository
-2. Copy `.env.example` to `.env` and configure environment variables
-3. Start the development environment:
-```bash
-docker compose up --build
-```
+See repo root README.md for instructions on setting up the development environment.
 
 ## Flask Backend Architecture
 
@@ -45,11 +40,11 @@ The backend uses a Blueprint-based architecture for modularity:
 - Models define the database schema using SQLAlchemy
 
 ### Blueprint Structure
-
 Each blueprint follows this pattern:
 
+__File:__ `flask_app/[admin/api]/[sub-folders]/__init__.py`
+
 ```python
-# __init__.py
 from flask import Blueprint
 
 def create_blueprint():
@@ -60,8 +55,10 @@ def create_blueprint():
     bp.register_blueprint(some_routes, url_prefix='/prefix')
     
     return bp
+```
 
-# routes/some_routes.py
+__File:__ `flask_app/[admin/api]/[sub-folders]/routes/some_route.py`
+```python
 from flask import Blueprint
 
 bp = Blueprint('some_feature', __name__)
@@ -75,30 +72,39 @@ def handler():
 ## Adding New Routes
 
 1. Create a new route module in the appropriate blueprint:
-   - API endpoints go in `api/`
+   - API endpoints go in `api/` in an appropriate subfolder
    - Admin pages go in `admin/routes/`
    
-2. Define your routes using type hints and docstrings:
-
-```python
-from flask import Blueprint
-from typing import Dict
-
-bp = Blueprint('feature', __name__)
-
-@bp.route('/endpoint', methods=['GET'])
-def handler() -> Dict[str, str]:
-    """Handle feature request
-    
-    Returns:
-        Dict containing status message
-    """
-    return {"status": "success"}
-```
+2. Define your routes.
 
 3. Register your routes in the blueprint's `__init__.py`
 
-4. The blueprint will be automatically picked up by the application factory
+4. Update `app.py` to register the blueprint in the application factory:
+    
+```python
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from admin.routes import create_admin_blueprint
+from api.some_route import create_some_route_blueprint  # Import your blueprint here
+from config import FlaskConfig
+
+db = SQLAlchemy()
+migrate = Migrate()
+
+def create_app(config_class=FlaskConfig()):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+
+    # Initialize extensions
+    db.init_app(app)
+
+    # Register blueprints
+    app.register_blueprint(create_admin_blueprint(), url_prefix='/admin')
+    app.register_blueprint(create_some_route_blueprint(), url_prefix='/some_route')  # Register your blueprint here
+
+    return app
+```
 
 ## Code Style Guidelines
 
@@ -141,7 +147,7 @@ def process_data(data: Dict[str, any]) -> List[str]:
 - Follow PEP 8 style guidelines
 - Keep functions focused and small
 - Use meaningful variable names
-- Add comments only when code isn't self-documenting
+- Add comments only when code isn't self-documenting (Should be the exception)
 - Use constants for magic values
 - Handle errors gracefully with try/except
 
@@ -152,18 +158,7 @@ def process_data(data: Dict[str, any]) -> List[str]:
 - Mock external dependencies
 
 ## Getting Help
-
 - Check existing code for examples
 - Review the documentation in docstrings
-- Ask questions in pull requests
-- Reach out to maintainers
-
-Remember to run tests and lint your code before submitting changes:
-
-```bash
-# Run tests
-pytest
-
-# Check code style
-flake8
-```
+- Ask questions in Discord early and often
+- Reach out to Trevor
