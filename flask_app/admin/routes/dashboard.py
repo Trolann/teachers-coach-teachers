@@ -1,6 +1,6 @@
 from flask import render_template, current_app, Blueprint, request, redirect, url_for, flash, session
 from extensions.database import db
-from models.user import MentorProfile
+from flask_app.models.user import MentorProfile
 from extensions.cognito import require_auth, CognitoBackendAuthorizer
 from extensions.logging import logger
 from sqlalchemy import text
@@ -75,5 +75,5 @@ def mentors():
     if 'access_token' not in session:
         return redirect(url_for('admin.admin_dashboard.index'))
     """Admin dashboard showing all mentor profiles"""
-    mentors = MentorProfile.query.all()
+    mentors = db.session.query(MentorProfile).all()
     return render_template('dashboard/mentors.html', mentors=mentors)
