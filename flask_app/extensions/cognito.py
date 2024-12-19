@@ -6,10 +6,11 @@ from flask import request, jsonify
 from jose import jwk, jwt
 from jose.utils import base64url_decode
 from config import CognitoConfig
-
+from boto3 import client
+from extensions.logging import logger
+config = CognitoConfig()
 
 class CognitoTokenVerifier:
-    config = CognitoConfig()
     def __init__(self,user_pool_id=config.COGNITO_USER_POOL_ID,
                  client_id=config.COGNITO_CLIENT_ID,
                  region=config.COGNITO_REGION):
@@ -89,3 +90,36 @@ def require_auth(f):
             return jsonify({'error': str(e)}), 401
 
     return decorated
+
+
+class CognitoBackendAuthorizer:
+    def __init__(self, user_pool_id=config.COGNITO_USER_POOL_ID,
+                 client_id=config.COGNITO_CLIENT_ID,
+                 region=config.COGNITO_REGION):
+        self.user_pool_id = user_pool_id
+        self.client_id = client_id
+        self.region = region
+        self.client = client('cognito-idp', region_name=region)
+
+
+    def login(self, username, password):
+        """Simulate user login and get tokens"""
+        try:
+            response = self.client.initiate_auth(
+                ClientId=self.client_id,
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    'USERNAME': username,
+                    'PASSWORD': password
+                }
+            )
+            logger.info(f'User {username} logged in')
+            print(f'{response}')
+            return response['AuthenticationResult']
+        except Exception as e:
+            print(f'Error: {str(e)}')
+            return {"error": str(e)}
+
+
+#  254   │             "username": "trevor.mathisen@sjsu.edu",
+#  255   │             "password": "TestPassword123!",
