@@ -26,6 +26,7 @@ def index():
         try:
             response = cognito.login(username, password)
             if 'error' in response:
+                print(f'{response}')
                 flash(f'Login failed: {response["error"]}')
                 return render_template('dashboard/login.html')
                 
