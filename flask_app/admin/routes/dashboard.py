@@ -20,8 +20,7 @@ admin_dashboard_bp = Blueprint('admin_dashboard', __name__,
 
 @admin_dashboard_bp.route('/', methods=['GET', 'POST'])
 def index():
-    # If user is already logged in, redirect to dashboard
-    if 'access_token' in session:
+    if request.method == 'GET' and 'access_token' in session:
         return redirect(url_for('admin.admin_dashboard.dashboard'))
         
     if request.method == 'POST':
@@ -58,8 +57,9 @@ def logout():
 
 
 @admin_dashboard_bp.route('/dashboard')
-@require_auth
 def dashboard():
+    if 'access_token' not in session:
+        return redirect(url_for('admin.admin_dashboard.index'))
     """Admin dashboard showing system status"""
     try:
         # Test database connection
@@ -71,8 +71,9 @@ def dashboard():
     return render_template('dashboard/index.html', db_status=db_status)
 
 @admin_dashboard_bp.route('/mentors')
-@require_auth
 def mentors():
+    if 'access_token' not in session:
+        return redirect(url_for('admin.admin_dashboard.index'))
     """Admin dashboard showing all mentor profiles"""
     mentors = MentorProfile.query.all()
     return render_template('dashboard/mentors.html', mentors=mentors)
