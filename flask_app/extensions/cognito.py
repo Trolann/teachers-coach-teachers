@@ -112,7 +112,14 @@ class CognitoBackendAuthorizer:
         self.user_pool_id = user_pool_id
         self.client_id = client_id
         self.region = region
-        self.client = client('cognito-idp', region_name=region)
+        
+        # Configure AWS credentials
+        self.client = client(
+            'cognito-idp',
+            region_name=region,
+            aws_access_key_id=config.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY
+        )
 
 
     def login_as_admin(self, username, password):
