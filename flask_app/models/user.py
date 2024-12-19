@@ -1,6 +1,6 @@
 from uuid import uuid4
 from datetime import datetime
-from app import db
+from extensions.database import db
 from enum import Enum
 
 class MentorStatus(Enum):
