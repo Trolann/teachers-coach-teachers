@@ -4,9 +4,8 @@ import random
 import numpy as np
 from uuid import uuid4
 
-from flask_app.models.user import MentorProfile
-from flask_app.extensions.database import db
-from flask_app.app import create_app
+from ..models.user import MentorProfile
+from ..extensions.database import db
 
 fake = Faker()
 
@@ -59,7 +58,8 @@ def populate_mentors(num_mentors=10):
     try:
         db.session.commit()
         print(f"Successfully added {num_mentors} mentor profiles")
+        return True
     except Exception as e:
         db.session.rollback()
         print(f"Error adding mentor profiles: {e}")
-        raise  # Re-raise the exception for debugging
+        return False
