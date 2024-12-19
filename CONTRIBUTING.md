@@ -13,22 +13,22 @@ The backend is organized in a modular structure under `flask_app/`:
 
 ```
 flask_app/
-├── admin/                   # Admin panel routes and templates
-│   ├── routes/             # Admin route handlers
-│   └── templates/          # Admin HTML templates
-├── api/                    # API endpoints
-│   ├── auth/              # Authentication related code
-│   ├── matching/          # Matching service routes
-│   └── mentors/           # Mentor specific routes
-├── extensions/            # Flask extensions and utilities
-├── models/               # SQLAlchemy models
-├── app.py                # Application factory
-└── config.py            # Configuration classes
+├── admin/                   # Everything admin panel. Routes, templates, etc.
+│   ├── routes/              # Admin route handlers
+|   ├── static/              # Static files for admin panel such as CSS or js files
+│   └── templates/           # Admin HTML templates
+├── api/                     # API endpoints for the frontend. Mostly (if not all) protected by auth
+│   ├── auth/                # Authentication related code
+│   ├── matching/            # Matching service routes
+│   └── mentors/             # Mentor specific routes
+├── extensions/              # All things not endpoints. Such as database, mail, vector db, logging, etc.
+├── models/                  # SQLAlchemy models and migrations
+├── app.py                   # Application root. Registers all blueprint routes, produces the app object to run.
+└── config.py                # Configuration classes. All environment imports happen here
+└── run.py                   # Run wrapper. Determines environment and runs appropriate web server.
+└── requirements.txt         # All Python library requirements for the docker container
+└── Dockerfile               # Docker config for backend. 
 ```
-
-## Development Environment
-
-See repo root README.md for instructions on setting up the development environment.
 
 ## Flask Backend Architecture
 
@@ -107,6 +107,11 @@ def create_app(config_class=FlaskConfig()):
 ```
 
 ## Code Style Guidelines
+
+### Logging
+- Logging is required.
+- Do not use print statements for logging.
+- Remove debugging print statements before committing code.
 
 ### Type Hints
 - Use type hints for all function parameters and return values
