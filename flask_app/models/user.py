@@ -9,10 +9,11 @@ class MentorStatus(Enum):
     REJECTED = 'rejected'
 
 
-# TODO: Delete MyTable model (debug only)
-# Define the table model
+
 class MyTable(db.Model):
+    """Debug-only table, used in debug_routes"""
     __tablename__ = 'mytable'
+    __table_args__ = {'extend_existing': True}
     uuid = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     data = db.Column(db.String(255))
 
