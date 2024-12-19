@@ -20,6 +20,7 @@ class MyTable(db.Model):
 class User(db.Model):
     """Base User Model"""
     __tablename__ = 'users'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -33,6 +34,7 @@ class User(db.Model):
 class MentorProfile(db.Model):
     """Detailed Mentor Profile"""
     __tablename__ = 'mentor_profiles'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
@@ -59,6 +61,7 @@ class MentorProfile(db.Model):
 class MentorshipSession(db.Model):
     """Mentorship Session Tracking"""
     __tablename__ = 'mentorship_sessions'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
 
