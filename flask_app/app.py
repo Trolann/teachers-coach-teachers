@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from admin.routes import create_admin_blueprint
 from config import FlaskConfig
+import secrets
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -10,6 +11,9 @@ migrate = Migrate()
 def create_app(config_class=FlaskConfig()):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # Set a secure secret key for sessions
+    app.secret_key = secrets.token_hex(32)
 
     # Initialize extensions
     db.init_app(app)
