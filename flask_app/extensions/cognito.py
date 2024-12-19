@@ -2,7 +2,7 @@ import urllib
 import json
 import time
 from functools import wraps
-from flask import request, jsonify
+from flask import request, jsonify, session, redirect, url_for
 from jose import jwk, jwt
 from jose.utils import base64url_decode
 from config import CognitoConfig
@@ -78,16 +78,26 @@ def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         verifier = CognitoTokenVerifier()
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return jsonify({'error': 'No authorization token provided'}), 401
+        
+        # Check for token in session first (for web UI)
+        token = None
+        if 'access_token' in session:
+            token = session['access_token']
+        else:
+            # Check Authorization header (for API)
+            auth_header = request.headers.get('Authorization')
+            if auth_header:
+                token = auth_header.replace('Bearer ', '')
+        
+        if not token:
+            return redirect(url_for('admin.admin_dashboard.index'))
 
         try:
-            token = auth_header.replace('Bearer ', '')
             verifier.verify_token(token)
             return f(*args, **kwargs)
         except Exception as e:
-            return jsonify({'error': str(e)}), 401
+            session.clear()  # Clear invalid session
+            return redirect(url_for('admin.admin_dashboard.index'))
 
     return decorated
 
