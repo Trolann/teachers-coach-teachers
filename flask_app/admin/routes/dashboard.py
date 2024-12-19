@@ -31,7 +31,7 @@ def index():
                 
             # Store the access token
             session['access_token'] = response['AccessToken']
-            return redirect(url_for('admin.dashboard'))
+            return redirect(url_for('admin.admin_dashboard.dashboard'))
         except Exception as e:
             flash(f'Login error: {str(e)}')
             return render_template('dashboard/login.html')
