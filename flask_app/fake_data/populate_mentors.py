@@ -42,7 +42,7 @@ EXPERTISE_AREAS = [
 
 def generate_random_vector():
     """Generate a random 384-dimensional vector for testing"""
-    return list(np.random.uniform(-1, 1, 384))
+    return [float(x) for x in np.random.uniform(-1, 1, 384)]
 
 def create_mentor_profile():
     """Create a single mentor profile with fake data"""
