@@ -5,6 +5,7 @@ from functools import wraps
 from flask import request, jsonify, session, redirect, url_for
 from jose import jwk, jwt
 from jose.utils import base64url_decode
+
 from config import CognitoConfig
 from boto3 import client
 from extensions.logging import logger
@@ -129,19 +130,14 @@ class CognitoBackendAuthorizer:
             
             # Get the access token
             auth_result = response['AuthenticationResult']
-            access_token = auth_result['AccessToken']
-            
-            # Get user info including group membership
-            user_info = self.client.admin_get_user(
-                UserPoolId=self.user_pool_id,
-                Username=username
-            )
-            
+
             # Get groups for user
             groups_response = self.client.admin_list_groups_for_user(
                 Username=username,
                 UserPoolId=self.user_pool_id
             )
+
+            print(groups_response)
             
             # Check if user is in admins group
             is_admin = False
