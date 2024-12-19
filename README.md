@@ -1,27 +1,3 @@
-# Start the Containers
-1. Copy `.env.example` to `.env` and update the values (`cp .env.example .env`)
-    - The `.env` must remain in the repository root
-    - POSTGRES_USER, POSTGRES_PASSWORD can be any value for local development
-    - POSTGRES_DB should remain as tct_database
-    - SQLALCHEMY_DATABASE_URI should remain as is to reach the database over the docker network
-    - COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET get from Trevor
-    - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
-    - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
-    - FLASK_ENV should remain as development for local development
-3. Run `docker compose up --build -d` to start the application
-5. The backend is now running at `http://localhost:5001`
-5. To view/tail logs, run `docker compose logs -f`. To view logs for a specific service, run `docker compose logs -f <service_name>`
-5. Saving files will automatically reload the server
-6. Run `docker compose down` to stop the application
-7. If you need to change packages available in the backend, update the `requirements.txt` file and rebuild the image
-    - Run `docker compose down && docker compose up --build -d`
-8. Run `docker ps` to check if your containers are up and running - you should see **tct_database** running.
-    - View logs with `docker compose logs -f` to view logs for the entire stack
-    - View logs for a specific service with `docker compose logs -f <service_name>` (e.g. `docker compose logs -f tct_database`)
-9. Make sure you POSTGRES_PASSWORD and POSTGRES_USER are correctly configured in `.env` file or Docker Compose file
-11. Run `flask db upgrade` and make sure it completes without errors
-
-
 ### **README: Running an Expo + Flask Backend with Docker for the First Time**
 
 ## **Introduction**
@@ -35,36 +11,54 @@ This project demonstrates how to run an **Expo React Native frontend** and a **F
 
 ## **Prerequisites**
 
-Before running the project, ensure you have the following installed:
+  Before running the project, ensure you have the following installed:
 
 1. **Docker Desktop**:
-   - Download and install from [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop).
+     - Download and install from [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop).
 2. **Node.js and npm**:
-   - Download and install from [https://nodejs.org/](https://nodejs.org/).
+     - Download and install from [https://nodejs.org/](https://nodejs.org/).
 3. **Expo CLI** (optional for local testing):
-   ```bash
-   npm install -g expo-cli
-   ```
+```bash
+npm install -g expo-cli
+```
 
----
+4. **Environment Variables**:
+   - Copy the `.env.example` file to `.env` and update the values.
+```bash
+cp .env.example .env
+```
+
+### Notes on environment variables
+
+  - The `.env` must remain in the repository root
+  - POSTGRES_USER, POSTGRES_PASSWORD can be any value for local development
+  - POSTGRES_DB should remain as tct_database
+  - SQLALCHEMY_DATABASE_URI should remain as is to reach the database over the docker network
+  - COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET get from Trevor
+  - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
+  - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
+  - FLASK_ENV should remain as development for local development
+  - ADMIN_USERNAMES must list all admin usernames (user@email.tld) comma separated with no spaces
+  - ---
 
 ## **Project Structure**
 
 The project structure looks like this:
 
 ```
-.
-├── flask_app/                    # Flask backend
-│   ├── admin/                    # Admin panel routes and templates
+├── flask_app/                   # Flask backend module
+│   ├── admin/                   # Admin panel HTML files and associated routes
 │   │   ├── routes/              # Admin route handlers
 │   │   └── templates/           # Admin HTML templates
 │   ├── api/                     # API endpoints
 │   │   └── auth/                # Authentication related code
-│   ├── extensions/              # Flask extensions (Cognito, etc)
-│   ├── models/                  # Database models
-│   ├── app.py                   # Main Flask application factory
-│   ├── config.py                # Configuration classes
-│   ├── Dockerfile               # Flask container configuration
+|   |   └── matching/            # Matching service/vector DB routes
+|   |   └── mentors/             # Mentor specific routes (application submission, etc) (COULD BE CHANGED TO USER)
+│   ├── extensions/              # Utility extensions (Cognito, database, logging, vector operations, etc)
+│   ├── models/                  # Database models/migrations for SQLAlchemy
+│   ├── app.py                   # Main Flask application factory. Registers blueprints from api/ and admin/
+│   ├── config.py                # Configuration classes. Imports environment variables into Config classes
+│   ├── Dockerfile               # Docker configuration for the flask container
 │   └── run.py                   # Application entry point
 ├── mobile/                      # Expo frontend
 │   ├── app/                     # Main application screens
@@ -92,18 +86,99 @@ docker compose build
 
 ---
 
-### **3. Start the Containers**
+### **2. Start the Containers**
 Start the backend, database, and Expo frontend containers:
 ```bash
 docker compose up
 ```
 
 This will:
-- Start the **Flask backend** on port `5000`.
-- Start **PostgreSQL** on port `5432`.
+- Start the **Flask backend** on port `5001`.
+- Start **PostgreSQL** without exposing a port (only accessible from the backend).
 - Start the **Expo frontend** with Metro Bundler on `8081`.
 
 ---
+
+### **3. Confirm Successful Startup**
+After starting the containers, you should see output similar to this:
+```shell
+teachers-coach-teachers git:main
+❯ docker compose up
+[+] Running 4/4
+ ✔ Network teachers-coach-teachers_default    Created                                                0.1s
+ ✔ Container tct_postgres                     Created                                                0.1s
+ ✔ Container expo-frontend                    Created                                                4.6s
+ ✔ Container teachers-coach-teachers-backend  Created                                                0.1s
+Attaching to expo-frontend, tct_postgres, teachers-coach-teachers-backend
+tct_postgres                     |
+tct_postgres                     | PostgreSQL Database directory appears to contain a database; Skipping initialization
+tct_postgres                     |
+tct_postgres                     | 2024-12-19 18:29:53.340 UTC [1] LOG:  starting PostgreSQL 15.10 (Debian 15.10-1.pgdg120+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+tct_postgres                     | 2024-12-19 18:29:53.340 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+tct_postgres                     | 2024-12-19 18:29:53.340 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+tct_postgres                     | 2024-12-19 18:29:53.396 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+tct_postgres                     | 2024-12-19 18:29:53.414 UTC [28] LOG:  database system was shut down at 2024-12-18 21:24:24 UTC
+tct_postgres                     | 2024-12-19 18:29:53.427 UTC [1] LOG:  database system is ready to accept connections
+teachers-coach-teachers-backend  |  * Serving Flask app 'app'
+teachers-coach-teachers-backend  |  * Debug mode: on
+teachers-coach-teachers-backend  | WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+teachers-coach-teachers-backend  |  * Running on all addresses (0.0.0.0)
+teachers-coach-teachers-backend  |  * Running on http://127.0.0.1:5001
+teachers-coach-teachers-backend  |  * Running on http://172.18.0.4:5001
+teachers-coach-teachers-backend  | Press CTRL+C to quit
+teachers-coach-teachers-backend  |  * Restarting with stat
+expo-frontend                    | Starting project at /app
+teachers-coach-teachers-backend  |  * Debugger is active!
+teachers-coach-teachers-backend  |  * Debugger PIN: 740-292-087
+expo-frontend                    | Starting Metro Bundler
+expo-frontend                    | The following packages should be updated for best compatibility with the installed expo version:
+expo-frontend                    |   expo@52.0.9 - expected version: ~52.0.20
+expo-frontend                    |   expo-font@13.0.1 - expected version: ~13.0.2
+expo-frontend                    |   expo-router@4.0.7 - expected version: ~4.0.14
+expo-frontend                    |   expo-splash-screen@0.29.12 - expected version: ~0.29.18
+expo-frontend                    |   expo-system-ui@4.0.3 - expected version: ~4.0.6
+expo-frontend                    |   react-native@0.76.2 - expected version: 0.76.5
+expo-frontend                    |   react-native-webview@13.12.4 - expected version: 13.12.5
+expo-frontend                    | Your project may not work correctly until you install the expected versions of the packages.
+expo-frontend                    | Waiting on http://localhost:8081
+expo-frontend                    | Logs for your project will appear below.
+```
+
+### Note:
+To exit the compose containers and stop the services, press `Ctrl + C`.
+
+To run the containers in the background, add the `-d` flag:
+```bash
+docker compose up --build -d
+```
+
+When running in detached (`-d`) mode, you can view the logs with:
+```bash
+docker compose logs -f
+```
+Or for a single service in the stack with
+```bash
+docker compose logs -f <service_name>
+```
+
+### **4. Flask database migrations and management**
+To run database migrations, you can use the following commands:
+```bash
+docker compose exec teachers-coach-teachers-backend flask db init && \
+docker compose exec teachers-coach-teachers-backend flask db migrate && \
+docker compose exec teachers-coach-teachers-backend flask db upgrade
+```
+This will initialize the migrations directory, create an initial migration, and apply the migration to the database.
+A migration is necessary whenever the database models change.
+
+#### _Alternatively_:
+You can completely blow-out the database you have locally and start fresh with:
+```bash
+docker compose down -v --remove-orphans && \
+docker volume rm flaskproject_postgres_data && \
+docker compose up --build -d
+```
+**THIS WILL DELETE ALL DATA IN THE DATABASE**
 
 ## **Running the Application**
 
