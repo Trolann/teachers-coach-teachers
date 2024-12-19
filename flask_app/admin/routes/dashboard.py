@@ -1,4 +1,5 @@
 from flask import render_template, current_app, Blueprint, request, redirect, url_for, flash, session
+from extensions.database import db
 from extensions.cognito import require_auth, CognitoBackendAuthorizer
 from sqlalchemy import text
 from os import path
@@ -52,7 +53,7 @@ def dashboard():
     """Admin dashboard showing system status"""
     try:
         # Test database connection
-        current_app.db.session.execute(text('SELECT 1'))
+        db.session.execute(text('SELECT 1'))
         db_status = "Successfully connected to database"
     except Exception as e:
         db_status = f"Database connection failed: {str(e)}"

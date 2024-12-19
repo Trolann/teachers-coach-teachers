@@ -17,6 +17,7 @@ def create_app(config_class=FlaskConfig()):
 
     # Initialize extensions
     db.init_app(app)
+    app.db = db  # Make db available as app attribute
 
     # Register blueprints
     app.register_blueprint(create_admin_blueprint(), url_prefix='/admin')
