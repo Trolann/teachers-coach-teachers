@@ -6,9 +6,11 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import Column, String, Integer, DateTime, ARRAY, Float
+from os import environ
+
 
 # Database connection
-DB_URL = "postgresql://postgres:postgres@db:5432/postgres"
+DB_URL = environ.get('SQLALCHEMY_DATABASE_URI')
 engine = create_engine(DB_URL)
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
