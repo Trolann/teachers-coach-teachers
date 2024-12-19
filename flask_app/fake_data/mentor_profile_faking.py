@@ -66,4 +66,11 @@ def populate_mentors(num_mentors=10):
         return False
 
 if __name__ == '__main__':
-    populate_mentors(10)
+    from flask_app.app import create_app
+    
+    app = create_app()
+    with app.app_context():
+        if populate_mentors(10):
+            print("Successfully populated database with mentor profiles")
+        else:
+            print("Failed to populate database with mentor profiles")
