@@ -27,12 +27,13 @@ def index():
         try:
             response = cognito.login(username, password)
             if 'error' in response:
-                print(f'{response}')
+                logger.warning(f'Login attempt failed for user {username}: {response["error"]}')
                 flash(f'Login failed: {response["error"]}')
                 return render_template('dashboard/login.html')
                 
             # Store the access token
             session['access_token'] = response['AccessToken']
+            logger.info(f'Admin user {username} successfully logged into dashboard')
             return redirect(url_for('admin.admin_dashboard.dashboard'))
         except Exception as e:
             flash(f'Login error: {str(e)}')

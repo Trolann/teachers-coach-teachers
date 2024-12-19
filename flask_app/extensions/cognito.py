@@ -113,8 +113,9 @@ class CognitoBackendAuthorizer:
 
 
     def login(self, username, password):
-        """Simulate user login and get tokens"""
+        """Login user and verify admin access"""
         try:
+            # First authenticate the user
             response = self.client.initiate_auth(
                 ClientId=self.client_id,
                 AuthFlow='USER_PASSWORD_AUTH',
@@ -123,11 +124,31 @@ class CognitoBackendAuthorizer:
                     'PASSWORD': password
                 }
             )
-            logger.info(f'User {username} logged in')
-            print(f'{response}')
-            return response['AuthenticationResult']
+            
+            # Get the access token
+            auth_result = response['AuthenticationResult']
+            access_token = auth_result['AccessToken']
+            
+            # Get user info to check groups
+            user_info = self.client.get_user(
+                AccessToken=access_token
+            )
+            
+            # Check if user is in admin group
+            is_admin = False
+            for group in user_info.get('UserAttributes', []):
+                if group['Name'] == 'custom:groups' and 'admin' in group['Value'].split(','):
+                    is_admin = True
+                    break
+            
+            if not is_admin:
+                return {"error": "User is not authorized for admin access"}
+            
+            logger.info(f'Admin user {username} logged in successfully')
+            return auth_result
+            
         except Exception as e:
-            print(f'Error: {str(e)}')
+            logger.error(f'Login error for user {username}: {str(e)}')
             return {"error": str(e)}
 
 
