@@ -131,17 +131,22 @@ class CognitoBackendAuthorizer:
             auth_result = response['AuthenticationResult']
             access_token = auth_result['AccessToken']
             
-            # Get user info to check groups
-            user_info = self.client.get_user(
-                AccessToken=access_token
+            # Get user info including group membership
+            user_info = self.client.admin_get_user(
+                UserPoolId=self.user_pool_id,
+                Username=username
             )
             
-            # Check if user is in admin group
+            # Get groups for user
+            groups_response = self.client.admin_list_groups_for_user(
+                Username=username,
+                UserPoolId=self.user_pool_id
+            )
+            
+            # Check if user is in admins group
             is_admin = False
-            print(user_info.get('UserAttributes', []))
-            for group in user_info.get('UserAttributes', []):
-                print(group)
-                if group['Name'] == 'custom:groups' and 'admins' in group['Value'].split(','):
+            for group in groups_response.get('Groups', []):
+                if group['GroupName'] == 'admins':
                     is_admin = True
                     break
             
