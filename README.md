@@ -99,7 +99,7 @@ docker compose up
 ```
 
 This will:
-- Start the **Flask backend** on port `5001`.
+- Start the **Flask backend** on port `5000`.
 - Start **PostgreSQL** on port `5432`.
 - Start the **Expo frontend** with Metro Bundler on `8081`.
 
