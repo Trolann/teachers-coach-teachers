@@ -64,3 +64,6 @@ def populate_mentors(num_mentors=10):
         db.session.rollback()
         logger.error(f"Error adding mentor profiles: {e}")
         return False
+
+if __name__ == '__main__':
+    populate_mentors(10)
