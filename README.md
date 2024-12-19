@@ -1,20 +1,25 @@
-1. Install Docker
-2. Confirm installation: `docker run hello-world` - update user permissions as needed
+# Start the Containers
+1. Copy `.env.example` to `.env` and update the values (`cp .env.example .env`)
+    - The `.env` must remain in the repository root
+    - POSTGRES_USER, POSTGRES_PASSWORD can be any value for local development
+    - POSTGRES_DB should remain as tct_database
+    - SQLALCHEMY_DATABASE_URI should remain as is to reach the database over the docker network
+    - COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET get from Trevor
+    - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
+    - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
+    - FLASK_ENV should remain as development for local development
 3. Run `docker compose up --build -d` to start the application
-4. The backend is now running at `localhost:5000`
+5. The backend is now running at `http://localhost:5001`
 5. To view/tail logs, run `docker compose logs -f`. To view logs for a specific service, run `docker compose logs -f <service_name>`
 5. Saving files will automatically reload the server
 6. Run `docker compose down` to stop the application
-7. If you need to change packages available in the backend, update the `requirements.txt` file and rebuild the image (down then up)
-8. Postgres setup and Troubleshooting
-9. Environment Variables Setup: 
-- This project uses a .env file to manage sensitive information such as database credentials. An example environment file **.env.example** is provided in the repository. Before starting the application, create a **.env** file by copying the example:
-- `cp .env.example .env`
-- Populate the .env file with your specific values for POSTGRES_USER, POSTGRES_PASSWORD, and other environment variables. Refer to .env.example for guidance.
-9. Run `docker ps` to check if your containers are up and running - you should see **tct_database** running. If not, try running `docker compose up -d`
-10. Make sure you POSTGRES_PASSWORD and POSTGRES_USER are correctly configured in `.env` file or Docker Compose file
-11. Run `psql -U postgres -h localhost -d tct_database`
-12. Run `flask db upgrade` and make sure it completes without errors
+7. If you need to change packages available in the backend, update the `requirements.txt` file and rebuild the image
+    - Run `docker compose down && docker compose up --build -d`
+8. Run `docker ps` to check if your containers are up and running - you should see **tct_database** running.
+    - View logs with `docker compose logs -f` to view logs for the entire stack
+    - View logs for a specific service with `docker compose logs -f <service_name>` (e.g. `docker compose logs -f tct_database`)
+9. Make sure you POSTGRES_PASSWORD and POSTGRES_USER are correctly configured in `.env` file or Docker Compose file
+11. Run `flask db upgrade` and make sure it completes without errors
 
 
 ### **README: Running an Expo + Flask Backend with Docker for the First Time**
