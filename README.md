@@ -54,23 +54,30 @@ The project structure looks like this:
 
 ```
 .
-├── mobile/                       # Expo frontend
-│   ├── .expo/                    # Expo-specific configuration (auto-generated)
-│   ├── app/                      # Main application entry
-│   ├── assets/                   # Static assets (e.g., images, fonts)
-│   ├── components/               # Reusable UI components
-│   ├── constants/                # Project constants (e.g., colors, styles)
-│   ├── hooks/                    # Custom React hooks
-│   ├── node_modules/             # Installed dependencies (auto-generated)
-│   ├── scripts/                  # Utility scripts for project setup or deployment
-│   ├── App.js                    # Main Expo app entry point
-│   ├── app.json                  # Expo project configuration
-│   ├── Dockerfile                # Dockerfile for building the Expo app
-│   ├── package.json              # Project dependencies and scripts
-│   └── ...                       # Other Expo files
-├── app.py                        # Main Flask app
-├── docker-compose.yml            # Docker configuration
-└── README.md                     # Documentation for the project
+├── flask_app/                    # Flask backend
+│   ├── admin/                    # Admin panel routes and templates
+│   │   ├── routes/              # Admin route handlers
+│   │   └── templates/           # Admin HTML templates
+│   ├── api/                     # API endpoints
+│   │   └── auth/                # Authentication related code
+│   ├── extensions/              # Flask extensions (Cognito, etc)
+│   ├── models/                  # Database models
+│   ├── app.py                   # Main Flask application factory
+│   ├── config.py                # Configuration classes
+│   ├── Dockerfile               # Flask container configuration
+│   └── run.py                   # Application entry point
+├── mobile/                      # Expo frontend
+│   ├── app/                     # Main application screens
+│   │   └── (tabs)/             # Tab-based navigation screens
+│   ├── assets/                  # Static assets (images, fonts)
+│   ├── components/              # Reusable UI components
+│   │   └── ui/                  # Basic UI elements
+│   ├── hooks/                   # Custom React hooks
+│   ├── scripts/                 # Utility scripts
+│   ├── app.json                 # Expo configuration
+│   └── package.json             # Frontend dependencies
+├── docker-compose.yml           # Docker services configuration
+└── README.md                    # Project documentation
 ```
 
 ---
@@ -242,9 +249,9 @@ Once the app launches on the simulator:
 
 
 ### **2. Backend (Flask)**
-The Flask backend will start on port `5001`. Test the backend by accessing the `/check-database` endpoint:
+The Flask backend will start on port `5000`. Test the backend by accessing the `/health` endpoint:
 ```
-http://localhost:5001/check-database
+http://localhost:5000/health
 ```
 
 ---
