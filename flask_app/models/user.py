@@ -1,6 +1,6 @@
 from uuid import uuid4
 from datetime import datetime
-from app import db
+from extensions.database import db
 from enum import Enum
 
 class MentorStatus(Enum):
@@ -9,16 +9,18 @@ class MentorStatus(Enum):
     REJECTED = 'rejected'
 
 
-# TODO: Delete MyTable model (debug only)
-# Define the table model
+
 class MyTable(db.Model):
+    """Debug-only table, used in debug_routes"""
     __tablename__ = 'mytable'
+    __table_args__ = {'extend_existing': True}
     uuid = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     data = db.Column(db.String(255))
 
 class User(db.Model):
     """Base User Model"""
     __tablename__ = 'users'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -32,6 +34,7 @@ class User(db.Model):
 class MentorProfile(db.Model):
     """Detailed Mentor Profile"""
     __tablename__ = 'mentor_profiles'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
@@ -58,6 +61,7 @@ class MentorProfile(db.Model):
 class MentorshipSession(db.Model):
     """Mentorship Session Tracking"""
     __tablename__ = 'mentorship_sessions'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
 

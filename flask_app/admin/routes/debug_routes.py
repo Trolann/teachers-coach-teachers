@@ -3,7 +3,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 from flask_app.models.user import User, MentorProfile, MyTable
 from sqlalchemy import text, inspect
 from flask_app.extensions.logging import logger
-from app import db
+from extensions.database import db
 from extensions.cognito import require_auth
 
 debug_bps = Blueprint('debug', __name__)
