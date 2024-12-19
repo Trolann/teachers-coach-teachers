@@ -11,6 +11,21 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('admin.admin_dashboard.dashboard') }}">Admin Panel</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.admin_dashboard.dashboard' %}active{% endif %}" 
+                           href="{{ url_for('admin.admin_dashboard.dashboard') }}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.admin_dashboard.mentors' %}active{% endif %}"
+                           href="{{ url_for('admin.admin_dashboard.mentors') }}">Mentors</a>
+                    </li>
+                </ul>
+            </div>
 
         </div>
     </nav>

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Mentor Profiles{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0">Mentor Profiles</h4>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Expertise</th>
+                        <th>Experience</th>
+                        <th>Status</th>
+                        <th>Applied</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mentor in mentors %}
+                    <tr>
+                        <td>{{ mentor.first_name }} {{ mentor.last_name }}</td>
+                        <td>{{ mentor.user.email }}</td>
+                        <td>{{ mentor.expertise_areas|join(', ') if mentor.expertise_areas else 'N/A' }}</td>
+                        <td>{{ mentor.years_of_experience }} years</td>
+                        <td><span class="badge bg-{{ 'success' if mentor.application_status == 'approved' 
+                                                    else 'warning' if mentor.application_status == 'pending'
+                                                    else 'danger' }}">
+                            {{ mentor.application_status }}
+                        </span></td>
+                        <td>{{ mentor.application_submitted_at.strftime('%Y-%m-%d') }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No mentor profiles found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
