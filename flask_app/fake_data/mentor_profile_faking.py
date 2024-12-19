@@ -4,9 +4,9 @@ import random
 import numpy as np
 from uuid import uuid4
 
-from flask_app.models.user import MentorProfile
-from flask_app.extensions.database import db
-from flask_app.extensions.logging import logger
+from ..models.user import MentorProfile
+from ..extensions.database import db
+from ..extensions.logging import logger
 
 fake = Faker()
 
