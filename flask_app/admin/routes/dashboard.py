@@ -1,5 +1,6 @@
 from flask import render_template, current_app, Blueprint, request, redirect, url_for, flash, session
 from extensions.database import db
+from models.user import MentorProfile
 from extensions.cognito import require_auth, CognitoBackendAuthorizer
 from extensions.logging import logger
 from sqlalchemy import text
@@ -64,3 +65,10 @@ def dashboard():
         db_status = f"Database connection failed: {str(e)}"
 
     return render_template('dashboard/index.html', db_status=db_status)
+
+@admin_dashboard_bp.route('/mentors')
+@require_auth
+def mentors():
+    """Admin dashboard showing all mentor profiles"""
+    mentors = MentorProfile.query.all()
+    return render_template('dashboard/mentors.html', mentors=mentors)
