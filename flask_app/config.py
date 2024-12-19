@@ -14,3 +14,4 @@ class CognitoConfig:
         self.COGNITO_USER_POOL_ID = environ.get('COGNITO_USER_POOL_ID')
         self.COGNITO_CLIENT_ID = environ.get('COGNITO_CLIENT_ID')
         self.COGNITO_REGION = environ.get('COGNITO_REGION')
+        self.ADMIN_USERNAMES = environ.get('ADMIN_USERNAMES').split(',')
