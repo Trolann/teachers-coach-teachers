@@ -4,9 +4,22 @@ import random
 import numpy as np
 from uuid import uuid4
 
-from ..models.user import MentorProfile
-from ..extensions.database import db
-from ..extensions.logging import logger
+
+# Every time you do this shit, we get this error:
+# Traceback (most recent call last):
+# 2024-12-19T22:26:41.285336698Z   File "/app/flask_app/run.py", line 20, in <module>
+# 2024-12-19T22:26:41.285446718Z     from fake_data.mentor_profile_faking import populate_mentors
+# 2024-12-19T22:26:41.285490119Z   File "/app/flask_app/fake_data/mentor_profile_faking.py", line 7, in <module>
+# 2024-12-19T22:26:41.285570503Z     from ..models.user import MentorProfile
+# 2024-12-19T22:26:41.285632150Z ImportError: attempted relative import beyond top-level package
+# from ..models.user import MentorProfile
+# from ..extensions.database import db
+# from ..extensions.logging import logger
+# FUCKING STOP DOING IT AND LEAVE THESE ALONE
+
+from flask_app.models.user import MentorProfile
+from flask_app.extensions.database import db
+from flask_app.extensions.logging import logger
 
 fake = Faker()
 

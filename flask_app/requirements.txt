@@ -6,3 +6,5 @@ python-jose
 Flask-Migrate
 waitress
 boto3
+faker
+numpy
