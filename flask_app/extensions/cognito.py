@@ -10,6 +10,8 @@ from boto3 import client
 from extensions.logging import logger
 config = CognitoConfig()
 
+# TODO: Remove admin group name magic value (add to config)
+
 class CognitoTokenVerifier:
     def __init__(self,user_pool_id=config.COGNITO_USER_POOL_ID,
                  client_id=config.COGNITO_CLIENT_ID,
@@ -112,7 +114,7 @@ class CognitoBackendAuthorizer:
         self.client = client('cognito-idp', region_name=region)
 
 
-    def login(self, username, password):
+    def login_as_admin(self, username, password):
         """Login user and verify admin access"""
         try:
             # First authenticate the user
@@ -136,8 +138,10 @@ class CognitoBackendAuthorizer:
             
             # Check if user is in admin group
             is_admin = False
+            print(user_info.get('UserAttributes', []))
             for group in user_info.get('UserAttributes', []):
-                if group['Name'] == 'custom:groups' and 'admin' in group['Value'].split(','):
+                print(group)
+                if group['Name'] == 'custom:groups' and 'admins' in group['Value'].split(','):
                     is_admin = True
                     break
             
