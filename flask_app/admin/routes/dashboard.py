@@ -20,6 +20,10 @@ admin_dashboard_bp = Blueprint('admin_dashboard', __name__,
 
 @admin_dashboard_bp.route('/', methods=['GET', 'POST'])
 def index():
+    # If user is already logged in, redirect to dashboard
+    if 'access_token' in session:
+        return redirect(url_for('admin.admin_dashboard.dashboard'))
+        
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
