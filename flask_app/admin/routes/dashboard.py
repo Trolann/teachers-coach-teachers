@@ -77,3 +77,41 @@ def mentors():
     """Admin dashboard showing all mentor profiles"""
     mentors = db.session.query(MentorProfile).all()
     return render_template('dashboard/mentors.html', mentors=mentors)
+
+@admin_dashboard_bp.route('/mentors/<int:mentor_id>/approve', methods=['POST'])
+def approve_mentor(mentor_id):
+    if 'access_token' not in session:
+        return {'success': False, 'error': 'Unauthorized'}, 401
+    
+    try:
+        mentor = db.session.query(MentorProfile).get(mentor_id)
+        if not mentor:
+            return {'success': False, 'error': 'Mentor not found'}, 404
+            
+        mentor.application_status = 'approved'
+        db.session.commit()
+        logger.info(f'Mentor {mentor_id} approved successfully')
+        return {'success': True}
+    except Exception as e:
+        logger.error(f'Error approving mentor {mentor_id}: {str(e)}')
+        db.session.rollback()
+        return {'success': False, 'error': str(e)}, 500
+
+@admin_dashboard_bp.route('/mentors/<int:mentor_id>/revoke', methods=['POST'])
+def revoke_mentor(mentor_id):
+    if 'access_token' not in session:
+        return {'success': False, 'error': 'Unauthorized'}, 401
+    
+    try:
+        mentor = db.session.query(MentorProfile).get(mentor_id)
+        if not mentor:
+            return {'success': False, 'error': 'Mentor not found'}, 404
+            
+        mentor.application_status = 'revoked'
+        db.session.commit()
+        logger.info(f'Mentor {mentor_id} approval revoked successfully')
+        return {'success': True}
+    except Exception as e:
+        logger.error(f'Error revoking mentor {mentor_id}: {str(e)}')
+        db.session.rollback()
+        return {'success': False, 'error': str(e)}, 500
