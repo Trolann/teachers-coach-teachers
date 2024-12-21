@@ -45,7 +45,8 @@ def generate_fake_mentors():
                 last_name=fake.last_name(),
                 bio=fake.text(max_nb_chars=200),
                 expertise_areas=[fake.job() for _ in range(random.randint(1, 3))],
-                years_of_experience=random.randint(1, 20)
+                years_of_experience=random.randint(1, 20),
+                application_status=MentorStatus.PENDING.value  # Use .value to get the string
             )
             db.session.add(mentor)
         
