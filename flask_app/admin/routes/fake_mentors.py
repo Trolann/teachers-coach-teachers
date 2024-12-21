@@ -28,7 +28,7 @@ def fake_mentors_page():
 def generate_fake_mentors():
     """Generate fake mentor profiles based on form data"""
     try:
-        num_profiles = int(request.form.get('numProfiles', 10))
+        num_profiles = int(request.form.get('numProfiles'))
         if not 1 <= num_profiles <= 100:
             return jsonify({'success': False, 'error': 'Number of profiles must be between 1 and 100'}), 400
         

@@ -45,10 +45,8 @@ async function handleSubmit(event) {
     
     try {
         const formData = new FormData(form);
-        // Ensure numProfiles is included
-        if (!formData.get('numProfiles')) {
-            formData.set('numProfiles', '10');
-        }
+        const numProfiles = document.getElementById('numProfiles').value;
+        formData.set('numProfiles', numProfiles);
         
         const response = await fetch('/admin/fake-mentors/generate', {
             method: 'POST',
