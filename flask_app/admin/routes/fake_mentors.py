@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, request, jsonify
-from models.user import MentorProfile, db
+from flask import Blueprint, render_template
+from flask_app.models.user import MentorProfile
 from faker import Faker
 
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
