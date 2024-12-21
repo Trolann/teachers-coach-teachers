@@ -10,4 +10,8 @@ def create_admin_blueprint():
     from .dashboard import admin_dashboard_bp
     admin_bp.register_blueprint(admin_dashboard_bp, url_prefix='')
 
+    # Register fake mentors routes
+    from .fake_mentors import fake_mentors_bp
+    admin_bp.register_blueprint(fake_mentors_bp, url_prefix='')
+
     return admin_bp
