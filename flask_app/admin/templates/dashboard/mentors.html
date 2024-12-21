@@ -27,7 +27,7 @@
                         <td>{{ mentor.user.email }}</td>
                         <td>{{ mentor.expertise_areas|join(', ') if mentor.expertise_areas else 'N/A' }}</td>
                         <td>{{ mentor.years_of_experience }} years</td>
-                        <td><span class="badge bg-{{ 'success' if mentor.application_status == 'approved' 
+                        <td><span class="badge bg-{{ 'success' if mentor.application_status == 'approved' or 'APPROVED'
                                                     else 'warning' if mentor.application_status == 'pending'
                                                     else 'danger' }}">
                             {{ mentor.application_status }}
