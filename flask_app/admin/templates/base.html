@@ -24,6 +24,10 @@
                         <a class="nav-link {% if request.endpoint == 'admin.admin_dashboard.mentors' %}active{% endif %}"
                            href="{{ url_for('admin.admin_dashboard.mentors') }}">Mentors</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.admin_dashboard.fake_mentors' %}active{% endif %}"
+                           href="{{ url_for('admin.admin_dashboard.mentors') }}">Fake Mentor Generator</a>
+                    </li>
                 </ul>
             </div>
 
