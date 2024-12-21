@@ -33,6 +33,7 @@ class User(db.Model):
 
 class MentorProfile(db.Model):
     """Detailed Mentor Profile"""
+    # If this is updated, remember to update the fake_mentors.py script and associated admin panel routes
     __tablename__ = 'mentor_profiles'
     __table_args__ = {'extend_existing': True}
 
