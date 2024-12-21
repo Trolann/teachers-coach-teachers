@@ -84,7 +84,7 @@ def approve_mentor(mentor_id):
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(MentorProfile).get(mentor_id)
+        mentor = db.session.query(MentorProfile).filter(MentorProfile.id == str(mentor_id)).first()
         if not mentor:
             return {'success': False, 'error': 'Mentor not found'}, 404
             
@@ -103,7 +103,7 @@ def revoke_mentor(mentor_id):
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(MentorProfile).get(mentor_id)
+        mentor = db.session.query(MentorProfile).filter(MentorProfile.id == str(mentor_id)).first()
         if not mentor:
             return {'success': False, 'error': 'Mentor not found'}, 404
             
