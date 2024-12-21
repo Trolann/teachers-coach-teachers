@@ -44,9 +44,15 @@ async function handleSubmit(event) {
     submitButton.disabled = true;
     
     try {
+        const formData = new FormData(form);
+        // Ensure numProfiles is included
+        if (!formData.get('numProfiles')) {
+            formData.set('numProfiles', '10');
+        }
+        
         const response = await fetch('/admin/fake-mentors/generate', {
             method: 'POST',
-            body: new FormData(form)
+            body: formData
         });
         
         const data = await response.json();
