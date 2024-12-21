@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, request, jsonify
-from flask_app.models.user import MentorProfile, User, db
+from flask_app.models.user import MentorProfile, User, db, MentorStatus
 from faker import Faker
 import random
 
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
-fake = Faker()
+fake = Faker('en_US')
 
 FAKER_MAPPINGS = {
     'first_name': ['first_name', 'first_name_male', 'first_name_female'],
@@ -33,7 +33,7 @@ def generate_fake_mentors():
         for _ in range(num_profiles):
             # Create a user first
             user = User(
-                email=fake.email()
+                email=fake.unique.email()
             )
             db.session.add(user)
             db.session.flush()  # Get the user ID
