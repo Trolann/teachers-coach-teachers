@@ -1,16 +1,17 @@
 from app import create_app
 from config import FlaskConfig
-from extensions.logging import logger, getLogger
+from extensions.logging import get_logger
 from os import environ
 
 config = FlaskConfig()
+logger = get_logger(__name__)
 app = create_app()
 
 if __name__ == '__main__':
     if environ.get('FLASK_ENV') == 'production':
         logger.info("Starting production server")
         logger.setLevel('WARN')
-        waitress_logger = getLogger('waitress')
+        waitress_logger = get_logger('waitress')
         waitress_logger.setLevel(logger.level)
         waitress_logger.parent = logger
         logger.info(f"Starting Flask server on {config.FLASK_RUN_HOST}:{config.FLASK_RUN_PORT}")

@@ -2,10 +2,11 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from flask_app.models.user import User, MentorProfile, MyTable
 from sqlalchemy import text, inspect
-from flask_app.extensions.logging import logger
+from flask_app.extensions.logging import get_logger
 from extensions.database import db
 from extensions.cognito import require_auth
 
+logger = get_logger(__name__)
 debug_bps = Blueprint('debug', __name__)
 
 @debug_bps.route('/submit-mentor-application', methods=['POST'])

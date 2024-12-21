@@ -8,9 +8,10 @@ from jose.utils import base64url_decode
 
 from config import CognitoConfig
 from boto3 import client
-from extensions.logging import logger
-config = CognitoConfig()
+from extensions.logging import get_logger
 
+config = CognitoConfig()
+logger = get_logger(__name__)
 # TODO: Remove admin group name magic value (add to config)
 
 class CognitoTokenVerifier:

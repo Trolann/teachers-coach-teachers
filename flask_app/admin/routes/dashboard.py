@@ -2,9 +2,11 @@ from flask import render_template, current_app, Blueprint, request, redirect, ur
 from extensions.database import db
 from flask_app.models.user import MentorProfile
 from extensions.cognito import require_auth, CognitoBackendAuthorizer
-from extensions.logging import logger
+from extensions.logging import get_logger
 from sqlalchemy import text
 from os import path
+
+logger = get_logger(__name__)
 
 # Get the current directory path
 current_dir = path.dirname(path.abspath(__file__))
