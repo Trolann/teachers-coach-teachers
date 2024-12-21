@@ -12,7 +12,7 @@
         <div class="card-body">
             <h5 class="card-title">Generate Fake Mentors</h5>
             
-            <form id="generateForm">
+            <form id="generateForm" onsubmit="handleSubmit(event)">
                 <div class="mb-3">
                     <label for="numProfiles" class="form-label">Number of Profiles to Generate</label>
                     <input type="number" class="form-control" id="numProfiles" min="1" max="100" value="10">
@@ -35,4 +35,32 @@
         </div>
     </div>
 </div>
+
+<script>
+async function handleSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    
+    try {
+        const response = await fetch('/admin/fake-mentors/generate', {
+            method: 'POST',
+            body: new FormData(form)
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            alert(`Successfully generated ${data.count} mentor profiles`);
+            location.reload();  // Refresh to update the count
+        } else {
+            alert('Error generating profiles: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error: ' + error);
+    } finally {
+        submitButton.disabled = false;
+    }
+}
+</script>
 {% endblock %}
