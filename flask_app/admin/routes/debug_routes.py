@@ -2,11 +2,9 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from flask_app.models.user import User, MentorProfile, MyTable
 from sqlalchemy import text, inspect
-from flask_app.extensions.logging import get_logger
 from extensions.database import db
 from extensions.cognito import require_auth
 
-logger = get_logger(__name__)
 debug_bps = Blueprint('debug', __name__)
 
 @debug_bps.route('/submit-mentor-application', methods=['POST'])
@@ -33,17 +31,16 @@ def submit_mentor_application():
         db.session.add(new_mentor_profile)
 
         db.session.commit()
-
-        logger.info(f"Mentor application submitted for {new_user.email}")
-        return jsonify({
+        
+        response_data = {
             "message": "Mentor application submitted successfully",
             "user_id": new_user.id,
             "mentor_profile_id": new_mentor_profile.id
-        }), 201
+        }
+        return jsonify(response_data), 201
 
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Error submitting mentor application: {str(e)}")
         return jsonify({"error": str(e)}), 400
 
 
@@ -51,12 +48,10 @@ def submit_mentor_application():
 def check_database():
     try:
         db.session.execute(text('SELECT 1'))
-        logger.info("Checked database connectivity successfully.")
         return jsonify({"message": "Database 'tct_database' exists and is accessible"})
 
     except OperationalError as e:
         # possible connection issue (wrong host, credentials, etc.)
-        logger.error(f"Could not connect to database: {str(e)}")
         return jsonify({
             "error": "Database connection failed",
             "details": str(e)
@@ -64,7 +59,6 @@ def check_database():
 
     except ProgrammingError as e:
         # check if database does not exit
-        logger.warning(f"Database does not exist or is not accessible: {str(e)}")
         return jsonify({
             "error": "Database does not exist",
             "details": str(e)
@@ -72,7 +66,6 @@ def check_database():
 
     except Exception as e:
         # other unexpected exceptions
-        logger.error(f"Unexpected error: {str(e)}")
         return jsonify({
             "error": "Unexpected error occurred",
             "details": str(e)
@@ -83,56 +76,61 @@ def check_database():
 @debug_bps.route('/check-table', methods=['GET'])
 def check_table():
     inspector = inspect(db.engine)
-    if 'mytable' in inspector.get_table_names():
-        logger.info("Table 'mytable' exists.")
+    table_names = inspector.get_table_names()
+    
+    if 'mytable' in table_names:
         return jsonify({"message": "Table 'mytable' exists"})
     else:
         db.create_all()
-        logger.warning("Table 'mytable' was created as it did not exist.")
         return jsonify({"message": "Table 'mytable' was created"})
 
 
 @debug_bps.route('/add-data', methods=['POST'])
 def add_data():
     data = request.json.get('data')
+    
     if not data:
-        logger.error("No data provided in /add-data endpoint.")
         return jsonify({"error": "No data provided"}), 400
 
-    new_entry = MyTable(data=data)
-    db.session.add(new_entry)
-    db.session.commit()
-    logger.info(f"Data added with UUID: {new_entry.uuid}")
-
-    return jsonify({
-        "message": "Data added successfully",
-        "uuid": new_entry.uuid,
-        "data": new_entry.data
-    })
+    try:
+        new_entry = MyTable(data=data)
+        db.session.add(new_entry)
+        db.session.commit()
+        
+        response = {
+            "message": "Data added successfully",
+            "uuid": new_entry.uuid,
+            "data": new_entry.data
+        }
+        return jsonify(response)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Failed to add data"}), 500
 
 
 @debug_bps.route('/get-all', methods=['GET'])
 @require_auth
 def get_all():
     inspector = inspect(db.engine)
+    table_names = inspector.get_table_names()
 
     # Check if the table exists
-    if 'mytable' not in inspector.get_table_names():
-        logger.warning("'mytable' does not exist. Creating all tables.")
+    if 'mytable' not in table_names:
         db.create_all()
-        logger.info("'mytable' and any other missing tables created.")
 
-    # Query all entries
-    entries = MyTable.query.all()
-    logger.info("Fetched all entries from 'mytable'.")
-
-    return jsonify([{
-        "uuid": entry.uuid,
-        "data": entry.data
-    } for entry in entries])
+    try:
+        # Query all entries
+        entries = MyTable.query.all()
+        
+        response = [{
+            "uuid": entry.uuid,
+            "data": entry.data
+        } for entry in entries]
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"error": "Failed to fetch entries"}), 500
 
 
 @debug_bps.route('/health', methods=['GET'])
 def health_check():
-    logger.info("Health endpoint was accessed.")
     return jsonify({"status": "Flask app with PostgreSQL is running"}), 200
