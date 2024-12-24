@@ -23,15 +23,40 @@ class MyTable(db.Model):
 class User(db.Model):
     """Base User Model"""
     __tablename__ = 'users'
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = (
+        db.CheckConstraint('credits >= 0', name='check_positive_credits'),
+        {'extend_existing': True}
+    )
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     email = db.Column(db.String(120), unique=True, nullable=False)
     cognito_sub = db.Column(db.String(100), unique=True, nullable=True)  # AWS Cognito user ID
+    credits = db.Column(db.Integer, default=0)
 
     # Relationships
     mentor_profile = db.relationship('MentorProfile', uselist=False, back_populates='user')
     sessions = db.relationship('MentorshipSession', back_populates='user')
+    # Credit relationships
+    credits_created = db.relationship(
+        'CreditRedemption',
+        foreign_keys='CreditRedemption.created_by',
+        back_populates='creator'
+    )
+    credits_redeemed = db.relationship(
+        'CreditRedemption',
+        foreign_keys='CreditRedemption.redeemed_by',
+        back_populates='redeemer'
+    )
+    credits_sent = db.relationship(
+        'CreditTransfer',
+        foreign_keys='CreditTransfer.from_user_id',
+        back_populates='from_user'
+    )
+    credits_received = db.relationship(
+        'CreditTransfer',
+        foreign_keys='CreditTransfer.to_user_id',
+        back_populates='to_user'
+    )
 
     def __init__(self, email, cognito_sub=None):
         logger.debug(f"Creating new User with email: {email[:3]}***{email[-4:]}")

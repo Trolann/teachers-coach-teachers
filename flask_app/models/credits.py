@@ -16,10 +16,10 @@ class CreditRedemption(db.Model):
     """CreditRedemption Model for tracking credit code creation and redemption"""
     __tablename__ = 'credit_redemptions'
     __table_args__ = (
-        {'extend_existing': True},
         db.CheckConstraint('amount > 0', name='check_positive_amount'),
         db.Index('ix_unique_active_code', 'code', 'redeemed_by', unique=True,
                 postgresql_where=db.text('redeemed_by IS NULL')),
+        {'extend_existing': True}
     )
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
@@ -69,8 +69,8 @@ class CreditTransfer(db.Model):
     """CreditTransfer Model for tracking credit movements between users"""
     __tablename__ = 'credit_transfers'
     __table_args__ = (
-        {'extend_existing': True},
         db.CheckConstraint('amount > 0', name='check_positive_amount'),
+        {'extend_existing': True}
     )
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
