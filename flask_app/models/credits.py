@@ -1,6 +1,8 @@
 from extensions.database import db
 from uuid import uuid4
 from enum import Enum
+import random
+from sqlalchemy import and_, or_
 from extensions.logging import get_logger
 
 logger = get_logger(__name__)
@@ -16,9 +18,12 @@ class CreditRedemption(db.Model):
     __table_args__ = (
         {'extend_existing': True},
         db.CheckConstraint('amount > 0', name='check_positive_amount'),
+        db.Index('ix_unique_active_code', 'code', 'redeemed_by', unique=True,
+                postgresql_where=db.text('redeemed_by IS NULL')),
     )
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    code = db.Column(db.String(6), nullable=False, index=True)
     created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
     amount = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now(), index=True)
@@ -29,9 +34,28 @@ class CreditRedemption(db.Model):
     creator = db.relationship('User', foreign_keys=[created_by], back_populates='credits_created')
     redeemer = db.relationship('User', foreign_keys=[redeemed_by], back_populates='credits_redeemed')
 
+    @classmethod
+    def generate_unique_code(cls):
+        """Generate a unique 6-digit code that isn't active (unredeemed) in the system"""
+        # First generate a random 6-digit code that is truly unique
+
+
+        while True:
+            code = ''.join(str(random.randint(0, 9)) for _ in range(6))
+            # Check if code exists and is unredeemed
+            exists = cls.query.filter(
+                and_(
+                    cls.code == code,
+                    cls.redeemed_by.is_(None)
+                )
+            ).first()
+            if not exists:
+                return code
+
     def __init__(self, created_by, amount):
         self.created_by = created_by
         self.amount = amount
+        self.code = self.generate_unique_code()
 
 
 class CreditTransfer(db.Model):
