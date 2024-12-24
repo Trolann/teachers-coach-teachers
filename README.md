@@ -164,12 +164,19 @@ docker compose logs -f <service_name>
 ### **4. Flask database migrations and management**
 To run database migrations, you can use the following commands:
 ```bash
-docker compose exec teachers-coach-teachers-backend flask db init && \
-docker compose exec teachers-coach-teachers-backend flask db migrate && \
-docker compose exec teachers-coach-teachers-backend flask db upgrade
+# Initialize migrations (first time only)
+docker-compose run --rm -e FLASK_APP=manage.py backend flask db init
+
+# Create new migration
+docker-compose run --rm -e FLASK_APP=manage.py backend flask db migrate -m "Description"
+
+# Apply migration
+docker-compose run --rm -e FLASK_APP=manage.py backend flask db upgrade
 ```
 This will initialize the migrations directory, create an initial migration, and apply the migration to the database.
 A migration is necessary whenever the database models change.
+
+*Note*: If you are not having success ensure you have imported the new models within the flask application.
 
 #### _Alternatively_:
 You can completely blow-out the database you have locally and start fresh with:

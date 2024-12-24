@@ -131,7 +131,7 @@ env.bak/
 venv.bak/
 
 # Flask Migrations
-/migrations/
+#/migrations/
 
 # Log Files
 app.log.*
