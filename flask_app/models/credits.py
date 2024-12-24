@@ -36,10 +36,16 @@ class CreditRedemption(db.Model):
 
     @classmethod
     def generate_unique_code(cls):
-        """Generate a unique 6-digit code that isn't active (unredeemed) in the system"""
-        # First generate a random 6-digit code that is truly unique
+        """Generate a unique 6-digit code, trying for complete uniqueness first"""
+        # Try 5 times to generate a completely unique code
+        for _ in range(5):
+            code = ''.join(str(random.randint(0, 9)) for _ in range(6))
+            # Check if code exists at all
+            exists = cls.query.filter(cls.code == code).first()
+            if not exists:
+                return code
 
-
+        # Fall back to generating a code that's unique among unredeemed codes
         while True:
             code = ''.join(str(random.randint(0, 9)) for _ in range(6))
             # Check if code exists and is unredeemed
@@ -50,6 +56,7 @@ class CreditRedemption(db.Model):
                 )
             ).first()
             if not exists:
+                logger.info("Generated pseudo-unique code after failing to find completely unique code")
                 return code
 
     def __init__(self, created_by, amount):
