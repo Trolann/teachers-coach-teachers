@@ -41,9 +41,11 @@ def index():
                 flash(f'Login failed: {response["error"]}')
                 return render_template('dashboard/login.html')
 
-            # Store the access token
+            # Store user information in session
             session['access_token'] = response['AccessToken']
-            logger.info(f'Admin user {username} successfully logged into dashboard')
+            session['user_id'] = response.get('Username')  # Cognito username serves as user_id
+            session['username'] = username
+            logger.info(f'Admin user {username} successfully logged into dashboard with ID {session["user_id"]}')
             return redirect(url_for('admin.admin_dashboard.dashboard'))
         except Exception as e:
             flash(f'Login error: {str(e)}')
