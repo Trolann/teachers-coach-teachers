@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Credit Code Generator</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="num_codes">Number of Codes</label>
+                    <input type="number" class="form-control" id="num_codes" name="num_codes" value="1" min="1" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="credits_per_code">Credits per Code</label>
+                    <input type="number" class="form-control" id="credits_per_code" name="credits_per_code" value="1" min="1" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary mt-4">Generate Codes</button>
+            </div>
+        </div>
+    </form>
+
+    <h3>Generated Codes</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Credits</th>
+                <th>Created</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for code in credit_codes %}
+            <tr class="{{ 'table-secondary' if code.redeemed_by else '' }}">
+                <td>{{ code.code }}</td>
+                <td>{{ code.amount }}</td>
+                <td>{{ code.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>
+                    {% if code.redeemed_by %}
+                        <span class="badge bg-secondary">Redeemed</span>
+                    {% else %}
+                        <span class="badge bg-success">Available</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
