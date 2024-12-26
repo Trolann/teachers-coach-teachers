@@ -154,13 +154,14 @@ class CognitoBackendAuthorizer:
                 AuthFlow='USER_PASSWORD_AUTH',
                 AuthParameters={
                     'USERNAME': username,
-                    'PASSWORD': '[REDACTED]'  # Don't log passwords
+                    'PASSWORD': password
                 }
             )
+            logger.warning(f'{response=}')
             logger.debug("Authentication response received")
-            
             # Get the access token
             auth_result = response['AuthenticationResult']
+
             logger.debug("Retrieved authentication result")
 
             # Check if user is in admins group
@@ -175,6 +176,7 @@ class CognitoBackendAuthorizer:
             return auth_result
             
         except Exception as e:
+            # TODO: Catch separately: botocore.errorfactory.NotAuthorizedException: An error occurred (NotAuthorizedException)
             logger.error(f"Login error for user {username}: {str(e)}")
             logger.exception(e)
             return {"error": str(e)}
