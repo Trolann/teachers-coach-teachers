@@ -143,6 +143,23 @@ class CognitoBackendAuthorizer:
         self.client = client('cognito-idp', region_name=region)
 
 
+    def get_user_attributes(self, access_token):
+        """Get user attributes using the access token"""
+        try:
+            user_info = self.client.get_user(
+                AccessToken=access_token
+            )
+            return {
+                'user_id': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'sub'), None),
+                'email': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'email'), None),
+                'name': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'name'), None),
+                'username': user_info['Username']
+            }
+        except Exception as e:
+            logger.error(f"Error getting user attributes: {str(e)}")
+            logger.exception(e)
+            return None
+
     def login_as_admin(self, username, password):
         """Login user and verify admin access"""
         logger.info(f"Attempting admin login for user: {username}")
@@ -157,12 +174,15 @@ class CognitoBackendAuthorizer:
                     'PASSWORD': password
                 }
             )
-            logger.warning(f'{response=}')
             logger.debug("Authentication response received")
-            # Get the access token
+            
+            # Get the authentication result
             auth_result = response['AuthenticationResult']
-
-            logger.debug("Retrieved authentication result")
+            
+            # Get user attributes
+            user_info = self.get_user_attributes(auth_result['AccessToken'])
+            if not user_info:
+                return {"error": "Failed to get user information"}
 
             # Check if user is in admins group
             is_admin = False if username.casefold() not in config.ADMIN_USERNAMES else True
@@ -173,7 +193,10 @@ class CognitoBackendAuthorizer:
                 return {"error": "User is not authorized for admin access"}
             
             logger.info(f"Admin user {username} logged in successfully")
-            return auth_result
+            return {
+                **auth_result,
+                "user_info": user_info
+            }
             
         except Exception as e:
             # TODO: Catch separately: botocore.errorfactory.NotAuthorizedException: An error occurred (NotAuthorizedException)
