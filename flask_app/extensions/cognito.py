@@ -2,13 +2,15 @@ import urllib
 import json
 import time
 from functools import wraps
-from flask import request, jsonify, session, redirect, url_for
+from flask import request, session, redirect, url_for
 from jose import jwk, jwt
 from jose.utils import base64url_decode
 
 from config import CognitoConfig
 from boto3 import client
 from extensions.logging import get_logger
+from extensions.database import db
+from models.user import User
 
 config = CognitoConfig()
 logger = get_logger(__name__)
@@ -26,6 +28,52 @@ class CognitoTokenVerifier:
         self.keys = None
         self.claims = None
         self.get_keys()
+        # Configure AWS credentials
+        self.client = client('cognito-idp', region_name=region)
+
+    def login_as_admin(self, username, password):
+        """Login user and verify admin access"""
+        logger.info(f"Attempting admin login for user: {username}")
+        try:
+            # First authenticate the user
+            logger.debug("Initiating Cognito authentication")
+            response = self.client.initiate_auth(
+                ClientId=self.client_id,
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    'USERNAME': username,
+                    'PASSWORD': password
+                }
+            )
+            logger.debug("Authentication response received")
+
+            # Get the authentication result
+            auth_result = response['AuthenticationResult']
+
+            # Get user attributes
+            user_info = self.get_user_attributes(auth_result['AccessToken'])
+            if not user_info:
+                return {"error": "Failed to get user information"}
+
+            # Check if user is in admins group
+            is_admin = False if username.casefold() not in config.ADMIN_USERNAMES else True
+            logger.debug(f"Admin status check for {username}: {is_admin}")
+
+            if not is_admin:
+                logger.warning(f"Unauthorized admin access attempt by user: {username}")
+                return {"error": "User is not authorized for admin access"}
+
+            logger.info(f"Admin user {username} logged in successfully")
+            return {
+                **auth_result,
+                "user_info": user_info
+            }
+
+        except Exception as e:
+            # TODO: Catch separately: botocore.errorfactory.NotAuthorizedException: An error occurred (NotAuthorizedException)
+            logger.error(f"Login error for user {username}: {str(e)}")
+            logger.exception(e)
+            return {"error": str(e)}
 
     def get_keys(self):
         """Get the JSON Web Key (JWK) for the user pool"""
@@ -95,12 +143,75 @@ class CognitoTokenVerifier:
 
             self.claims = claims
             logger.info("Token successfully verified")
+            self.setup_user(token)
             return True
             
         except Exception as e:
             logger.error(f"Token verification failed: {str(e)}")
             logger.exception(e)
             raise
+
+    def get_user_attributes(self, access_token):
+        """Get user attributes using the access token"""
+        try:
+            user_info = self.client.get_user(
+                AccessToken=access_token
+            )
+            return {
+                'user_id': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'sub'), None),
+                'email': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'email'), None),
+                'name': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'name'), None),
+                'username': user_info['Username']
+            }
+        except Exception as e:
+            logger.error(f"Error getting user attributes: {str(e)}")
+            logger.exception(e)
+            return None
+
+    def setup_user(self, access_token):
+        """Get user attributes using the access token"""
+        try:
+            user_info = self.get_user_attributes(access_token)
+            user_id = user_info['user_id']
+            try:
+                # Add debug logging for SQLAlchemy registry
+                from sqlalchemy.orm.clsregistry import _ModuleMarker, _MultipleClassMarker
+                registry = db.Model.registry
+                for key in registry._class_registry:
+                    value = registry._class_registry[key]
+                    if isinstance(value, _MultipleClassMarker):
+                        logger.debug(f"Multiple registrations for {key}:")
+                        # Try different ways to inspect the MultipleClassMarker
+                        logger.debug(f"  Dir: {dir(value)}")
+                        for attr in dir(value):
+                            if not attr.startswith('_'):
+                                logger.debug(f"  {attr}: {getattr(value, attr)}")
+                    else:
+                        logger.debug(f"Single registration for {key} in {getattr(value, '__module__', 'unknown')}")
+
+            except Exception as e:
+                logger.error(f"Registry inspection error: {str(e)}")
+
+            #TODO: Confirm this is the correct way to check if user exists and how to add them
+            existing_user = db.session.query(User).filter(User.id == user_id).first()
+            logger.debug(f'Existing user: {existing_user}')
+            if not existing_user:
+                user = User(
+                    cognito_sub=user_id,
+                    email=user_info['email']  # Modified to directly access email from user_info
+                )
+                logger.debug(f"Adding new user to database: {user.email}")
+                db.session.add(user)
+                db.session.commit()
+                logger.debug(f'User {user.email} added to database')
+                return True
+
+            logger.debug(f"User {user_info['email']} already exists in database")
+            return False
+        except Exception as e:
+            logger.error(f"Error getting user attributes: {str(e)}")
+            logger.exception(e)
+            return None
 
 
 def require_auth(f):
@@ -129,81 +240,3 @@ def require_auth(f):
             return redirect(url_for('admin.admin_dashboard.index'))
 
     return decorated
-
-
-class CognitoBackendAuthorizer:
-    def __init__(self, user_pool_id=config.COGNITO_USER_POOL_ID,
-                 client_id=config.COGNITO_CLIENT_ID,
-                 region=config.COGNITO_REGION):
-        self.user_pool_id = user_pool_id
-        self.client_id = client_id
-        self.region = region
-
-        # Configure AWS credentials
-        self.client = client('cognito-idp', region_name=region)
-
-
-    def get_user_attributes(self, access_token):
-        """Get user attributes using the access token"""
-        try:
-            user_info = self.client.get_user(
-                AccessToken=access_token
-            )
-            return {
-                'user_id': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'sub'), None),
-                'email': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'email'), None),
-                'name': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'name'), None),
-                'username': user_info['Username']
-            }
-        except Exception as e:
-            logger.error(f"Error getting user attributes: {str(e)}")
-            logger.exception(e)
-            return None
-
-    def login_as_admin(self, username, password):
-        """Login user and verify admin access"""
-        logger.info(f"Attempting admin login for user: {username}")
-        try:
-            # First authenticate the user
-            logger.debug("Initiating Cognito authentication")
-            response = self.client.initiate_auth(
-                ClientId=self.client_id,
-                AuthFlow='USER_PASSWORD_AUTH',
-                AuthParameters={
-                    'USERNAME': username,
-                    'PASSWORD': password
-                }
-            )
-            logger.debug("Authentication response received")
-            
-            # Get the authentication result
-            auth_result = response['AuthenticationResult']
-            
-            # Get user attributes
-            user_info = self.get_user_attributes(auth_result['AccessToken'])
-            if not user_info:
-                return {"error": "Failed to get user information"}
-
-            # Check if user is in admins group
-            is_admin = False if username.casefold() not in config.ADMIN_USERNAMES else True
-            logger.debug(f"Admin status check for {username}: {is_admin}")
-            
-            if not is_admin:
-                logger.warning(f"Unauthorized admin access attempt by user: {username}")
-                return {"error": "User is not authorized for admin access"}
-            
-            logger.info(f"Admin user {username} logged in successfully")
-            return {
-                **auth_result,
-                "user_info": user_info
-            }
-            
-        except Exception as e:
-            # TODO: Catch separately: botocore.errorfactory.NotAuthorizedException: An error occurred (NotAuthorizedException)
-            logger.error(f"Login error for user {username}: {str(e)}")
-            logger.exception(e)
-            return {"error": str(e)}
-
-
-#  254   │             "username": "trevor.mathisen@sjsu.edu",
-#  255   │             "password": "TestPassword123!",
