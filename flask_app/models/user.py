@@ -35,11 +35,11 @@ class User(db.Model):
 
     # Relationships
     mentor_profile: Mapped[Optional["MentorProfile"]] = relationship(
-        "MentorProfile", uselist=False, backref="user"
+        "flask_app.models.mentor_profiles.MentorProfile", uselist=False, backref="user"
     )
     sessions: Mapped[List["MentorshipSession"]] = relationship(
-        "MentorshipSession",
-        foreign_keys="MentorshipSession.mentee_id",
+        "flask_app.models.mentorship_session.MentorshipSession",
+        foreign_keys="flask_app.models.mentorship_session.MentorshipSession.mentee_id",
         backref="user"
     )
     # Credit relationships
