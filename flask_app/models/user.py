@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 if TYPE_CHECKING:
     from .mentor_profiles import MentorProfile
     from .mentorship_session import MentorshipSession
+    from .credits import CreditRedemption, CreditTransfer
 
 logger = get_logger(__name__)
 
@@ -43,25 +44,25 @@ class User(db.Model):
         backref="user"
     )
     # Credit relationships
-    credits_created = db.relationship(
-        'flask_app.models.credits.CreditRedemption',
-        foreign_keys='flask_app.models.credits.CreditRedemption.created_by',
-        back_populates='creator'
+    credits_created: Mapped[List["CreditRedemption"]] = relationship(
+        "flask_app.models.credits.CreditRedemption",
+        foreign_keys="flask_app.models.credits.CreditRedemption.created_by",
+        back_populates="creator"
     )
-    credits_redeemed = db.relationship(
-        'flask_app.models.credits.CreditRedemption',
-        foreign_keys='flask_app.models.credits.CreditRedemption.redeemed_by',
-        back_populates='redeemer'
+    credits_redeemed: Mapped[List["CreditRedemption"]] = relationship(
+        "flask_app.models.credits.CreditRedemption",
+        foreign_keys="flask_app.models.credits.CreditRedemption.redeemed_by",
+        back_populates="redeemer"
     )
-    credits_sent = db.relationship(
-        'flask_app.models.credits.CreditTransfer',
-        foreign_keys='flask_app.models.credits.CreditTransfer.from_user_id',
-        back_populates='from_user'
+    credits_sent: Mapped[List["CreditTransfer"]] = relationship(
+        "flask_app.models.credits.CreditTransfer",
+        foreign_keys="flask_app.models.credits.CreditTransfer.from_user_id",
+        back_populates="from_user"
     )
-    credits_received = db.relationship(
-        'flask_app.models.credits.CreditTransfer',
-        foreign_keys='flask_app.models.credits.CreditTransfer.to_user_id',
-        back_populates='to_user'
+    credits_received: Mapped[List["CreditTransfer"]] = relationship(
+        "flask_app.models.credits.CreditTransfer",
+        foreign_keys="flask_app.models.credits.CreditTransfer.to_user_id",
+        back_populates="to_user"
     )
 
     def __init__(self, email, cognito_sub=None):
