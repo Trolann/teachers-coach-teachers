@@ -10,7 +10,7 @@ from config import CognitoConfig
 from boto3 import client
 from extensions.logging import get_logger
 from extensions.database import db
-from models.user import User
+from flask_app.models.user import User
 
 config = CognitoConfig()
 logger = get_logger(__name__)
