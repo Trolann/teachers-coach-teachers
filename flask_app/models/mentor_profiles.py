@@ -50,6 +50,6 @@ class MentorProfile(db.Model):
     vector_embedding = db.Column(db.ARRAY(db.Float), nullable=True)
 
     # Relationships
-    sessions = db.relationship('flask_app.models.mentorship_session.MentorshipSession',
-                             foreign_keys='MentorshipSession.mentor_id',
+    sessions = db.relationship('models.mentorship_session.MentorshipSession',
+                             foreign_keys='models.mentorship_session.MentorshipSession.mentor_id',
                              backref='mentor')
