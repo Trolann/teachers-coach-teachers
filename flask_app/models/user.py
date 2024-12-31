@@ -2,8 +2,13 @@ from uuid import uuid4
 from extensions.database import db
 from enum import Enum
 from extensions.logging import get_logger
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from .mentor_profiles import MentorProfile
+    from .mentorship_session import MentorshipSession
 
 logger = get_logger(__name__)
 
