@@ -27,8 +27,10 @@ class User(db.Model):
     credits = db.Column(db.Integer, default=0)
 
     # Relationships
-    mentor_profile = db.relationship('flask_app.models.mentor_profiles.MentorProfile', uselist=False, back_populates='user')
-    sessions = db.relationship('flask_app.models.mentorship_session.MentorshipSession', back_populates='user')
+    mentor_profile = db.relationship('flask_app.models.mentor_profiles.MentorProfile', uselist=False, backref='user')
+    sessions = db.relationship('flask_app.models.mentorship_session.MentorshipSession', 
+                             foreign_keys='MentorshipSession.mentee_id',
+                             backref='user')
     # Credit relationships
     credits_created = db.relationship(
         'flask_app.models.credits.CreditRedemption',

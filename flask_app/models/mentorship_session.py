@@ -52,6 +52,3 @@ class MentorshipSession(db.Model):
     mentee_feedback = db.Column(db.Text)
     mentor_feedback = db.Column(db.Text)
 
-    # Relationships
-    user = db.relationship('flask_app.models.user.User', back_populates='sessions')
-    mentor = db.relationship('flask_app.models.mentor_profiles.MentorProfile', back_populates='sessions')
