@@ -2,6 +2,8 @@ from uuid import uuid4
 from extensions.database import db
 from enum import Enum
 from extensions.logging import get_logger
+from typing import List, Optional
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 logger = get_logger(__name__)
 
@@ -27,10 +29,14 @@ class User(db.Model):
     credits = db.Column(db.Integer, default=0)
 
     # Relationships
-    mentor_profile = db.relationship('models.mentor_profiles.MentorProfile', uselist=False, backref='user')
-    sessions = db.relationship('models.mentorship_session.MentorshipSession', 
-                             foreign_keys='models.mentorship_session.MentorshipSession.mentee_id',
-                             backref='user')
+    mentor_profile: Mapped[Optional["MentorProfile"]] = relationship(
+        "MentorProfile", uselist=False, backref="user"
+    )
+    sessions: Mapped[List["MentorshipSession"]] = relationship(
+        "MentorshipSession",
+        foreign_keys="MentorshipSession.mentee_id",
+        backref="user"
+    )
     # Credit relationships
     credits_created = db.relationship(
         'flask_app.models.credits.CreditRedemption',

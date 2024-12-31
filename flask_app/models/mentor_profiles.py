@@ -3,6 +3,8 @@ from datetime import datetime
 from extensions.database import db
 from enum import Enum
 from extensions.logging import get_logger
+from typing import List, Optional
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 logger = get_logger(__name__)
 
@@ -50,6 +52,8 @@ class MentorProfile(db.Model):
     vector_embedding = db.Column(db.ARRAY(db.Float), nullable=True)
 
     # Relationships
-    sessions = db.relationship('models.mentorship_session.MentorshipSession',
-                             foreign_keys='models.mentorship_session.MentorshipSession.mentor_id',
-                             backref='mentor')
+    sessions: Mapped[List["MentorshipSession"]] = relationship(
+        "MentorshipSession",
+        foreign_keys="MentorshipSession.mentor_id",
+        backref="mentor"
+    )
