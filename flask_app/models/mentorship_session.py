@@ -1,8 +1,6 @@
 from uuid import uuid4
 from extensions.database import db
 from extensions.logging import get_logger
-from models.user import User
-from models.mentor_profiles import MentorProfile
 
 logger = get_logger(__name__)
 
