@@ -45,22 +45,22 @@ class User(db.Model):
     # Credit relationships
     credits_created = db.relationship(
         'flask_app.models.credits.CreditRedemption',
-        foreign_keys='CreditRedemption.created_by',
+        foreign_keys='flask_app.models.credits.CreditRedemption.created_by',
         back_populates='creator'
     )
     credits_redeemed = db.relationship(
         'flask_app.models.credits.CreditRedemption',
-        foreign_keys='CreditRedemption.redeemed_by',
+        foreign_keys='flask_app.models.credits.CreditRedemption.redeemed_by',
         back_populates='redeemer'
     )
     credits_sent = db.relationship(
         'flask_app.models.credits.CreditTransfer',
-        foreign_keys='CreditTransfer.from_user_id',
+        foreign_keys='flask_app.models.credits.CreditTransfer.from_user_id',
         back_populates='from_user'
     )
     credits_received = db.relationship(
         'flask_app.models.credits.CreditTransfer',
-        foreign_keys='CreditTransfer.to_user_id',
+        foreign_keys='flask_app.models.credits.CreditTransfer.to_user_id',
         back_populates='to_user'
     )
 
