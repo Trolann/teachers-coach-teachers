@@ -4,6 +4,8 @@ from enum import Enum
 from extensions.logging import get_logger
 from typing import List, Optional
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from flask_app.models.mentor_profiles import MentorProfile
+from flask_app.models.mentorship_session import MentorshipSession
 
 logger = get_logger(__name__)
 
