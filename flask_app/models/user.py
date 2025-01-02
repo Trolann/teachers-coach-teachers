@@ -22,7 +22,9 @@ class MyTable(db.Model):
     data = db.Column(db.String(255))
 
 class User(db.Model):
-    """Base User Model"""
+    """Base User Model.
+    Full paths for relationships are absolutely required and cannot be removed.
+    """
     __tablename__ = 'users'
     __table_args__ = (
         db.CheckConstraint('credits >= 0', name='check_positive_credits'),
@@ -34,7 +36,7 @@ class User(db.Model):
     cognito_sub = db.Column(db.String(100), unique=True, nullable=True)  # AWS Cognito user ID
     credits = db.Column(db.Integer, default=0)
 
-    # Relationships
+    # Relationships: USE FULL PATHS
     mentor_profile: Mapped[Optional["MentorProfile"]] = relationship(
         "flask_app.models.mentor_profiles.MentorProfile", uselist=False, backref="user"
     )
