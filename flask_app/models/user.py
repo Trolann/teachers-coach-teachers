@@ -37,6 +37,9 @@ class User(db.Model):
     credits = db.Column(db.Integer, default=0)
 
     # Relationships: USE FULL PATHS
+    # If you don't use full paths, you'll get
+    # sqlalchemy.exc.InvalidRequestError: Multiple classes found for path "####" in the registry of this declarative base. Please use a fully module-qualified path.
+
     mentor_profile: Mapped[Optional["MentorProfile"]] = relationship(
         "flask_app.models.mentor_profiles.MentorProfile", uselist=False, backref="user"
     )
