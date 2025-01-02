@@ -51,15 +51,15 @@ class User(db.Model):
     # Credit relationships - FULL PATHS REQUIRED TO PREVENT MULTIPLE CLASS ERRORS
     credits_created: Mapped[List["CreditRedemption"]] = relationship(
         "flask_app.models.credits.CreditRedemption",
-        primaryjoin="User.id==flask_app.models.credits.CreditRedemption.created_by",
+        primaryjoin="and_(User.id==foreign(flask_app.models.credits.CreditRedemption.created_by))",
         back_populates="creator",
-        foreign_keys="flask_app.models.credits.CreditRedemption.created_by"
+        viewonly=False
     )
     credits_redeemed: Mapped[List["CreditRedemption"]] = relationship(
         "flask_app.models.credits.CreditRedemption",
-        primaryjoin="User.id==flask_app.models.credits.CreditRedemption.redeemed_by",
+        primaryjoin="and_(User.id==foreign(flask_app.models.credits.CreditRedemption.redeemed_by))",
         back_populates="redeemer",
-        foreign_keys="flask_app.models.credits.CreditRedemption.redeemed_by"
+        viewonly=False
     )
     credits_sent: Mapped[List["CreditTransfer"]] = relationship(
         "flask_app.models.credits.CreditTransfer",

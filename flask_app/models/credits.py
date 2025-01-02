@@ -35,13 +35,13 @@ class CreditRedemption(db.Model):
         'flask_app.models.user.User',
         foreign_keys=[created_by],
         back_populates='credits_created',
-        primaryjoin="CreditRedemption.created_by==flask_app.models.user.User.id"
+        primaryjoin="and_(CreditRedemption.created_by==foreign(flask_app.models.user.User.id))"
     )
     redeemer = db.relationship(
         'flask_app.models.user.User',
         foreign_keys=[redeemed_by],
         back_populates='credits_redeemed',
-        primaryjoin="CreditRedemption.redeemed_by==flask_app.models.user.User.id"
+        primaryjoin="and_(CreditRedemption.redeemed_by==foreign(flask_app.models.user.User.id))"
     )
 
     @classmethod
