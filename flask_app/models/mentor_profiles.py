@@ -8,7 +8,7 @@ from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
-    from .mentorship_session import MentorshipSession
+    from flask_app.models.mentorship_session import MentorshipSession
 
 logger = get_logger(__name__)
 
@@ -57,7 +57,7 @@ class MentorProfile(db.Model):
 
     # Relationships
     sessions: Mapped[List["MentorshipSession"]] = relationship(
-        "flask_app.models.mentor_profiles.MentorshipSession",
-        foreign_keys="flask_app.models.mentor_profiles.MentorshipSession.mentor_id",
+        "flask_app.models.mentorship_session.MentorshipSession",
+        foreign_keys="flask_app.models.mentorship_session.MentorshipSession.mentor_id",
         backref="mentor"
     )
