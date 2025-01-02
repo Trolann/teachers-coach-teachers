@@ -57,7 +57,7 @@ class MentorProfile(db.Model):
 
     # Relationships
     sessions: Mapped[List["MentorshipSession"]] = relationship(
-        "MentorshipSession",
-        foreign_keys="MentorshipSession.mentor_id",
+        "flask_app.models.mentor_profiles.MentorshipSession",
+        foreign_keys="flask_app.models.mentor_profiles.MentorshipSession.mentor_id",
         backref="mentor"
     )
