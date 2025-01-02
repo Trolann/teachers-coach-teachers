@@ -48,25 +48,25 @@ class User(db.Model):
         foreign_keys="flask_app.models.mentorship_session.MentorshipSession.mentee_id",
         backref="user"
     )
-    # Credit relationships
+    # Credit relationships - FULL PATHS REQUIRED TO PREVENT MULTIPLE CLASS ERRORS
     credits_created: Mapped[List["CreditRedemption"]] = relationship(
-        "CreditRedemption",
-        primaryjoin="User.id==CreditRedemption.created_by",
+        "flask_app.models.credits.CreditRedemption",
+        primaryjoin="User.id==flask_app.models.credits.CreditRedemption.created_by",
         back_populates="creator"
     )
     credits_redeemed: Mapped[List["CreditRedemption"]] = relationship(
-        "CreditRedemption",
-        primaryjoin="User.id==CreditRedemption.redeemed_by",
+        "flask_app.models.credits.CreditRedemption",
+        primaryjoin="User.id==flask_app.models.credits.CreditRedemption.redeemed_by",
         back_populates="redeemer"
     )
     credits_sent: Mapped[List["CreditTransfer"]] = relationship(
-        "CreditTransfer",
-        primaryjoin="User.id==CreditTransfer.from_user_id",
+        "flask_app.models.credits.CreditTransfer",
+        primaryjoin="User.id==flask_app.models.credits.CreditTransfer.from_user_id",
         back_populates="from_user"
     )
     credits_received: Mapped[List["CreditTransfer"]] = relationship(
-        "CreditTransfer",
-        primaryjoin="User.id==CreditTransfer.to_user_id",
+        "flask_app.models.credits.CreditTransfer",
+        primaryjoin="User.id==flask_app.models.credits.CreditTransfer.to_user_id",
         back_populates="to_user"
     )
 
