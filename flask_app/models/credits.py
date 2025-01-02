@@ -31,8 +31,18 @@ class CreditRedemption(db.Model):
     redeemed_at = db.Column(db.DateTime, nullable=True)
 
     # Relationships - FULL PATHS REQUIRED TO PREVENT MULTIPLE CLASS ERRORS
-    creator = db.relationship('flask_app.models.user.User', foreign_keys=[created_by], back_populates='credits_created')
-    redeemer = db.relationship('flask_app.models.user.User', foreign_keys=[redeemed_by], back_populates='credits_redeemed')
+    creator = db.relationship(
+        'flask_app.models.user.User',
+        foreign_keys=[created_by],
+        back_populates='credits_created',
+        primaryjoin="CreditRedemption.created_by==flask_app.models.user.User.id"
+    )
+    redeemer = db.relationship(
+        'flask_app.models.user.User',
+        foreign_keys=[redeemed_by],
+        back_populates='credits_redeemed',
+        primaryjoin="CreditRedemption.redeemed_by==flask_app.models.user.User.id"
+    )
 
     @classmethod
     def generate_unique_code(cls):
@@ -81,5 +91,15 @@ class CreditTransfer(db.Model):
     transfer_type = db.Column(db.Enum(TransferType), nullable=False)
 
     # Relationships - FULL PATHS REQUIRED TO PREVENT MULTIPLE CLASS ERRORS
-    from_user = db.relationship('flask_app.models.user.User', foreign_keys=[from_user_id], back_populates='credits_sent')
-    to_user = db.relationship('flask_app.models.user.User', foreign_keys=[to_user_id], back_populates='credits_received')
+    from_user = db.relationship(
+        'flask_app.models.user.User',
+        foreign_keys=[from_user_id],
+        back_populates='credits_sent',
+        primaryjoin="CreditTransfer.from_user_id==flask_app.models.user.User.id"
+    )
+    to_user = db.relationship(
+        'flask_app.models.user.User',
+        foreign_keys=[to_user_id],
+        back_populates='credits_received',
+        primaryjoin="CreditTransfer.to_user_id==flask_app.models.user.User.id"
+    )
