@@ -9,7 +9,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 if TYPE_CHECKING:
     from .mentor_profiles import MentorProfile
     from .mentorship_session import MentorshipSession
-    from .credits import CreditRedemption, CreditTransfer
+
+from flask_app.models.credits import CreditRedemption, CreditTransfer
 
 logger = get_logger(__name__)
 
@@ -31,53 +32,39 @@ class User(db.Model):
         {'extend_existing': True}
     )
 
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    cognito_sub = db.Column(db.String(100), unique=True, nullable=True)  # AWS Cognito user ID
-    credits = db.Column(db.Integer, default=0)
+    id: Mapped[str] = mapped_column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    email: Mapped[str] = mapped_column(db.String(120), unique=True, nullable=False)
+    cognito_sub: Mapped[Optional[str]] = mapped_column(db.String(100), unique=True, nullable=True)
+    credits: Mapped[int] = mapped_column(db.Integer, default=0)
 
-    # Relationships: USE FULL PATHS
-    # If you don't use full paths, you'll get
-    # sqlalchemy.exc.InvalidRequestError: Multiple classes found for path "####" in the registry of this declarative base. Please use a fully module-qualified path.
-
-    mentor_profile: Mapped[Optional["MentorProfile"]] = relationship(
-        "flask_app.models.mentor_profiles.MentorProfile", uselist=False, backref="user"
-    )
-    sessions: Mapped[List["MentorshipSession"]] = relationship(
-        "flask_app.models.mentorship_session.MentorshipSession",
-        foreign_keys="flask_app.models.mentorship_session.MentorshipSession.mentee_id",
-        backref="user"
-    )
-    # Credit relationships - FULL PATHS REQUIRED TO PREVENT MULTIPLE CLASS ERRORS
-    credits_created: Mapped[List["CreditRedemption"]] = relationship(
+    # Relationships - FULL PATHS REQUIRED TO PREVENT MULTIPLE CLASS ERRORS
+    credits_created: Mapped[List["flask_app.models.credits.CreditRedemption"]] = relationship(
         "flask_app.models.credits.CreditRedemption",
-        primaryjoin="and_(User.id==foreign(flask_app.models.credits.CreditRedemption.created_by))",
         back_populates="creator",
-        viewonly=False
+        primaryjoin="flask_app.models.user.User.id == foreign(flask_app.models.credits.CreditRedemption.created_by)"
     )
-    credits_redeemed: Mapped[List["CreditRedemption"]] = relationship(
+
+    credits_redeemed: Mapped[List["flask_app.models.credits.CreditRedemption"]] = relationship(
         "flask_app.models.credits.CreditRedemption",
-        primaryjoin="and_(User.id==foreign(flask_app.models.credits.CreditRedemption.redeemed_by))",
         back_populates="redeemer",
-        viewonly=False
+        primaryjoin="flask_app.models.user.User.id == foreign(flask_app.models.credits.CreditRedemption.redeemed_by)"
     )
-    credits_sent: Mapped[List["CreditTransfer"]] = relationship(
+
+    credits_sent: Mapped[List["flask_app.models.credits.CreditTransfer"]] = relationship(
         "flask_app.models.credits.CreditTransfer",
-        primaryjoin="User.id==flask_app.models.credits.CreditTransfer.from_user_id",
-        back_populates="from_user",
-        foreign_keys="flask_app.models.credits.CreditTransfer.from_user_id"
+        primaryjoin="flask_app.models.user.User.id == foreign(flask_app.models.credits.CreditTransfer.from_user_id)",
+        back_populates="from_user"
     )
-    credits_received: Mapped[List["CreditTransfer"]] = relationship(
+
+    credits_received: Mapped[List["flask_app.models.credits.CreditTransfer"]] = relationship(
         "flask_app.models.credits.CreditTransfer",
-        primaryjoin="User.id==flask_app.models.credits.CreditTransfer.to_user_id",
-        back_populates="to_user",
-        foreign_keys="flask_app.models.credits.CreditTransfer.to_user_id"
+        primaryjoin="flask_app.models.user.User.id == foreign(flask_app.models.credits.CreditTransfer.to_user_id)",
+        back_populates="to_user"
     )
+
 
     def __init__(self, email, cognito_sub=None):
         logger.debug(f"Creating new User with email: {email[:3]}***{email[-4:]}")
         self.email = email
         self.cognito_sub = cognito_sub
         logger.info(f"User created with ID: {self.id}")
-
-

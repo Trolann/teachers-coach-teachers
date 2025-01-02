@@ -2,8 +2,13 @@ from extensions.database import db
 from uuid import uuid4
 from enum import Enum
 import random
-from sqlalchemy import and_, or_
+from sqlalchemy import and_
 from extensions.logging import get_logger
+from sqlalchemy.orm import Mapped, relationship, mapped_column
+from typing import Optional
+from datetime import datetime
+from sqlalchemy import String, Integer, DateTime, ForeignKey
+
 
 logger = get_logger(__name__)
 
@@ -18,30 +23,45 @@ class CreditRedemption(db.Model):
     __table_args__ = (
         db.CheckConstraint('amount > 0', name='check_positive_amount'),
         db.Index('ix_unique_active_code', 'code', 'redeemed_by', unique=True,
-                postgresql_where=db.text('redeemed_by IS NULL')),
+                 postgresql_where=db.text('redeemed_by IS NULL')),
         {'extend_existing': True}
     )
 
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
-    code = db.Column(db.String(6), nullable=False, index=True)
-    created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
-    amount = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now(), index=True)
-    redeemed_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True, index=True)
-    redeemed_at = db.Column(db.DateTime, nullable=True)
+    id: Mapped[str] = mapped_column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    code: Mapped[str] = mapped_column(db.String(6), nullable=False, index=True)
+    created_by: Mapped[str] = mapped_column(
+        db.String(36),
+        ForeignKey('users.id', ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    amount: Mapped[int] = mapped_column(db.Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime,
+        server_default=db.func.now(),
+        index=True
+    )
+    redeemed_by: Mapped[Optional[str]] = mapped_column(
+        db.String(36),
+        ForeignKey('users.id', ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+    redeemed_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
 
     # Relationships - FULL PATHS REQUIRED TO PREVENT MULTIPLE CLASS ERRORS
-    creator = db.relationship(
-        'flask_app.models.user.User',
+    creator: Mapped["flask_app.models.user.User"] = relationship(
+        "flask_app.models.user.User",
         foreign_keys=[created_by],
-        back_populates='credits_created',
-        primaryjoin="and_(CreditRedemption.created_by==foreign(flask_app.models.user.User.id))"
+        back_populates="credits_created",
+        primaryjoin="flask_app.models.credits.CreditRedemption.created_by==flask_app.models.user.User.id"
     )
-    redeemer = db.relationship(
-        'flask_app.models.user.User',
+
+    redeemer: Mapped[Optional["flask_app.models.user.User"]] = relationship(
+        "flask_app.models.user.User",
         foreign_keys=[redeemed_by],
-        back_populates='credits_redeemed',
-        primaryjoin="and_(CreditRedemption.redeemed_by==foreign(flask_app.models.user.User.id))"
+        back_populates="credits_redeemed",
+        primaryjoin="flask_app.models.credits.CreditRedemption.redeemed_by==flask_app.models.user.User.id"
     )
 
     @classmethod
