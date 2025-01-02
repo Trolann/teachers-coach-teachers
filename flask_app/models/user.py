@@ -47,23 +47,23 @@ class User(db.Model):
     )
     # Credit relationships
     credits_created: Mapped[List["CreditRedemption"]] = relationship(
-        "flask_app.models.credits.CreditRedemption",
-        foreign_keys="[flask_app.models.credits.CreditRedemption.created_by]",
+        "CreditRedemption",
+        primaryjoin="User.id==CreditRedemption.created_by",
         back_populates="creator"
     )
     credits_redeemed: Mapped[List["CreditRedemption"]] = relationship(
-        "flask_app.models.credits.CreditRedemption",
-        foreign_keys="[flask_app.models.credits.CreditRedemption.redeemed_by]",
+        "CreditRedemption",
+        primaryjoin="User.id==CreditRedemption.redeemed_by",
         back_populates="redeemer"
     )
     credits_sent: Mapped[List["CreditTransfer"]] = relationship(
-        "flask_app.models.credits.CreditTransfer",
-        foreign_keys="flask_app.models.credits.CreditTransfer.from_user_id",
+        "CreditTransfer",
+        primaryjoin="User.id==CreditTransfer.from_user_id",
         back_populates="from_user"
     )
     credits_received: Mapped[List["CreditTransfer"]] = relationship(
-        "flask_app.models.credits.CreditTransfer",
-        foreign_keys="flask_app.models.credits.CreditTransfer.to_user_id",
+        "CreditTransfer",
+        primaryjoin="User.id==CreditTransfer.to_user_id",
         back_populates="to_user"
     )
 

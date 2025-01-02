@@ -31,8 +31,8 @@ class CreditRedemption(db.Model):
     redeemed_at = db.Column(db.DateTime, nullable=True)
 
     # Relationships
-    creator = db.relationship('User', foreign_keys=[created_by], back_populates='credits_created')
-    redeemer = db.relationship('User', foreign_keys=[redeemed_by], back_populates='credits_redeemed')
+    creator = db.relationship('User', back_populates='credits_created')
+    redeemer = db.relationship('User', back_populates='credits_redeemed')
 
     @classmethod
     def generate_unique_code(cls):
@@ -81,5 +81,5 @@ class CreditTransfer(db.Model):
     transfer_type = db.Column(db.Enum(TransferType), nullable=False)
 
     # Relationships
-    from_user = db.relationship('User', foreign_keys=[from_user_id], back_populates='credits_sent')
-    to_user = db.relationship('User', foreign_keys=[to_user_id], back_populates='credits_received')
+    from_user = db.relationship('User', back_populates='credits_sent')
+    to_user = db.relationship('User', back_populates='credits_received')
