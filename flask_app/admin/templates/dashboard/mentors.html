@@ -8,6 +8,15 @@ function filterTable() {
     const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
     const searchText = document.getElementById('searchInput').value.toLowerCase();
     const rows = document.querySelectorAll('tbody tr');
+    
+    // Get all header cells that contain 'name' (case-insensitive)
+    const headerCells = document.querySelectorAll('thead th');
+    const nameColumnIndexes = Array.from(headerCells).reduce((indexes, cell, index) => {
+        if (cell.textContent.toLowerCase().includes('name')) {
+            indexes.push(index);
+        }
+        return indexes;
+    }, []);
 
     rows.forEach(row => {
         // Skip the "No mentor profiles found" row
@@ -15,8 +24,6 @@ function filterTable() {
 
         // Find the status badge span
         const statusBadge = row.querySelector('.badge');
-        const fullName = row.cells[1].textContent.toLowerCase().trim(); // Assuming name is in second column
-        
         if (!statusBadge) return;
 
         const status = statusBadge.textContent.toLowerCase().trim();
@@ -24,9 +31,12 @@ function filterTable() {
         // Status matching remains exact
         const matchesStatus = statusFilter === '' || status === statusFilter;
         
-        // Name search is now fuzzy - shows results if searchText appears anywhere in the name
+        // Check all name columns for a match
         const matchesSearch = searchText === '' || 
-                            fullName.indexOf(searchText) !== -1;
+            nameColumnIndexes.some(index => {
+                const cellText = row.cells[index]?.textContent.toLowerCase().trim() || '';
+                return cellText.indexOf(searchText) !== -1;
+            });
 
         row.style.display = matchesStatus && matchesSearch ? '' : 'none';
     });
