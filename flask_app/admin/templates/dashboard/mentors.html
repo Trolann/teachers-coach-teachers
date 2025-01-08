@@ -21,8 +21,12 @@ function filterTable() {
 
         const status = statusBadge.textContent.toLowerCase().trim();
         
+        // Status matching remains exact
         const matchesStatus = statusFilter === '' || status === statusFilter;
-        const matchesSearch = searchText === '' || fullName.includes(searchText);
+        
+        // Name search is now fuzzy - shows results if searchText appears anywhere in the name
+        const matchesSearch = searchText === '' || 
+                            fullName.indexOf(searchText) !== -1;
 
         row.style.display = matchesStatus && matchesSearch ? '' : 'none';
     });
