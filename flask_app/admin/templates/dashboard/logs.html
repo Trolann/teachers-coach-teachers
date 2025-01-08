@@ -95,10 +95,10 @@ function formatLogLine(logEntry) {
     
     return `
         <div class="log-line log-${level}" data-level="${level}">
-            <span style="color: #666;">${timeStr}</span> 
-            ${logEntry.content.substring(timeStr.length)}
+            <span style="color: #666;">${logEntry.timestamp}</span> 
+            ${logEntry.content.substring(logEntry.timestamp.length)}
         </div>
-    `;
+    `.trim();
 }
 
 function updateLogView(content) {
@@ -173,17 +173,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-document.querySelectorAll('[data-level]').forEach(button => {
-    button.addEventListener('click', (e) => {
-        // Update button states
-        document.querySelectorAll('[data-level]').forEach(btn => {
-            btn.classList.remove('active');
+// Set up filter buttons
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-level]').forEach(button => {
+        button.addEventListener('click', (e) => {
+            // Update button states
+            document.querySelectorAll('[data-level]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            e.target.classList.add('active');
+            
+            // Apply filter
+            filterLogs(e.target.dataset.level);
         });
-        e.target.classList.add('active');
-        
-        // Apply filter
-        filterLogs(e.target.dataset.level);
     });
 });
+
+// Initialize with 'all' filter
+filterLogs('all');
 </script>
 {% endblock %}

@@ -24,19 +24,21 @@ def read_log_file(filename):
             # Parse each line to extract log level
             parsed_lines = []
             for line in lines:
-                if '[DEBUG]' in line:
-                    level = 'DEBUG'
-                elif '[INFO]' in line:
-                    level = 'INFO'
-                elif '[WARNING]' in line:
-                    level = 'WARNING'
-                elif '[ERROR]' in line:
-                    level = 'ERROR'
-                elif '[CRITICAL]' in line:
-                    level = 'CRITICAL'
-                else:
-                    level = None
-                parsed_lines.append({'content': line.strip(), 'level': level})
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                level = None
+                for lvl in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
+                    if f'[{lvl}]' in line:
+                        level = lvl
+                        break
+                        
+                parsed_lines.append({
+                    'content': line,
+                    'level': level,
+                    'timestamp': line[:19] if len(line) > 19 else ''  # Extract YYYY-MM-DD HH:MM:SS
+                })
             return parsed_lines[::-1]  # Reverse to show newest first
     return []
 
