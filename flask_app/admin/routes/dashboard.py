@@ -1,5 +1,4 @@
 from flask import render_template, current_app, Blueprint, request, redirect, url_for, flash, session
-from flask_wtf.csrf import csrf_exempt
 from extensions.database import db
 from flask_app.models.mentor_profiles import MentorProfile
 from extensions.cognito import require_auth, CognitoTokenVerifier
@@ -98,7 +97,6 @@ def mentors():
     return render_template('dashboard/mentors.html', mentors=mentors)
 
 @admin_dashboard_bp.route('/mentors/<string:mentor_id>/approve', methods=['POST'])
-@csrf_exempt
 @require_auth
 def approve_mentor(mentor_id):
     if 'access_token' not in session:
@@ -122,7 +120,6 @@ def approve_mentor(mentor_id):
         return {'success': False, 'error': str(e)}, 500
 
 @admin_dashboard_bp.route('/mentors/<string:mentor_id>/revoke', methods=['POST'])
-@csrf_exempt
 @require_auth
 def revoke_mentor(mentor_id):
     if 'access_token' not in session:
