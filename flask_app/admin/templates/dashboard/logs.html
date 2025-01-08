@@ -5,46 +5,68 @@
 {% block content %}
 <style>
     .log-viewer {
-        background-color: #2b2b2b;
-        color: #f0f0f0;
+        background-color: #1e1e1e;
+        color: #d4d4d4;
         font-family: 'Consolas', 'Monaco', monospace;
-        padding: 15px;
+        padding: 8px;
         border-radius: 5px;
         height: 800px;
         overflow-y: auto;
         box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        font-size: 13px;
+        line-height: 1.4;
     }
     .log-line {
-        white-space: pre-wrap;
-        margin: 3px 0;
-        padding: 3px 8px;
-        border-radius: 3px;
-        transition: background-color 0.2s;
+        white-space: pre;
+        padding: 1px 4px;
+        color: #d4d4d4;
     }
     .log-line:hover {
-        background-color: rgba(255,255,255,0.1);
+        background-color: rgba(255,255,255,0.05);
     }
-    .log-DEBUG { color: #88c0d0; }
-    .log-INFO { color: #a3be8c; }
-    .log-WARNING { color: #ebcb8b; }
-    .log-ERROR { color: #bf616a; }
-    .log-CRITICAL { 
-        color: #ffffff;
-        background-color: #bf616a;
-        font-weight: bold;
+
+    /* Color different log levels */
+    .log-DEBUG { color: #9cdcfe !important; }
+    .log-INFO { color: #3c9c3c !important; }
+    .log-WARNING { color: #ff8c00 !important; }
+    .log-ERROR { color: #f14c4c !important; }
+    .log-CRITICAL {
+        color: #ffffff !important;
+        background-color: #ff0000;
     }
-    .stack-trace {
-        color: #ce9178;
-        margin-left: 20px;
-    }
+
+    /* Filter controls */
     .log-controls {
-        margin-bottom: 15px;
         display: flex;
         gap: 10px;
         align-items: center;
+        margin-bottom: 10px;
+        padding: 8px;
+        background: #2d2d2d;
+        border-radius: 4px;
     }
+
     .filter-controls {
         margin-left: auto;
+    }
+
+    .filter-controls .btn {
+        padding: 4px 12px;
+        border: 1px solid #444;
+        background: transparent;
+        color: #d4d4d4;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .filter-controls .btn:hover {
+        background: rgba(255,255,255,0.1);
+    }
+
+    .filter-controls .btn.active {
+        background-color: #0078d4;
+        border-color: #0078d4;
+        color: white;
     }
 </style>
 
@@ -65,14 +87,12 @@
 
     <button class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">🔄 Refresh</button>
     
-    <div class="filter-controls">
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-sm btn-outline-primary active" data-level="all">All</button>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-level="DEBUG">Debug</button>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-level="INFO">Info</button>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-level="WARNING">Warning</button>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-level="ERROR">Error</button>
-        </div>
+    <div class="btn-group filter-controls" role="group">
+        <button type="button" class="btn btn-sm" data-level="all">All</button>
+        <button type="button" class="btn btn-sm" data-level="DEBUG">Debug</button>
+        <button type="button" class="btn btn-sm" data-level="INFO">Info</button>
+        <button type="button" class="btn btn-sm" data-level="WARNING">Warning</button>
+        <button type="button" class="btn btn-sm" data-level="ERROR">Error</button>
     </div>
 </div>
 
@@ -83,22 +103,32 @@ let currentFilter = 'all';
 
 function formatLogLine(logEntry) {
     if (!logEntry.content) return '';
-    
-    // Check if line is part of a stack trace
-    if (logEntry.content.startsWith(' ') || logEntry.content.startsWith('\t')) {
-        return `<div class="log-line stack-trace">${logEntry.content}</div>`;
-    }
-    
-    const level = logEntry.level || '';
-    const timestamp = logEntry.content.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
-    const timeStr = timestamp ? timestamp[0] : '';
-    
-    return `
-        <div class="log-line log-${level}" data-level="${level}">
-            <span style="color: #666;">${logEntry.timestamp}</span> 
-            ${logEntry.content.substring(logEntry.timestamp.length)}
-        </div>
-    `.trim();
+
+    const line = logEntry.content;
+    let logLevel = '';
+
+    // Detect log level from the line
+    if (line.includes(' DEBUG ')) logLevel = 'DEBUG';
+    else if (line.includes(' INFO ')) logLevel = 'INFO';
+    else if (line.includes(' WARNING ')) logLevel = 'WARNING';
+    else if (line.includes(' ERROR ')) logLevel = 'ERROR';
+    else if (line.includes(' CRITICAL ')) logLevel = 'CRITICAL';
+
+    // Add color styling classes based on the detected level
+    return `<div class="log-line log-${logLevel}" data-level="${logLevel}">${line}</div>`;
+}
+
+function filterLogs(level) {
+    currentFilter = level;
+    const lines = document.querySelectorAll('.log-line');
+
+    lines.forEach(line => {
+        if (level === 'all' || line.textContent.includes(` ${level} `)) {
+            line.style.display = '';
+        } else {
+            line.style.display = 'none';
+        }
+    });
 }
 
 function updateLogView(content) {
@@ -112,19 +142,6 @@ function updateLogView(content) {
     if (document.getElementById('tailMode').checked) {
         logViewer.scrollTop = logViewer.scrollHeight;
     }
-}
-
-function filterLogs(level) {
-    currentFilter = level;
-    const lines = document.querySelectorAll('.log-line');
-    
-    lines.forEach(line => {
-        if (level === 'all' || line.dataset.level === level) {
-            line.style.display = '';
-        } else {
-            line.style.display = 'none';
-        }
-    });
 }
 
 // Initial load
@@ -175,16 +192,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Set up filter buttons
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('[data-level]').forEach(button => {
+    const filterButtons = document.querySelectorAll('.filter-controls .btn');
+    filterButtons.forEach(button => {
         button.addEventListener('click', (e) => {
-            // Update button states
-            document.querySelectorAll('[data-level]').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            e.target.classList.add('active');
-            
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+
+            // Add active class to clicked button
+            button.classList.add('active');
+
             // Apply filter
-            filterLogs(e.target.dataset.level);
+            const level = button.getAttribute('data-level');
+            filterLogs(level);
         });
     });
 });
