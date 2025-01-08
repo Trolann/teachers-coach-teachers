@@ -127,7 +127,7 @@ def revoke_mentor(mentor_id):
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(MentorProfile).filter(MentorProfile.id == str(mentor_id)).first()
+        mentor = db.session.query(MentorProfile).filter(MentorProfile.id == mentor_id).first()
         if not mentor:
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
