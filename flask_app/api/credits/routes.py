@@ -10,13 +10,13 @@ logger = get_logger(__name__)
 credits_bp = Blueprint('credits', __name__)
 
 @credits_bp.route('/redeem', methods=['POST'])
-@require_auth
+#@require_auth
 def redeem_credit():
     """Redeem a credit code for a user"""
     data = request.get_json()
     code = data.get('code')
     user_identifier = data.get('user_identifier')  # Can be cognito_sub or email
-    
+    logger.debug(f'Redeeming credit code {code} for user {user_identifier}')
     if not code or not user_identifier:
         return jsonify({'error': 'Missing required fields'}), 400
         
