@@ -132,7 +132,7 @@ def revoke_mentor(mentor_id):
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
             
-        mentor.application_status = 'rejected'
+        mentor.application_status = 'revoked'
         logger.info(f'Revoking mentor {mentor_id} for {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} approval revoked successfully')
