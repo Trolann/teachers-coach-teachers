@@ -138,8 +138,8 @@ function updateLogView(content) {
     // Apply current filter
     filterLogs(currentFilter);
     
-    // Scroll to bottom if in tail mode
-    if (document.getElementById('tailMode').checked) {
+    // Only auto-scroll if in tail mode and user hasn't manually scrolled
+    if (document.getElementById('tailMode').checked && !userHasScrolled) {
         logViewer.scrollTop = logViewer.scrollHeight;
     }
 }
@@ -169,6 +169,12 @@ function changeLog(filename) {
 }
 
 let refreshInterval;
+let userHasScrolled = false;
+
+// Track user scrolling
+document.getElementById('logViewer').addEventListener('scroll', function() {
+    userHasScrolled = true;
+});
 
 function toggleTail(enabled) {
     const currentFile = document.getElementById('logFile').value;
