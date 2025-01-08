@@ -16,6 +16,7 @@ class MentorStatus(Enum):
     PENDING = 'pending'
     APPROVED = 'approved'
     REJECTED = 'rejected'
+    REVOKED = 'revoked'
 
 class MentorProfile(db.Model):
     """Detailed Mentor Profile"""
