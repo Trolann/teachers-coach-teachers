@@ -1,7 +1,7 @@
 from flask import render_template, current_app, Blueprint, request, redirect, url_for, flash, session
 from extensions.database import db
-from flask_app.models.user import MentorProfile
-from extensions.cognito import require_auth, CognitoBackendAuthorizer
+from flask_app.models.mentor_profiles import MentorProfile
+from extensions.cognito import require_auth, CognitoTokenVerifier
 from extensions.logging import get_logger
 from sqlalchemy import text
 from os import path
@@ -32,7 +32,7 @@ def index():
             logger.warning(f'Login attempt failed {username}: username or password missing')
             return render_template('dashboard/login.html')
 
-        cognito = CognitoBackendAuthorizer()
+        cognito = CognitoTokenVerifier()
         try:
             logger.info(f'Attempting to login as admin user {username}')
             response = cognito.login_as_admin(username, password)
@@ -43,8 +43,7 @@ def index():
 
             # Store user information in session
             session['access_token'] = response['AccessToken']
-            session['user_id'] = response.get('Username')  # Cognito username serves as user_id
-            session['username'] = username
+            session['user_id'] = response['user_info']['user_id']  # Cognito sub id
             logger.info(f'Admin user {username} successfully logged into dashboard with ID {session["user_id"]}')
             return redirect(url_for('admin.admin_dashboard.dashboard'))
         except Exception as e:
@@ -61,6 +60,7 @@ def index():
 
 
 @admin_dashboard_bp.route('/logout')
+@require_auth
 def logout():
     session.clear()
     logger.debug(f'{session.get("username")} logged out')
@@ -68,6 +68,7 @@ def logout():
 
 
 @admin_dashboard_bp.route('/dashboard')
+@require_auth
 def dashboard():
     if 'access_token' not in session:
         logger.debug('Routing user to dashboard login page')
@@ -86,6 +87,7 @@ def dashboard():
     return render_template('dashboard/index.html', db_status=db_status)
 
 @admin_dashboard_bp.route('/mentors')
+@require_auth
 def mentors():
     if 'access_token' not in session:
         logger.debug('Routing user to dashboard login page')
@@ -95,6 +97,7 @@ def mentors():
     return render_template('dashboard/mentors.html', mentors=mentors)
 
 @admin_dashboard_bp.route('/mentors/<int:mentor_id>/approve', methods=['POST'])
+#@require_auth
 def approve_mentor(mentor_id):
     if 'access_token' not in session:
         # Show IP address in logs
@@ -102,9 +105,9 @@ def approve_mentor(mentor_id):
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(MentorProfile).filter(MentorProfile.id == str(mentor_id)).first()
+        mentor = db.session.query(MentorProfile).filter(MentorProfile.user_id == str(mentor_id)).first()
         if not mentor:
-            return {'success': False, 'error': 'Mentor not found'}, 404
+            return {'success': False, 'error': 'Mentor not found'}, 418
         logger.info(f'Approving mentor {mentor_id} for {session.get("username")}')
         mentor.application_status = 'approved'
         db.session.commit()
@@ -117,6 +120,7 @@ def approve_mentor(mentor_id):
         return {'success': False, 'error': str(e)}, 500
 
 @admin_dashboard_bp.route('/mentors/<int:mentor_id>/revoke', methods=['POST'])
+@require_auth
 def revoke_mentor(mentor_id):
     if 'access_token' not in session:
         logger.error(f'Unauthorized access to revoke mentor {mentor_id} by {request.remote_addr}')
