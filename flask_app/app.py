@@ -1,5 +1,6 @@
 from flask import Flask
 from admin.routes import create_admin_blueprint
+from api import create_api_blueprint
 from config import FlaskConfig
 from secrets import token_hex
 from extensions.database import init_db
@@ -43,9 +44,13 @@ def create_app(config_class=FlaskConfig()):
         # Register blueprints
         logger.info('Registering application blueprints')
         admin_bp = create_admin_blueprint()
+        api_bp = create_api_blueprint()
         app.register_blueprint(admin_bp, url_prefix='/admin')
         logger.info('Admin blueprint successfully registered at /admin endpoint')
         logger.debug('Available admin routes will be prefixed with /admin')
+        app.register_blueprint(api_bp, url_prefix='/api')
+        logger.info('API blueprint successfully registered at /api endpoint')
+        logger.debug('Available API routes will be prefixed with /api')
     except Exception as e:
         logger.error(f'Critical error during blueprint registration: {str(e)}')
         logger.error('Application startup failed - blueprint registration error')

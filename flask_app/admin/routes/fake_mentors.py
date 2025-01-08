@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
-from flask_app.models.user import MentorProfile, User, db, MentorStatus
+from flask_app.models.user import User, db
+from flask_app.models.mentor_profiles import MentorProfile, MentorStatus
+
 from extensions.logging import get_logger
 from faker import Faker
 import random

@@ -56,7 +56,7 @@ class CognitoTokenVerifier:
                 return {"error": "Failed to get user information"}
 
             # Check if user is in admins group
-            is_admin = False if username.casefold() not in config.ADMIN_USERNAMES else True
+            is_admin = self.is_user_admin(auth_result['AccessToken'])
             logger.debug(f"Admin status check for {username}: {is_admin}")
 
             if not is_admin:
@@ -74,6 +74,23 @@ class CognitoTokenVerifier:
             logger.error(f"Login error for user {username}: {str(e)}")
             logger.exception(e)
             return {"error": str(e)}
+
+    def is_user_admin(self, access_token):
+        """Check if user is in admins group"""
+        logger.debug("Checking if user is in admins group")
+        try:
+            user_info = self.get_user_attributes(access_token)
+            logger.debug(f'User info: {user_info}')
+            if not user_info:
+                return False
+
+            is_admin = False if user_info['email'].casefold() not in config.ADMIN_USERNAMES else True
+            logger.debug(f"Admin status check for {user_info['username']}: {is_admin}")
+            return is_admin
+
+        except Exception as e:
+            logger.error(f"Error checking admin status: {str(e)}")
+            logger.exception(e)
 
     def get_keys(self):
         """Get the JSON Web Key (JWK) for the user pool"""
@@ -173,26 +190,26 @@ class CognitoTokenVerifier:
         try:
             user_info = self.get_user_attributes(access_token)
             user_id = user_info['user_id']
-            try:
-                # Add debug logging for SQLAlchemy registry
-                from sqlalchemy.orm.clsregistry import _ModuleMarker, _MultipleClassMarker
-                registry = db.Model.registry
-                for key in registry._class_registry:
-                    value = registry._class_registry[key]
-                    if isinstance(value, _MultipleClassMarker):
-                        logger.debug(f"Multiple registrations for {key}:")
-                        # Try different ways to inspect the MultipleClassMarker
-                        logger.debug(f"  Dir: {dir(value)}")
-                        for attr in dir(value):
-                            if not attr.startswith('_'):
-                                logger.debug(f"  {attr}: {getattr(value, attr)}")
-                    else:
-                        logger.debug(f"Single registration for {key} in {getattr(value, '__module__', 'unknown')}")
+            # try:
+            #     # Add debug logging for SQLAlchemy registry
+            #     from sqlalchemy.orm.clsregistry import _ModuleMarker, _MultipleClassMarker
+            #     registry = db.Model.registry
+            #     for key in registry._class_registry:
+            #         value = registry._class_registry[key]
+            #         if isinstance(value, _MultipleClassMarker):
+            #             logger.debug(f"Multiple registrations for {key}:")
+            #             # Try different ways to inspect the MultipleClassMarker
+            #             logger.debug(f"  Dir: {dir(value)}")
+            #             for attr in dir(value):
+            #                 if not attr.startswith('_'):
+            #                     logger.debug(f"  {attr}: {getattr(value, attr)}")
+            #         else:
+            #             logger.debug(f"Single registration for {key} in {getattr(value, '__module__', 'unknown')}")
+            #
+            # except Exception as e:
+            #     logger.error(f"Registry inspection error: {str(e)}")
 
-            except Exception as e:
-                logger.error(f"Registry inspection error: {str(e)}")
-
-            #TODO: Confirm this is the correct way to check if user exists and how to add them
+            logger.debug(f'Checking for existing user.')
             existing_user = db.session.query(User).filter(User.id == user_id).first()
             logger.debug(f'Existing user: {existing_user}')
             if not existing_user:

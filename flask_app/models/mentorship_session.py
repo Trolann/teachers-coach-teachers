@@ -1,9 +1,6 @@
 from uuid import uuid4
 from extensions.database import db
 from extensions.logging import get_logger
-from typing import Optional
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import datetime
 
 logger = get_logger(__name__)
 

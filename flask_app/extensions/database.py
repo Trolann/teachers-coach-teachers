@@ -16,6 +16,9 @@ def init_db(app):
     try:
         db.init_app(app)
         migrate.init_app(app, db)
+        import models
+        with app.app_context():
+            db.create_all()
         app.db = db  # Make db available as app attribute
         logger.info("Database initialization successful")
     except Exception as e:

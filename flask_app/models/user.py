@@ -6,6 +6,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 logger = get_logger(__name__)
 
+# TODO: Remove MyTable class after debugging
+class MyTable(db.Model):
+    """Debug-only table, used in debug_routes"""
+    __tablename__ = 'mytable'
+    __table_args__ = {'extend_existing': True}
+    uuid = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    data = db.Column(db.String(255))
+
 class User(db.Model):
     """Base User Model"""
     __tablename__ = 'users'
@@ -23,4 +31,6 @@ class User(db.Model):
         logger.debug(f"Creating new User with email: {email[:3]}***{email[-4:]}")
         self.email = email
         self.cognito_sub = cognito_sub
+        if cognito_sub:
+            self.id = cognito_sub
         logger.info(f"User created with ID: {self.id}")
