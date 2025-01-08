@@ -34,6 +34,7 @@ def index():
             logger.warning(f'Unauthorized code generation attempt from {request.remote_addr}')
             return redirect(url_for('admin.admin_dashboard.index'))
         try:
+            # TODO: Move this to the api and use cognito's is_user_admin to determine if they are an admin.
             num_codes = int(request.form.get('num_codes', 1))
             credits_per_code = int(request.form.get('credits_per_code', 0))
             admin_id = session.get('user_id')
