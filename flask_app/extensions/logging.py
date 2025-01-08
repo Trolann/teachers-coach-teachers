@@ -68,6 +68,8 @@ def setup_logger():
 
     # File handler for all logs
     file_handler = TimedRotatingFileHandler('app.log', when='midnight', interval=1)
+    # file_handler should make a new log every time the app starts
+    #file_handler = TimedRotatingFileHandler('app.log', when='S', interval=1)
     file_handler.setFormatter(Formatter(log_format))
     file_handler.setLevel(log_level)
     root_logger.addHandler(file_handler)
