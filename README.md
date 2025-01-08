@@ -31,6 +31,8 @@ cp .env.example .env
 ### Notes on environment variables
 
   - The `.env` must remain in the repository root
+  - LOG_LEVEL is the log level for our backend. 
+  - FLASK_LOG_LEVEL is the log level for the Flask/Waitress web server
   - POSTGRES_USER, POSTGRES_PASSWORD can be any value for local development
   - POSTGRES_DB should remain as tct_database
   - SQLALCHEMY_DATABASE_URI should remain as is to reach the database over the docker network
@@ -38,7 +40,7 @@ cp .env.example .env
   - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
   - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
   - FLASK_ENV should remain as development for local development
-
+  - ADMIN_USERNAMES is a comma-separated list of usernames that will be able to access the admin panel (name@email.tld)
 ---
 
 ## **Project Structure**
@@ -50,10 +52,11 @@ The project structure looks like this:
 │   ├── admin/                   # Admin panel HTML files and associated routes
 │   │   ├── routes/              # Admin route handlers
 │   │   └── templates/           # Admin HTML templates
-│   ├── api/                     # API endpoints
-│   │   └── auth/                # Authentication related code
+│   ├── api/                     # API endpoints for the user application to use
+│   │   └── auth/                # Authentication endpoints (mostly handled in frontend)
 |   |   └── matching/            # Matching service/vector DB routes
 |   |   └── mentors/             # Mentor specific routes (application submission, etc) (COULD BE CHANGED TO USER)
+|   |   └── credits/             # Creation, redemption, and transfer endpoints
 │   ├── extensions/              # Utility extensions (Cognito, database, logging, vector operations, etc)
 │   ├── models/                  # Database models/migrations for SQLAlchemy
 │   ├── app.py                   # Main Flask application factory. Registers blueprints from api/ and admin/
@@ -165,13 +168,13 @@ docker compose logs -f <service_name>
 To run database migrations, you can use the following commands:
 ```bash
 # Initialize migrations (first time only)
-docker-compose run --rm -e FLASK_APP=manage.py backend flask db init
+docker compose run --rm -e FLASK_APP=manage.py backend flask db init
 
 # Create new migration
-docker-compose run --rm -e FLASK_APP=manage.py backend flask db migrate -m "Description"
+docker compose run --rm -e FLASK_APP=manage.py backend flask db migrate -m "Description"
 
 # Apply migration
-docker-compose run --rm -e FLASK_APP=manage.py backend flask db upgrade
+docker compose run --rm -e FLASK_APP=manage.py backend flask db upgrade
 ```
 This will initialize the migrations directory, create an initial migration, and apply the migration to the database.
 A migration is necessary whenever the database models change.
