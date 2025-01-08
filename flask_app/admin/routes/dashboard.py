@@ -119,7 +119,7 @@ def approve_mentor(mentor_id):
         db.session.rollback()
         return {'success': False, 'error': str(e)}, 500
 
-@admin_dashboard_bp.route('/mentors/<int:mentor_id>/revoke', methods=['POST'])
+@admin_dashboard_bp.route('/mentors/<string:mentor_id>/revoke', methods=['POST'])
 @require_auth
 def revoke_mentor(mentor_id):
     if 'access_token' not in session:
