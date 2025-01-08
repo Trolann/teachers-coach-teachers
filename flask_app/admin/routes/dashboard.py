@@ -119,6 +119,30 @@ def approve_mentor(mentor_id):
         db.session.rollback()
         return {'success': False, 'error': str(e)}, 500
 
+@admin_dashboard_bp.route('/mentors/<string:mentor_id>/reject', methods=['POST'])
+@require_auth
+def reject_mentor(mentor_id):
+    if 'access_token' not in session:
+        logger.error(f'Unauthorized access to reject mentor {mentor_id} by {request.remote_addr}')
+        return {'success': False, 'error': 'Unauthorized'}, 401
+    
+    try:
+        mentor = db.session.query(MentorProfile).filter(MentorProfile.id == mentor_id).first()
+        if not mentor:
+            logger.warning(f'Mentor {mentor_id} not found')
+            return {'success': False, 'error': 'Mentor not found'}, 404
+            
+        mentor.application_status = 'rejected'
+        logger.info(f'Rejecting mentor {mentor_id} for {session.get("username")}')
+        db.session.commit()
+        logger.info(f'Mentor {mentor_id} rejected successfully')
+        return {'success': True}
+    except Exception as e:
+        logger.error(f'Error rejecting mentor {mentor_id}: {str(e)}')
+        logger.exception(e)
+        db.session.rollback()
+        return {'success': False, 'error': str(e)}, 500
+
 @admin_dashboard_bp.route('/mentors/<string:mentor_id>/revoke', methods=['POST'])
 @require_auth
 def revoke_mentor(mentor_id):
