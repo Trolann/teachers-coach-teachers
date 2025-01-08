@@ -32,6 +32,27 @@
         </div>
     </form>
 
+    <h3>Redeem Code</h3>
+    <form id="redeemForm" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="code">Credit Code</label>
+                    <input type="text" class="form-control" id="code" name="code" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="user_identifier">User Email or ID</label>
+                    <input type="text" class="form-control" id="user_identifier" name="user_identifier" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-success mt-4">Redeem Code</button>
+            </div>
+        </div>
+    </form>
+
     <h3>Generated Codes</h3>
     <table class="table">
         <thead>
@@ -60,4 +81,34 @@
         </tbody>
     </table>
 </div>
+
+<script>
+document.getElementById('redeemForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const code = document.getElementById('code').value;
+    const user_identifier = document.getElementById('user_identifier').value;
+    
+    try {
+        const response = await fetch('/api/credits/redeem', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code, user_identifier })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Success: ' + data.message);
+            location.reload();  // Refresh to show updated status
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Failed to redeem code. Please try again.');
+    }
+});
+</script>
 {% endblock %}
