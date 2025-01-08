@@ -33,6 +33,10 @@
                             <a class="nav-link {% if request.endpoint == 'admin.admin_credits.index' %}active{% endif %}"
                                href="{{ url_for('admin.admin_credits.index') }}">Credits</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'admin.logs.logs_page' %}active{% endif %}"
+                               href="{{ url_for('admin.logs.logs_page') }}">Logs</a>
+                        </li>
                     </ul>
                 </div>
             {% endif %}

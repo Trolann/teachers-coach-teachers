@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Logs{% endblock %}
+
+{% block content %}
+<style>
+    .log-viewer {
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+        font-family: monospace;
+        padding: 15px;
+        border-radius: 5px;
+        height: 800px;
+        overflow-y: auto;
+    }
+    .log-line {
+        white-space: pre-wrap;
+        margin: 2px 0;
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
+    .log-DEBUG { color: #569cd6; }
+    .log-INFO { color: #6a9955; }
+    .log-WARNING { color: #dcdcaa; }
+    .log-ERROR { color: #f44747; }
+    .log-CRITICAL { 
+        color: #ffffff;
+        background-color: #f44747;
+    }
+    .stack-trace {
+        color: #ce9178;
+        margin-left: 20px;
+    }
+    .log-controls {
+        margin-bottom: 15px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .filter-controls {
+        margin-left: auto;
+    }
+</style>
+
+<div class="log-controls">
+    <select id="logFile" class="form-select" style="width: auto;">
+        {% for file, timestamp in log_files %}
+        <option value="{{ file }}">{{ file }} ({{ timestamp }})</option>
+        {% endfor %}
+    </select>
+    
+    <div class="filter-controls">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-outline-primary active" data-level="all">All</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-level="DEBUG">Debug</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-level="INFO">Info</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-level="WARNING">Warning</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-level="ERROR">Error</button>
+        </div>
+    </div>
+</div>
+
+<div id="logViewer" class="log-viewer"></div>
+
+<script>
+let currentFilter = 'all';
+
+function formatLogLine(line) {
+    // Check if line is part of a stack trace
+    if (line.startsWith(' ') || line.startsWith('\t')) {
+        return `<div class="log-line stack-trace">${line}</div>`;
+    }
+    
+    // Parse log level from line
+    const match = line.match(/- (\w+) -/);
+    const level = match ? match[1] : '';
+    
+    return `<div class="log-line log-${level}" data-level="${level}">${line}</div>`;
+}
+
+function updateLogView(content) {
+    const logViewer = document.getElementById('logViewer');
+    logViewer.innerHTML = content.map(formatLogLine).join('');
+    
+    // Apply current filter
+    filterLogs(currentFilter);
+}
+
+function filterLogs(level) {
+    currentFilter = level;
+    const lines = document.querySelectorAll('.log-line');
+    
+    lines.forEach(line => {
+        if (level === 'all' || line.dataset.level === level) {
+            line.style.display = '';
+        } else {
+            line.style.display = 'none';
+        }
+    });
+}
+
+function loadLogFile(filename) {
+    fetch(`/admin/logs/content/${filename}`)
+        .then(response => response.json())
+        .then(data => updateLogView(data.content));
+}
+
+// Initial load
+loadLogFile('app.log');
+
+// Setup auto-refresh
+setInterval(() => {
+    if (document.getElementById('logFile').value === 'app.log') {
+        loadLogFile('app.log');
+    }
+}, 2000);
+
+// Event listeners
+document.getElementById('logFile').addEventListener('change', (e) => {
+    loadLogFile(e.target.value);
+});
+
+document.querySelectorAll('[data-level]').forEach(button => {
+    button.addEventListener('click', (e) => {
+        // Update button states
+        document.querySelectorAll('[data-level]').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        e.target.classList.add('active');
+        
+        // Apply filter
+        filterLogs(e.target.dataset.level);
+    });
+});
+</script>
+{% endblock %}
