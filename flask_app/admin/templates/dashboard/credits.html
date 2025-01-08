@@ -102,7 +102,13 @@ document.getElementById('redeemForm').addEventListener('submit', async function(
         
         if (response.ok) {
             alert('Success: ' + data.message);
-            location.reload();  // Refresh to show updated status
+            // Fetch updated codes list
+            const codesResponse = await fetch(window.location.href);
+            const html = await codesResponse.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.querySelector('table');
+            document.querySelector('table').replaceWith(newTable);
         } else {
             alert('Error: ' + data.error);
         }
