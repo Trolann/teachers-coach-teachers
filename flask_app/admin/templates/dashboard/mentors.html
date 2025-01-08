@@ -10,16 +10,19 @@ function filterTable() {
     const rows = document.querySelectorAll('tbody tr');
 
     rows.forEach(row => {
-        const statusCell = row.querySelector('td:nth-child(3)'); // Adjust index based on status column
-        const nameCell = row.querySelector('td:nth-child(2)'); // Adjust index based on name column
+        // Skip the "No mentor profiles found" row
+        if (row.cells.length === 1) return;
+
+        // Find the status badge span
+        const statusBadge = row.querySelector('.badge');
+        const fullName = row.cells[1].textContent.toLowerCase().trim(); // Assuming name is in second column
         
-        if (!statusCell || !nameCell) return;
+        if (!statusBadge) return;
 
-        const status = statusCell.textContent.toLowerCase().trim();
-        const name = nameCell.textContent.toLowerCase().trim();
-
-        const matchesStatus = !statusFilter || status.includes(statusFilter);
-        const matchesSearch = !searchText || name.includes(searchText);
+        const status = statusBadge.textContent.toLowerCase().trim();
+        
+        const matchesStatus = statusFilter === '' || status === statusFilter;
+        const matchesSearch = searchText === '' || fullName.includes(searchText);
 
         row.style.display = matchesStatus && matchesSearch ? '' : 'none';
     });
