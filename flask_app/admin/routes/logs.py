@@ -7,8 +7,8 @@ logs_bp = Blueprint('logs', __name__, url_prefix='/logs')
 
 def get_log_files():
     """Get list of available log files sorted by modification time"""
-    log_dir = '/app/flask_app'
-    log_files = glob.glob(os.path.join(log_dir, 'app.log*'))
+    log_dir = os.path.dirname(current_app.root_path)
+    log_files = glob.glob(os.path.join(log_dir, '*.log*'))
     log_files = [(os.path.basename(f), 
                   datetime.fromtimestamp(os.path.getmtime(f)).strftime('%Y-%m-%d %H:%M:%S'))
                  for f in log_files]
@@ -16,7 +16,7 @@ def get_log_files():
 
 def read_log_file(filename):
     """Read and return log file contents"""
-    log_path = os.path.join('/app/flask_app', filename)
+    log_path = os.path.join(os.path.dirname(current_app.root_path), filename)
     if os.path.exists(log_path) and os.path.isfile(log_path):
         with open(log_path, 'r') as f:
             return f.readlines()[::-1]  # Reverse to show newest first

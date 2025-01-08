@@ -72,7 +72,7 @@ function formatLogLine(line) {
     }
     
     // Parse log level from line
-    const match = line.match(/- (\w+) -/);
+    const match = line.match(/\[(DEBUG|INFO|WARNING|ERROR|CRITICAL)\]/);
     const level = match ? match[1] : '';
     
     return `<div class="log-line log-${level}" data-level="${level}">${line}</div>`;
