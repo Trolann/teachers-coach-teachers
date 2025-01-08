@@ -15,29 +15,37 @@ def get_log_files():
                  for f in log_files]
     return sorted(log_files, key=lambda x: x[1], reverse=True)
 
+
 def read_log_file(filename):
     """Read and return log file contents with parsed log levels"""
     log_path = os.path.join(os.path.dirname(current_app.root_path), filename)
     if os.path.exists(log_path) and os.path.isfile(log_path):
         with open(log_path, 'r') as f:
             lines = f.readlines()
-            # Parse each line to extract log level
             parsed_lines = []
             for line in lines:
                 line = line.strip()
                 if not line:
                     continue
-                    
+
+                # Extract timestamp (first 19 characters: YYYY-MM-DD HH:MM:SS)
+                timestamp = line[:19] if len(line) >= 19 else ''
+
+                # Look for level between module name and message
+                # Pattern is typically: timestamp - module - LEVEL - message
                 level = None
-                for lvl in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
-                    if f'[{lvl}]' in line:
-                        level = lvl
-                        break
-                        
+                parts = line.split(' - ')
+                if len(parts) >= 3:
+                    for part in parts:
+                        part = part.strip()
+                        if part in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
+                            level = part
+                            break
+
                 parsed_lines.append({
                     'content': line,
                     'level': level,
-                    'timestamp': line[:19] if len(line) > 19 else ''  # Extract YYYY-MM-DD HH:MM:SS
+                    'timestamp': timestamp
                 })
             return parsed_lines[::-1]  # Reverse to show newest first
     return []
