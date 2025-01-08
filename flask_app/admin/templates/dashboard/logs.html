@@ -43,11 +43,21 @@
 </style>
 
 <div class="log-controls">
-    <select id="logFile" class="form-select" style="width: auto;">
+    <select id="logFile" class="form-select" style="width: auto;" onchange="changeLog(this.value)">
         {% for file, timestamp in log_files %}
-        <option value="{{ file }}">{{ file }} ({{ timestamp }})</option>
+        <option value="{{ file }}" {% if file == selected_log %}selected{% endif %}>
+            {{ file }} ({{ timestamp }})
+        </option>
         {% endfor %}
     </select>
+
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="tailMode" {% if tail_mode %}checked{% endif %} 
+               onchange="toggleTail(this.checked)">
+        <label class="form-check-label" for="tailMode">Tail Mode</label>
+    </div>
+
+    <button class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">🔄 Refresh</button>
     
     <div class="filter-controls">
         <div class="btn-group" role="group">
@@ -99,26 +109,24 @@ function filterLogs(level) {
     });
 }
 
-function loadLogFile(filename) {
-    fetch(`/admin/logs/content/${filename}`)
-        .then(response => response.json())
-        .then(data => updateLogView(data.content));
+// Initial load
+updateLogView({{ current_log | tojson }});
+
+function refreshLogs() {
+    const currentFile = document.getElementById('logFile').value;
+    const tailMode = document.getElementById('tailMode').checked;
+    window.location.href = `?file=${currentFile}&tail=${tailMode}`;
 }
 
-// Initial load
-loadLogFile('app.log');
+function changeLog(filename) {
+    const tailMode = document.getElementById('tailMode').checked;
+    window.location.href = `?file=${filename}&tail=${tailMode}`;
+}
 
-// Setup auto-refresh
-setInterval(() => {
-    if (document.getElementById('logFile').value === 'app.log') {
-        loadLogFile('app.log');
-    }
-}, 2000);
-
-// Event listeners
-document.getElementById('logFile').addEventListener('change', (e) => {
-    loadLogFile(e.target.value);
-});
+function toggleTail(enabled) {
+    const currentFile = document.getElementById('logFile').value;
+    window.location.href = `?file=${currentFile}&tail=${enabled}`;
+}
 
 document.querySelectorAll('[data-level]').forEach(button => {
     button.addEventListener('click', (e) => {
