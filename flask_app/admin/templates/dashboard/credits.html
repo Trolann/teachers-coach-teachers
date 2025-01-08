@@ -12,7 +12,7 @@
         {% endif %}
     {% endwith %}
     
-    <form method="POST" class="mb-4">
+    <form id="generateForm" class="mb-4">
         <div class="row">
             <div class="col-md-4">
                 <div class="form-group">
@@ -83,6 +83,35 @@
 </div>
 
 <script>
+document.getElementById('generateForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const num_codes = parseInt(document.getElementById('num_codes').value);
+    const credits_per_code = parseInt(document.getElementById('credits_per_code').value);
+    
+    try {
+        const response = await fetch('/api/credits/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ num_codes, credits_per_code })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Success: ' + data.message);
+            // Reload the page to show new codes
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Failed to generate codes. Please try again.');
+    }
+});
+
 document.getElementById('redeemForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     

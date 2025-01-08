@@ -1,13 +1,61 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from extensions.logging import get_logger
 from models.credits import CreditRedemption
 from models.user import User
 from extensions.database import db
-from extensions.cognito import require_auth
+from extensions.cognito import require_auth, CognitoTokenVerifier
 
 logger = get_logger(__name__)
 
 credits_bp = Blueprint('credits', __name__)
+
+@credits_bp.route('/generate', methods=['POST'])
+@require_auth
+def generate_credits():
+    """Generate credit codes - currently admin only"""
+    data = request.get_json()
+    num_codes = data.get('num_codes', 1)
+    credits_per_code = data.get('credits_per_code', 0)
+    admin_id = session.get('user_id')
+
+    if not admin_id:
+        return jsonify({'error': 'Authentication required'}), 401
+
+    # TODO: Add user role validation when implementing user-generated credits
+    # For now, only admins can generate credits
+    cognito = CognitoTokenVerifier()
+    if not cognito.is_user_admin(session.get('access_token')):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    try:
+        if credits_per_code <= 0:
+            return jsonify({'error': 'Credits per code must be greater than 0'}), 400
+        elif num_codes <= 0:
+            return jsonify({'error': 'Number of codes must be greater than 0'}), 400
+
+        generated_codes = []
+        for _ in range(num_codes):
+            redemption = CreditRedemption(
+                created_by=admin_id,
+                amount=credits_per_code
+            )
+            db.session.add(redemption)
+            generated_codes.append({
+                'code': redemption.code,
+                'amount': redemption.amount
+            })
+        
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': f'Successfully generated {num_codes} credit codes',
+            'codes': generated_codes
+        })
+
+    except Exception as e:
+        logger.error(f"Error generating codes: {e}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to generate codes'}), 500
 
 @credits_bp.route('/redeem', methods=['POST'])
 #@require_auth
