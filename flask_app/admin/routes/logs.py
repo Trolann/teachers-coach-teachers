@@ -55,14 +55,9 @@ def logs_page():
     """Render logs page"""
     log_files = get_log_files()
     selected_log = request.args.get('file', 'app.log')
-    tail_mode = request.args.get('tail', 'false') == 'true'
-    
     log_content = read_log_file(selected_log)
-    if tail_mode:
-        log_content = log_content[:1000]  # Show last 1000 lines in tail mode
-        
+    
     return render_template('dashboard/logs.html', 
                          log_files=log_files,
                          current_log=log_content,
-                         selected_log=selected_log,
-                         tail_mode=tail_mode)
+                         selected_log=selected_log)

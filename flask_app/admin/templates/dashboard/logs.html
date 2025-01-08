@@ -79,12 +79,6 @@
         {% endfor %}
     </select>
 
-    <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="tailMode" {% if tail_mode %}checked{% endif %} 
-               onchange="toggleTail(this.checked)">
-        <label class="form-check-label" for="tailMode">Tail Mode</label>
-    </div>
-
     <button class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">🔄 Refresh</button>
     
     <div class="btn-group filter-controls" role="group">
@@ -138,10 +132,6 @@ function updateLogView(content) {
     // Apply current filter
     filterLogs(currentFilter);
     
-    // Only auto-scroll if in tail mode and user hasn't manually scrolled
-    if (document.getElementById('tailMode').checked && !userHasScrolled) {
-        logViewer.scrollTop = logViewer.scrollHeight;
-    }
 }
 
 // Initial load
@@ -149,10 +139,8 @@ updateLogView({{ current_log | tojson }});
 
 function refreshLogs() {
     const currentFile = document.getElementById('logFile').value;
-    const tailMode = document.getElementById('tailMode').checked;
-    
     // Use fetch to get updated logs without full page reload
-    fetch(`?file=${currentFile}&tail=${tailMode}`)
+    fetch(`?file=${currentFile}`)
         .then(response => response.text())
         .then(html => {
             // Extract log content from the response
@@ -164,37 +152,9 @@ function refreshLogs() {
 }
 
 function changeLog(filename) {
-    const tailMode = document.getElementById('tailMode').checked;
-    window.location.href = `?file=${filename}&tail=${tailMode}`;
+    window.location.href = `?file=${filename}`;
 }
 
-let refreshInterval;
-let userHasScrolled = false;
-
-// Track user scrolling
-document.getElementById('logViewer').addEventListener('scroll', function() {
-    userHasScrolled = true;
-});
-
-function toggleTail(enabled) {
-    const currentFile = document.getElementById('logFile').value;
-    window.location.href = `?file=${currentFile}&tail=${enabled}`;
-    
-    if (enabled) {
-        // Start auto-refresh when tail mode is enabled
-        refreshInterval = setInterval(refreshLogs, 5000); // Refresh every 5 seconds
-    } else {
-        // Clear auto-refresh when tail mode is disabled
-        clearInterval(refreshInterval);
-    }
-}
-
-// Set up initial auto-refresh if tail mode is enabled
-document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('tailMode').checked) {
-        refreshInterval = setInterval(refreshLogs, 5000);
-    }
-});
 
 // Set up filter buttons
 document.addEventListener('DOMContentLoaded', function() {
