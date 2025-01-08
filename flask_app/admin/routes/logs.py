@@ -2,6 +2,7 @@ import os
 import glob
 from flask import Blueprint, render_template, current_app, jsonify
 from datetime import datetime
+from flask import request
 
 logs_bp = Blueprint('logs', __name__, url_prefix='/logs')
 
