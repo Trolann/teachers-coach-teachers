@@ -16,11 +16,28 @@ def get_log_files():
     return sorted(log_files, key=lambda x: x[1], reverse=True)
 
 def read_log_file(filename):
-    """Read and return log file contents"""
+    """Read and return log file contents with parsed log levels"""
     log_path = os.path.join(os.path.dirname(current_app.root_path), filename)
     if os.path.exists(log_path) and os.path.isfile(log_path):
         with open(log_path, 'r') as f:
-            return f.readlines()[::-1]  # Reverse to show newest first
+            lines = f.readlines()
+            # Parse each line to extract log level
+            parsed_lines = []
+            for line in lines:
+                if '[DEBUG]' in line:
+                    level = 'DEBUG'
+                elif '[INFO]' in line:
+                    level = 'INFO'
+                elif '[WARNING]' in line:
+                    level = 'WARNING'
+                elif '[ERROR]' in line:
+                    level = 'ERROR'
+                elif '[CRITICAL]' in line:
+                    level = 'CRITICAL'
+                else:
+                    level = None
+                parsed_lines.append({'content': line.strip(), 'level': level})
+            return parsed_lines[::-1]  # Reverse to show newest first
     return []
 
 @logs_bp.route('/')

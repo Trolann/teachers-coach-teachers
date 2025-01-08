@@ -5,27 +5,33 @@
 {% block content %}
 <style>
     .log-viewer {
-        background-color: #1e1e1e;
-        color: #d4d4d4;
-        font-family: monospace;
+        background-color: #2b2b2b;
+        color: #f0f0f0;
+        font-family: 'Consolas', 'Monaco', monospace;
         padding: 15px;
         border-radius: 5px;
         height: 800px;
         overflow-y: auto;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
     }
     .log-line {
         white-space: pre-wrap;
-        margin: 2px 0;
-        padding: 2px 5px;
+        margin: 3px 0;
+        padding: 3px 8px;
         border-radius: 3px;
+        transition: background-color 0.2s;
     }
-    .log-DEBUG { color: #569cd6; }
-    .log-INFO { color: #6a9955; }
-    .log-WARNING { color: #dcdcaa; }
-    .log-ERROR { color: #f44747; }
+    .log-line:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+    .log-DEBUG { color: #88c0d0; }
+    .log-INFO { color: #a3be8c; }
+    .log-WARNING { color: #ebcb8b; }
+    .log-ERROR { color: #bf616a; }
     .log-CRITICAL { 
         color: #ffffff;
-        background-color: #f44747;
+        background-color: #bf616a;
+        font-weight: bold;
     }
     .stack-trace {
         color: #ce9178;
@@ -75,17 +81,24 @@
 <script>
 let currentFilter = 'all';
 
-function formatLogLine(line) {
+function formatLogLine(logEntry) {
+    if (!logEntry.content) return '';
+    
     // Check if line is part of a stack trace
-    if (line.startsWith(' ') || line.startsWith('\t')) {
-        return `<div class="log-line stack-trace">${line}</div>`;
+    if (logEntry.content.startsWith(' ') || logEntry.content.startsWith('\t')) {
+        return `<div class="log-line stack-trace">${logEntry.content}</div>`;
     }
     
-    // Parse log level from line
-    const match = line.match(/\[(DEBUG|INFO|WARNING|ERROR|CRITICAL)\]/);
-    const level = match ? match[1] : '';
+    const level = logEntry.level || '';
+    const timestamp = logEntry.content.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+    const timeStr = timestamp ? timestamp[0] : '';
     
-    return `<div class="log-line log-${level}" data-level="${level}">${line}</div>`;
+    return `
+        <div class="log-line log-${level}" data-level="${level}">
+            <span style="color: #666;">${timeStr}</span> 
+            ${logEntry.content.substring(timeStr.length)}
+        </div>
+    `;
 }
 
 function updateLogView(content) {
@@ -94,6 +107,11 @@ function updateLogView(content) {
     
     // Apply current filter
     filterLogs(currentFilter);
+    
+    // Scroll to bottom if in tail mode
+    if (document.getElementById('tailMode').checked) {
+        logViewer.scrollTop = logViewer.scrollHeight;
+    }
 }
 
 function filterLogs(level) {
