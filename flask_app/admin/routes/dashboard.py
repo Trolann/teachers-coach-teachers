@@ -96,7 +96,7 @@ def mentors():
     logger.info(f'Rendering mentors dashboard for {session.get("username")}')
     return render_template('dashboard/mentors.html', mentors=mentors)
 
-@admin_dashboard_bp.route('/mentors/<int:mentor_id>/approve', methods=['POST'])
+@admin_dashboard_bp.route('/mentors/<string:mentor_id>/approve', methods=['POST'])
 #@require_auth
 def approve_mentor(mentor_id):
     if 'access_token' not in session:
@@ -105,7 +105,7 @@ def approve_mentor(mentor_id):
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(MentorProfile).filter(MentorProfile.user_id == str(mentor_id)).first()
+        mentor = db.session.query(MentorProfile).filter(MentorProfile.user_id == mentor_id).first()
         if not mentor:
             return {'success': False, 'error': 'Mentor not found'}, 418
         logger.info(f'Approving mentor {mentor_id} for {session.get("username")}')
