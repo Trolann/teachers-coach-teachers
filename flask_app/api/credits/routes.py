@@ -43,7 +43,9 @@ def redeem_credit():
         return jsonify({
             'success': True,
             'message': f'Successfully redeemed {credit.amount} credits',
-            'new_balance': user.credits
+            'new_balance': user.credits,
+            'code': code,
+            'redeemed_at': credit.redeemed_at.strftime('%Y-%m-%d %H:%M:%S') if credit.redeemed_at else None
         })
         
     except Exception as e:
