@@ -70,7 +70,7 @@
     </div>
 </div>
 
-<div id="logViewer" class="log-viewer"></div>
+<div id="logViewer" class="log-viewer" data-content='{{ current_log | tojson }}'></div>
 
 <script>
 let currentFilter = 'all';
@@ -115,7 +115,17 @@ updateLogView({{ current_log | tojson }});
 function refreshLogs() {
     const currentFile = document.getElementById('logFile').value;
     const tailMode = document.getElementById('tailMode').checked;
-    window.location.href = `?file=${currentFile}&tail=${tailMode}`;
+    
+    // Use fetch to get updated logs without full page reload
+    fetch(`?file=${currentFile}&tail=${tailMode}`)
+        .then(response => response.text())
+        .then(html => {
+            // Extract log content from the response
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = JSON.parse(doc.getElementById('logViewer').getAttribute('data-content'));
+            updateLogView(newContent);
+        });
 }
 
 function changeLog(filename) {
@@ -123,10 +133,27 @@ function changeLog(filename) {
     window.location.href = `?file=${filename}&tail=${tailMode}`;
 }
 
+let refreshInterval;
+
 function toggleTail(enabled) {
     const currentFile = document.getElementById('logFile').value;
     window.location.href = `?file=${currentFile}&tail=${enabled}`;
+    
+    if (enabled) {
+        // Start auto-refresh when tail mode is enabled
+        refreshInterval = setInterval(refreshLogs, 5000); // Refresh every 5 seconds
+    } else {
+        // Clear auto-refresh when tail mode is disabled
+        clearInterval(refreshInterval);
+    }
 }
+
+// Set up initial auto-refresh if tail mode is enabled
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('tailMode').checked) {
+        refreshInterval = setInterval(refreshLogs, 5000);
+    }
+});
 
 document.querySelectorAll('[data-level]').forEach(button => {
     button.addEventListener('click', (e) => {
