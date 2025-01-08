@@ -4,6 +4,27 @@
 
 {% block content %}
 <script>
+function filterTable() {
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        const statusCell = row.querySelector('td:nth-child(3)'); // Adjust index based on status column
+        const nameCell = row.querySelector('td:nth-child(2)'); // Adjust index based on name column
+        
+        if (!statusCell || !nameCell) return;
+
+        const status = statusCell.textContent.toLowerCase().trim();
+        const name = nameCell.textContent.toLowerCase().trim();
+
+        const matchesStatus = !statusFilter || status.includes(statusFilter);
+        const matchesSearch = !searchText || name.includes(searchText);
+
+        row.style.display = matchesStatus && matchesSearch ? '' : 'none';
+    });
+}
+
 function confirmStatusUpdate(mentorId, action) {
     const message = action === 'approve' ? 
         'Are you sure you want to approve this mentor?' : 
@@ -30,12 +51,31 @@ function confirmStatusUpdate(mentorId, action) {
         });
     }
 }
+
+// Add event listeners for filters
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('statusFilter').addEventListener('change', filterTable);
+    document.getElementById('searchInput').addEventListener('input', filterTable);
+});
 </script>
-<div class="card">
+<div class="card w-100">
     <div class="card-header">
         <h4 class="mb-0">Mentor Profiles</h4>
     </div>
     <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="revoked">Revoked</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search by name...">
+            </div>
+        </div>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
