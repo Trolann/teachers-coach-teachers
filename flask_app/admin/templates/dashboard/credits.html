@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Credit Code Generator</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form id="generateForm" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="num_codes">Number of Codes</label>
+                    <input type="number" class="form-control" id="num_codes" name="num_codes" value="1" min="1" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="credits_per_code">Credits per Code</label>
+                    <input type="number" class="form-control" id="credits_per_code" name="credits_per_code" value="1" min="1" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary mt-4">Generate Codes</button>
+            </div>
+        </div>
+    </form>
+
+    <h3>Redeem Code</h3>
+    <form id="redeemForm" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="code">Credit Code</label>
+                    <input type="text" class="form-control" id="code" name="code" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="user_identifier">User Email or ID</label>
+                    <input type="text" class="form-control" id="user_identifier" name="user_identifier" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-success mt-4">Redeem Code</button>
+            </div>
+        </div>
+    </form>
+
+    <h3>Generated Codes</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Credits</th>
+                <th>Created</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for code in credit_codes %}
+            <tr class="{{ 'table-secondary' if code.redeemed_by else '' }}">
+                <td>{{ code.code }}</td>
+                <td>{{ code.amount }}</td>
+                <td>{{ code.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>
+                    {% if code.redeemed_by %}
+                        <span class="badge bg-secondary">Redeemed</span>
+                    {% else %}
+                        <span class="badge bg-success">Available</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.getElementById('generateForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const num_codes = parseInt(document.getElementById('num_codes').value);
+    const credits_per_code = parseInt(document.getElementById('credits_per_code').value);
+    
+    try {
+        const response = await fetch('/api/credits/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ num_codes, credits_per_code })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Success: ' + data.message);
+            // Reload the page to show new codes
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Failed to generate codes. Please try again.');
+    }
+});
+
+document.getElementById('redeemForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const code = document.getElementById('code').value;
+    const user_identifier = document.getElementById('user_identifier').value;
+    
+    try {
+        const response = await fetch('/api/credits/redeem', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code, user_identifier })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Success: ' + data.message);
+            // Find and update the specific row
+            const row = Array.from(document.querySelectorAll('table tr')).find(
+                row => row.cells[0].textContent.trim() === data.code
+            );
+            if (row) {
+                row.classList.add('table-secondary');
+                row.cells[3].innerHTML = '<span class="badge bg-secondary">Redeemed</span>';
+            }
+            // Clear the form
+            document.getElementById('code').value = '';
+            document.getElementById('user_identifier').value = '';
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Failed to redeem code. Please try again.');
+    }
+});
+</script>
+{% endblock %}

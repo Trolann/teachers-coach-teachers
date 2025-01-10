@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from flask_app.models.user import User, MentorProfile, MyTable
+from flask_app.models.user import User, MyTable
+from flask_app.models.mentor_profiles import MentorProfile
 from sqlalchemy import text, inspect
 from extensions.database import db
 from extensions.cognito import require_auth

@@ -1,5 +1,5 @@
-import logging
-from logging import getLogger, INFO, StreamHandler, Formatter, Filter, WARNING, ERROR
+from os import environ
+from logging import getLogger, StreamHandler, Formatter, INFO, WARNING, ERROR
 from logging.handlers import TimedRotatingFileHandler
 
 
@@ -55,7 +55,10 @@ def setup_logger():
     """Setup the root logger with proper formatting and handlers"""
     # Initialize root logger
     root_logger = getLogger()
-    root_logger.setLevel(INFO)
+    # Set log level based on env LOG_LEVEL, defaulting to INFO
+    log_level = environ.get('LOG_LEVEL', 'INFO')
+    flask_log_level = environ.get('FLASK_LOG_LEVEL', 'INFO')
+    root_logger.setLevel(log_level)
 
     # Remove any existing handlers
     root_logger.handlers = []
@@ -65,19 +68,21 @@ def setup_logger():
 
     # File handler for all logs
     file_handler = TimedRotatingFileHandler('app.log', when='midnight', interval=1)
+    # file_handler should make a new log every time the app starts
+    #file_handler = TimedRotatingFileHandler('app.log', when='S', interval=1)
     file_handler.setFormatter(Formatter(log_format))
-    file_handler.setLevel(INFO)
+    file_handler.setLevel(log_level)
     root_logger.addHandler(file_handler)
 
     # Console handler with colors for all logs
     console_handler = StreamHandler()
     console_handler.setFormatter(ColorFormatter(log_format))
-    console_handler.setLevel(INFO)
+    console_handler.setLevel(log_level)
     root_logger.addHandler(console_handler)
 
     # Special handling for Werkzeug logger
     werkzeug_logger = getLogger('werkzeug')
-    werkzeug_logger.setLevel(INFO)
+    werkzeug_logger.setLevel(flask_log_level)
     # Remove default handlers
     werkzeug_logger.handlers = []
 
@@ -88,6 +93,11 @@ def setup_logger():
 
     # Rename werkzeug to flask.app
     werkzeug_logger.name = 'flask.app'
+
+    # Set specific levels for boto3/botocore/urllib3
+    getLogger('botocore').setLevel('INFO')
+    getLogger('urllib3').setLevel('INFO')
+    getLogger('faker').setLevel('INFO')
 
     return root_logger
 
