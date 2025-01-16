@@ -40,6 +40,7 @@ class CreditPool(db.Model):
         index=True
     )
     is_active: Mapped[bool] = mapped_column(db.Boolean, nullable=False, default=True)
+    credits_available: Mapped[int] = mapped_column(db.Integer, nullable=False, default=0)
 
     
     @classmethod
@@ -51,11 +52,12 @@ class CreditPool(db.Model):
             if not exists:
                 return code
 
-    def __init__(self, owner_id: str, name: str, is_active: bool = True):
+    def __init__(self, owner_id: str, name: str, is_active: bool = True, credits_available: int = 0):
         self.owner_id = owner_id
         self.name = name
         self.pool_code = self.generate_unique_code()
         self.is_active = is_active
+        self.credits_available = credits_available
 
 class CreditPoolAccess(db.Model):
     """Model for managing access to credit pools"""
