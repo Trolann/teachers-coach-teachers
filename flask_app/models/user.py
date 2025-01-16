@@ -4,6 +4,7 @@ from extensions.logging import get_logger
 from typing import Optional, List
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import select
+from flask_app.models.credits import CreditPool
 
 logger = get_logger(__name__)
 
