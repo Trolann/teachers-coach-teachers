@@ -38,7 +38,6 @@ def list_pools():
                 'id': pool.id,
                 'name': pool.name,
                 'code': pool.code,
-                'credits_available': pool.credits_available,
                 'created_at': pool.created_at.isoformat(),
                 'is_active': pool.is_active
             } for pool in pools]
@@ -62,7 +61,6 @@ def create_pool():
         pool = CreditPool(
             name=name,
             owner_id=session.get('user_id'),
-            credits_available=initial_credits,
             is_active=True
         )
         db.session.add(pool)
@@ -73,8 +71,7 @@ def create_pool():
             'pool': {
                 'id': pool.id,
                 'name': pool.name,
-                'code': pool.code,
-                'credits_available': pool.credits_available
+                'code': pool.code
             }
         })
     except Exception as e:
