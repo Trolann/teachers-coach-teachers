@@ -239,7 +239,7 @@ def redeem_credit():
         return jsonify({'error': 'Missing required fields'}), 400
         
     # Find the credit code
-    credit = CreditRedemption.query.filter_by(code=code, redeemed_by=None).first()
+    credit = CreditRedemption.query.filter_by(code=code, credit_pool_id=None).first()
     if not credit:
         return jsonify({'error': 'Invalid or already redeemed code'}), 400
         
@@ -255,7 +255,7 @@ def redeem_credit():
     try:
         # Add credits to pool
         pool.credits_available = (pool.credits_available or 0) + credit.amount
-        credit.redeemed_by = pool.id
+        credit.credit_pool_id = pool.id
         credit.redeemed_at = datetime.utcnow()
         db.session.commit()
         
