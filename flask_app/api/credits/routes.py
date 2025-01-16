@@ -24,7 +24,7 @@ def require_district_admin(f):
     return decorated
 
 @credits_bp.route('/pools', methods=['GET'])
-@require_auth
+@require_district_admin
 def list_pools():
     """List credit pools owned by the current user"""
     user_id = session.get('user_id')
