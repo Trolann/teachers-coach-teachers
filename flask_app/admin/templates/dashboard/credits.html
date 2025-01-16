@@ -2,7 +2,29 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Credit Code Generator</h2>
+    <h2>Credits Management</h2>
+
+    <ul class="nav nav-tabs mb-4" id="creditTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab">
+                Generate Codes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pools-tab" data-bs-toggle="tab" data-bs-target="#pools" type="button" role="tab">
+                Credit Pools
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="manage-tab" data-bs-toggle="tab" data-bs-target="#manage" type="button" role="tab">
+                Manage Users
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="creditTabsContent">
+        <!-- Generate Codes Tab -->
+        <div class="tab-pane fade show active" id="generate" role="tabpanel">
     
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -80,6 +102,24 @@
             {% endfor %}
         </tbody>
     </table>
+        </div>
+
+        <!-- Credit Pools Tab -->
+        <div class="tab-pane fade" id="pools" role="tabpanel">
+            <h3>Credit Pools</h3>
+            <div class="alert alert-info">
+                Credit pools management coming soon. This will show all credit pools, their owners, and available credits.
+            </div>
+        </div>
+
+        <!-- Manage Users Tab -->
+        <div class="tab-pane fade" id="manage" role="tabpanel">
+            <h3>Manage Users</h3>
+            <div class="alert alert-info">
+                User pool management coming soon. Here you'll be able to create user pools and assign users to them.
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
