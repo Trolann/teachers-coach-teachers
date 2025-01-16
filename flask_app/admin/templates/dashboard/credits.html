@@ -2,6 +2,7 @@
 
 {% block head %}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 {% endblock %}
 
@@ -101,7 +102,7 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="userEmail">User Email</label>
-                            <select class="form-control" id="userEmail" required>
+                            <select class="form-control select2-user-search" id="userEmail" required>
                                 <option value="">Search for a user...</option>
                             </select>
                         </div>
@@ -226,7 +227,7 @@ async function loadPoolsForUser(userEmail) {
 // Load pools when switching to pools tab
 // Initialize select2 for user email search
 $(document).ready(function() {
-    $('#userEmail').select2({
+    $('.select2-user-search').select2({
         placeholder: 'Search for a user...',
         allowClear: true,
         minimumInputLength: 2,
