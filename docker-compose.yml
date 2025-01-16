@@ -3,7 +3,7 @@ services:
     container_name: teachers-coach-teachers-backend
     env_file:
       - .env
-    build: 
+    build:
       context: ./flask_app
     ports:
       - "5001:5001"
@@ -11,25 +11,33 @@ services:
       - .:/app
     environment:
       - FLASK_APP=flask_app/run.py
-      - FLASK_ENV=development
+      - FLASK_ENV=${FLASK_ENV}
       - FLASK_DEBUG=1
       - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI}
       - PYTHONPATH=/app
+    user: "${UID}:${GID}"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:15
     container_name: tct_postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - tct_postgres_data:/var/lib/postgresql/data
     # Leave ports here even if commented out. Allows for easy debugging/direct connecting to the database locally
 #    ports:
 #      - "5432:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB={$POSTGRES_DB}
+      - POSTGRES_DB=${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 1s
+      timeout: 2s
+      retries: 15
+      start_period: 1s
 
   expo-frontend:
     container_name: expo-frontend
@@ -42,8 +50,9 @@ services:
       - ./mobile:/app
       - /app/node_modules
     command: npx expo start
+    user: "${UID}:${GID}" # TODO: Confirm this is working as expected
     environment:
       - NODE_ENV=development
 
 volumes:
-  postgres_data:
+  tct_postgres_data:
