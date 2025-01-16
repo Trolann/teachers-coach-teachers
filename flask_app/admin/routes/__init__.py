@@ -25,6 +25,16 @@ def create_admin_blueprint():
         admin_bp.register_blueprint(fake_mentors_bp, url_prefix='')
         logger.info('Registered fake mentors routes at root prefix')
 
+        # Register credits routes
+        from .credits import admin_credits_bp
+        admin_bp.register_blueprint(admin_credits_bp, url_prefix='/credits')
+        logger.info('Registered credits routes at /credits prefix')
+
+        # Register logs routes
+        from .logs import logs_bp
+        admin_bp.register_blueprint(logs_bp, url_prefix='/logs')
+        logger.info('Registered logs routes at /logs prefix')
+
         logger.info('Successfully created and configured admin blueprint')
         return admin_bp
     except Exception as e:

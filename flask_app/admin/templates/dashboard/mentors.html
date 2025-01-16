@@ -4,10 +4,63 @@
 
 {% block content %}
 <script>
+function filterTable() {
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    // Get all header cells that contain 'name' (case-insensitive)
+    const headerCells = document.querySelectorAll('thead th');
+    const nameColumnIndexes = Array.from(headerCells).reduce((indexes, cell, index) => {
+        if (cell.textContent.toLowerCase().includes('name')) {
+            indexes.push(index);
+        }
+        return indexes;
+    }, []);
+
+    rows.forEach(row => {
+        // Skip the "No mentor profiles found" row
+        if (row.cells.length === 1) return;
+
+        // Find the status badge span
+        const statusBadge = row.querySelector('.badge');
+        if (!statusBadge) return;
+
+        const status = statusBadge.textContent.toLowerCase().trim();
+        
+        // Status matching remains exact
+        const matchesStatus = statusFilter === '' || status === statusFilter;
+        
+        // Check all name columns for a match
+        const matchesSearch = searchText === '' || 
+            nameColumnIndexes.some(index => {
+                const cellText = row.cells[index]?.textContent.toLowerCase().trim() || '';
+                return cellText.indexOf(searchText) !== -1;
+            });
+
+        row.style.display = matchesStatus && matchesSearch ? '' : 'none';
+    });
+}
+
+function refreshTable() {
+    window.location.reload();
+}
+
 function confirmStatusUpdate(mentorId, action) {
-    const message = action === 'approve' ? 
-        'Are you sure you want to approve this mentor?' : 
-        'Are you sure you want to revoke this mentor\'s approval?';
+    let message;
+    switch(action) {
+        case 'approve':
+            message = 'Are you sure you want to approve this mentor?';
+            break;
+        case 'revoke':
+            message = 'Are you sure you want to revoke this mentor\'s approval?';
+            break;
+        case 'reject':
+            message = 'Are you sure you want to reject this mentor?';
+            break;
+        default:
+            message = 'Are you sure you want to update this mentor\'s status?';
+    }
     
     if (confirm(message)) {
         fetch(`/admin/mentors/${mentorId}/${action}`, {
@@ -30,12 +83,37 @@ function confirmStatusUpdate(mentorId, action) {
         });
     }
 }
+
+// Add event listeners for filters
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('statusFilter').addEventListener('change', filterTable);
+    document.getElementById('searchInput').addEventListener('input', filterTable);
+});
 </script>
-<div class="card">
+<div class="card w-100">
     <div class="card-header">
         <h4 class="mb-0">Mentor Profiles</h4>
     </div>
     <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="revoked">Revoked</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search by name...">
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-primary" onclick="refreshTable()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
@@ -74,11 +152,21 @@ function confirmStatusUpdate(mentorId, action) {
                             {% endif %}
                         {% endfor %}
                         <td>
-                            <button type="button" 
-                                    class="btn btn-{{ 'danger' if mentor.application_status == 'approved' or mentor.application_status == 'APPROVED' else 'success' }}"
-                                    onclick="confirmStatusUpdate('{{ mentor.id }}', '{{ 'revoke' if mentor.application_status == 'approved' or mentor.application_status == 'APPROVED' else 'approve' }}')">
-                                {{ 'REVOKE' if mentor.application_status == 'approved' or mentor.application_status == 'APPROVED' else 'APPROVE' }}
-                            </button>
+                            {% if mentor.application_status == 'approved' or mentor.application_status == 'APPROVED' %}
+                                <button type="button" class="btn btn-danger"
+                                        onclick="confirmStatusUpdate('{{ mentor.id }}', 'revoke')">
+                                    REVOKE
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-success"
+                                        onclick="confirmStatusUpdate('{{ mentor.id }}', 'approve')">
+                                    APPROVE
+                                </button>
+                                <button type="button" class="btn btn-danger ms-2"
+                                        onclick="confirmStatusUpdate('{{ mentor.id }}', 'reject')">
+                                    REJECT
+                                </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}

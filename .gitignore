@@ -131,7 +131,7 @@ env.bak/
 venv.bak/
 
 # Flask Migrations
-/migrations/
+#/migrations/
 
 # Log Files
 app.log.*
@@ -168,3 +168,4 @@ cython_debug/
 .idea/
 .aider*
 *.txt
+cognito-admin-policy.json

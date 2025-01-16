@@ -2,16 +2,19 @@ import urllib
 import json
 import time
 from functools import wraps
-from flask import request, jsonify, session, redirect, url_for
+from flask import request, session, redirect, url_for
 from jose import jwk, jwt
 from jose.utils import base64url_decode
 
 from config import CognitoConfig
 from boto3 import client
 from extensions.logging import get_logger
+from extensions.database import db
+from flask_app.models.user import User
 
 config = CognitoConfig()
 logger = get_logger(__name__)
+
 
 logger.info("Initializing Cognito authentication module")
 # TODO: Remove admin group name magic value (add to config)
@@ -26,6 +29,74 @@ class CognitoTokenVerifier:
         self.keys = None
         self.claims = None
         self.get_keys()
+        # Configure AWS credentials
+        self.client = client('cognito-idp', region_name=region)
+
+    def login_as_admin(self, username, password):
+        """Login user and verify admin access"""
+        logger.info(f"Attempting admin login for user: {username}")
+        try:
+            # First authenticate the user
+            logger.debug("Initiating Cognito authentication")
+            response = self.client.initiate_auth(
+                ClientId=self.client_id,
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    'USERNAME': username,
+                    'PASSWORD': password
+                }
+            )
+            logger.debug("Authentication response received")
+
+            # Get the authentication result
+            auth_result = response['AuthenticationResult']
+
+            # Get user attributes
+            user_info = self.get_user_attributes(auth_result['AccessToken'])
+            if not user_info:
+                return {"error": "Failed to get user information"}
+
+            # Check if user is in admins group
+            is_admin = self.is_user_admin(auth_result['AccessToken'], given_user_info=user_info)
+            logger.debug(f"Admin status check for {username}: {is_admin}")
+
+            if not is_admin:
+                logger.warning(f"Unauthorized admin access attempt by user: {username}")
+                return {"error": "User is not authorized for admin access"}
+
+            logger.info(f"Admin user {username} logged in successfully")
+            return {
+                **auth_result,
+                "user_info": user_info
+            }
+        except Exception as e:
+            logger.error(f"Login error for user {username}: {str(e)}")
+            logger.exception(e)
+            return {"error": str(e)}
+
+    def _check_user_group(self, access_token, group_name, given_user_info = None):
+        logger.debug(f"Checking if user is in {group_name} group")
+        try:
+            user_info = self.get_user_attributes(access_token) if not given_user_info else given_user_info
+            logger.debug(f'User info: {user_info}')
+            if not user_info:
+                return False
+            is_in_group = False if group_name not in user_info['groups'] else True
+            logger.debug(f"{group_name} status check for {user_info['username']}: {is_in_group}")
+            return is_in_group
+        except Exception as e:
+            logger.error(f"Error checking {group_name} status: {str(e)}")
+            logger.exception(e)
+
+    def is_user_district_admin(self, access_token):
+        """Check if user is in the district_admin group"""
+        logger.debug("Checking if user is in district_admin group")
+        return self._check_user_group(access_token, 'district_admin')
+
+    def is_user_admin(self, access_token, given_user_info=None):
+        """Check if user is in admins group"""
+        logger.debug("Checking if user is in admins group")
+        return self._check_user_group(access_token, 'admins')
 
     def get_keys(self):
         """Get the JSON Web Key (JWK) for the user pool"""
@@ -95,12 +166,64 @@ class CognitoTokenVerifier:
 
             self.claims = claims
             logger.info("Token successfully verified")
+            self.setup_user(token)
             return True
             
         except Exception as e:
             logger.error(f"Token verification failed: {str(e)}")
             logger.exception(e)
             raise
+
+    def get_user_attributes(self, access_token):
+        """Get user attributes using the access token"""
+        try:
+            user_info = self.client.get_user(
+                AccessToken=access_token
+            )
+            groups = self.client.admin_list_groups_for_user(
+                Username=user_info['Username'],
+                UserPoolId=self.user_pool_id
+            )
+            logger.debug(f'Got user info: {user_info}')
+            logger.debug(f'Got user groups: {groups}')
+            return {
+                'user_id': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'sub'), None),
+                'email': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'email'), None),
+                'name': next((attr['Value'] for attr in user_info['UserAttributes'] if attr['Name'] == 'name'), None),
+                'username': user_info['Username'],
+                'groups': [group_name for group_name in [group['GroupName'] for group in groups['Groups']]]
+            }
+        except Exception as e:
+            logger.error(f"Error getting user attributes: {str(e)}")
+            logger.exception(e)
+            return None
+
+    def setup_user(self, access_token):
+        """Get user attributes using the access token"""
+        try:
+            user_info = self.get_user_attributes(access_token)
+            user_id = user_info['user_id']
+
+            logger.debug(f'Checking for existing user.')
+            existing_user = db.session.query(User).filter(User.id == user_id).first()
+            logger.debug(f'Existing user: {existing_user}')
+            if not existing_user:
+                user = User(
+                    cognito_sub=user_id,
+                    email=user_info['email']  # Modified to directly access email from user_info
+                )
+                logger.debug(f"Adding new user to database: {user.email}")
+                db.session.add(user)
+                db.session.commit()
+                logger.debug(f'User {user.email} added to database')
+                return True
+
+            logger.debug(f"User {user_info['email']} already exists in database")
+            return False
+        except Exception as e:
+            logger.error(f"Error getting user attributes: {str(e)}")
+            logger.exception(e)
+            return None
 
 
 def require_auth(f):
@@ -129,56 +252,3 @@ def require_auth(f):
             return redirect(url_for('admin.admin_dashboard.index'))
 
     return decorated
-
-
-class CognitoBackendAuthorizer:
-    def __init__(self, user_pool_id=config.COGNITO_USER_POOL_ID,
-                 client_id=config.COGNITO_CLIENT_ID,
-                 region=config.COGNITO_REGION):
-        self.user_pool_id = user_pool_id
-        self.client_id = client_id
-        self.region = region
-
-        # Configure AWS credentials
-        self.client = client('cognito-idp', region_name=region)
-
-
-    def login_as_admin(self, username, password):
-        """Login user and verify admin access"""
-        logger.info(f"Attempting admin login for user: {username}")
-        try:
-            # First authenticate the user
-            logger.debug("Initiating Cognito authentication")
-            response = self.client.initiate_auth(
-                ClientId=self.client_id,
-                AuthFlow='USER_PASSWORD_AUTH',
-                AuthParameters={
-                    'USERNAME': username,
-                    'PASSWORD': '[REDACTED]'  # Don't log passwords
-                }
-            )
-            logger.debug("Authentication response received")
-            
-            # Get the access token
-            auth_result = response['AuthenticationResult']
-            logger.debug("Retrieved authentication result")
-
-            # Check if user is in admins group
-            is_admin = False if username.casefold() not in config.ADMIN_USERNAMES else True
-            logger.debug(f"Admin status check for {username}: {is_admin}")
-            
-            if not is_admin:
-                logger.warning(f"Unauthorized admin access attempt by user: {username}")
-                return {"error": "User is not authorized for admin access"}
-            
-            logger.info(f"Admin user {username} logged in successfully")
-            return auth_result
-            
-        except Exception as e:
-            logger.error(f"Login error for user {username}: {str(e)}")
-            logger.exception(e)
-            return {"error": str(e)}
-
-
-#  254   │             "username": "trevor.mathisen@sjsu.edu",
-#  255   │             "password": "TestPassword123!",
