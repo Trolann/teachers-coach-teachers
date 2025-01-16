@@ -50,7 +50,7 @@ services:
       - ./mobile:/app
       - /app/node_modules
     command: npx expo start
-    user: "${UID}:${GID}" # TODO: Confirm this is working as expected
+    user: "${UID}:${GID}"
     environment:
       - NODE_ENV=development
 

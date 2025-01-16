@@ -177,6 +177,13 @@ Or for a single service in the stack with
 docker compose logs -f <service_name>
 ```
 
+If you have previously ran the containers, some of your files may be owned by root. Run the following to change the ownership of all files from the top level directory down to the current user:
+```bash
+sudo chown -R $USER:$USER .
+```
+
+Then rerun `docker compose up` to start the services.
+
 ### **4. Flask database migrations and management**
 To run database migrations, you can use the following commands:
 ```bash
