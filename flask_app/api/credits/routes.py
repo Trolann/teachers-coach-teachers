@@ -274,14 +274,18 @@ def redeem_credit():
         if pool.credits_available is None:
             pool.credits_available = 0
             
-        # Get user email from session
+        # Get user email from session and ensure it exists
         user_email = session.get('email')
+        if not user_email:
+            logger.error("No email found in session during redemption")
+            return jsonify({'error': 'User email not found in session'}), 400
+
         logger.info(f"Attempting redemption with email: {user_email}")
         
         pool.credits_available += credit.amount
         credit.credit_pool_id = pool.id
         credit.redeemed_at = datetime.utcnow()
-        credit.redeemed_by_email = user_email
+        credit.redeemed_by_email = user_email  # This should be a string field in the DB
         
         # Log state before commit
         logger.info(f"Pre-commit state - Pool {pool_id}: credits_available={pool.credits_available}, "
@@ -294,10 +298,12 @@ def redeem_credit():
         db.session.refresh(credit)
         db.session.refresh(pool)
         
-        # Log final state
+        # Log final state with more details
         logger.info(f"Successfully redeemed code {code} for {credit.amount} credits to pool {pool_id}. "
                    f"Final state - redeemed_by_email: {credit.redeemed_by_email}, "
-                   f"credits_available: {pool.credits_available}")
+                   f"credits_available: {pool.credits_available}, "
+                   f"credit_pool_id: {credit.credit_pool_id}, "
+                   f"redeemed_at: {credit.redeemed_at}")
         
         return jsonify({
             'success': True,
