@@ -184,7 +184,7 @@ async function loadPools() {
                 <tr>
                     <td>${pool.name}</td>
                     <td>${pool.code}</td>
-                    <td>${pool.credits_available}</td>
+                    <td>${pool.credits_available || 0}</td>
                     <td>${new Date(pool.created_at).toLocaleString()}</td>
                     <td>
                         <span class="badge bg-${pool.is_active ? 'success' : 'secondary'}">
