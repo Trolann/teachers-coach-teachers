@@ -20,28 +20,6 @@ admin_credits_bp = Blueprint('admin_credits', __name__,
                                template_folder=template_dir)
 
 
-@admin_credits_bp.route('/search-users', methods=['GET'])
-@require_auth
-def search_users():
-    """Search users by email"""
-    query = request.args.get('q', '').lower()
-    
-    # If query is empty, return first 10 users
-    if not query:
-        users = User.query.limit(10).all()
-    else:
-        users = User.query.filter(User.email.ilike(f'%{query}%')).limit(10).all()
-    
-    # Format response for select2
-    return jsonify({
-        'results': [{
-            'id': user.email,  # Use email as ID since that's what we need
-            'text': user.email  # Text to display in dropdown
-        } for user in users],
-        'pagination': {
-            'more': False  # No pagination for now
-        }
-    })
 
 @admin_credits_bp.route('/', methods=['GET', 'POST'])
 @require_auth

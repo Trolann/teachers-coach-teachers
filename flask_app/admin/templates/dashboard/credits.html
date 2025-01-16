@@ -1,9 +1,6 @@
 {% extends "base.html" %}
 
 {% block head %}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -102,9 +99,8 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="userEmail">User Email</label>
-                            <select class="form-control select2-user-search" id="userEmail" required>
-                                <option value="">Search for a user...</option>
-                            </select>
+                            <input type="email" class="form-control" id="userEmail" 
+                                   placeholder="Enter user email" required>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -232,49 +228,15 @@ async function loadPoolsForUser(userEmail) {
 }
 
 // Load pools when switching to pools tab
-// Initialize select2 for user email search
-$(document).ready(function() {
-    $('.select2-user-search').select2({
-        placeholder: 'Search for a user...',
-        allowClear: true,
-        minimumInputLength: 0,
-        width: '100%',
-        ajax: {
-            url: '/admin/credits/search-users',
-            dataType: 'json',
-            delay: 250,
-            data: function(params) {
-                return {
-                    q: params.term || ''  // Handle null/undefined
-                };
-            },
-            processResults: function(data) {
-                return data;  // API now returns properly formatted data
-            },
-            cache: true
-        }
-    }).on('select2:open', function() {
-        // Trigger search immediately when opened
-        var select2 = $(this).data('select2');
-        setTimeout(function() {
-            select2.dropdown.$search.get(0).focus();
-            select2.dropdown.$search.trigger('input');
-        }, 0);
-    });
-
-    // When user email is selected, load their pools
-    $('#userEmail').on('select2:select', async function(e) {
-        const userEmail = e.params.data.id;
-        if (userEmail) {
-            document.getElementById('pool_id').disabled = false;
-            await loadPoolsForUser(userEmail);
-        }
-    });
-
-    // When user email is cleared
-    $('#userEmail').on('select2:clear', function() {
+// When user email changes, load their pools
+document.getElementById('userEmail').addEventListener('change', async function(e) {
+    const userEmail = e.target.value;
+    if (userEmail) {
+        document.getElementById('pool_id').disabled = false;
+        await loadPoolsForUser(userEmail);
+    } else {
         document.getElementById('pool_id').disabled = true;
-    });
+    }
 });
 
 document.querySelector('#pools-tab').addEventListener('click', () => loadPoolsForUser(''));
