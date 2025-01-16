@@ -37,7 +37,7 @@ def list_pools():
             'pools': [{
                 'id': pool.id,
                 'name': pool.name,
-                'code': pool.code,
+                'code': pool.pool_code,
                 'created_at': pool.created_at.isoformat(),
                 'is_active': pool.is_active
             } for pool in pools]
@@ -70,7 +70,7 @@ def create_pool():
             'pool': {
                 'id': pool.id,
                 'name': pool.name,
-                'code': pool.code
+                'code': pool.pool_code
             }
         })
     except Exception as e:
