@@ -40,7 +40,6 @@ cp .env.example .env
   - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
   - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
   - FLASK_ENV should remain as development for local development
-  - ADMIN_USERNAMES is a comma-separated list of usernames that will be able to access the admin panel (name@email.tld)
 ---
 
 ## **Project Structure**
