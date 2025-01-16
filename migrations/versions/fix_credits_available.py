@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'fix_credits_available'
-down_revision = None  # Update this to your previous migration ID
+down_revision = '7c9df6b9f052'  # Points to the previous migration that added credits_available column
 branch_labels = None
 depends_on = None
 
