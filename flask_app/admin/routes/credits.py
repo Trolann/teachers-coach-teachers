@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, flash, session, redirect, url_for, jsonify
 from extensions.logging import get_logger
 from os import path
-from models.credits import CreditRedemption, CreditTransfer
+from models.credits import CreditRedemption, CreditTransfer, CreditPool
 from models.user import User
 from extensions.database import db
 from extensions.cognito import require_auth
@@ -36,6 +36,9 @@ def index():
             logger.warning(f'Unauthorized code generation attempt from {request.remote_addr}')
             return redirect(url_for('admin.admin_dashboard.index'))
 
-    # Get all credit codes for display
+    # Get all credit codes and pools for display
     credit_codes = CreditRedemption.query.order_by(CreditRedemption.created_at.desc()).all()
-    return render_template('dashboard/credits.html', credit_codes=credit_codes)
+    credit_pools = CreditPool.query.filter_by(owner_id=session.get('user_id')).all()
+    return render_template('dashboard/credits.html', 
+                         credit_codes=credit_codes,
+                         credit_pools=credit_pools)

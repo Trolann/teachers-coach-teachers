@@ -245,7 +245,35 @@ async function loadPoolsForUser(userEmail) {
     }
 }
 
-// Load pools when switching to pools tab
+// Initialize pools table with server-provided data
+function initializePools() {
+    const tbody = document.querySelector('#poolsTable tbody');
+    {% if credit_pools %}
+        tbody.innerHTML = `
+        {% for pool in credit_pools %}
+            <tr>
+                <td>{{ pool.name }}</td>
+                <td>{{ pool.pool_code }}</td>
+                <td>{{ pool.credits_available if pool.credits_available is not none else 'N/A' }}</td>
+                <td>{{ pool.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>
+                    <span class="badge bg-{{ 'success' if pool.is_active else 'secondary' }}">
+                        {{ 'Active' if pool.is_active else 'Inactive' }}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="togglePoolStatus('{{ pool.id }}', {{ 'true' if not pool.is_active else 'false' }})">
+                        {{ 'Activate' if not pool.is_active else 'Deactivate' }}
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        `;
+    {% endif %}
+}
+
+// Initialize pools on page load and when switching to pools tab
+document.addEventListener('DOMContentLoaded', initializePools);
 // When user email changes, load their pools
 document.getElementById('userEmail').addEventListener('change', async function(e) {
     const userEmail = e.target.value;
