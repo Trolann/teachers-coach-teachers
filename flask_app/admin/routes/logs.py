@@ -3,6 +3,7 @@ import glob
 from flask import Blueprint, render_template, current_app, jsonify
 from datetime import datetime
 from flask import request
+from extensions.cognito import require_auth
 
 logs_bp = Blueprint('logs', __name__, url_prefix='/logs')
 
@@ -51,6 +52,7 @@ def read_log_file(filename):
     return []
 
 @logs_bp.route('/')
+@require_auth
 def logs_page():
     """Render logs page"""
     log_files = get_log_files()
