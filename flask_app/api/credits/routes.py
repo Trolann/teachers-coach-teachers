@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from extensions.logging import get_logger
-from models.credits import CreditRedemption, CreditPool
+from models.credits import CreditRedemption, CreditPool, CreditPoolAccess
 from models.user import User
 from extensions.database import db
 from extensions.cognito import require_auth, CognitoTokenVerifier
@@ -148,6 +148,9 @@ def add_pool_access():
         )
         db.session.add(access)
         db.session.commit()
+
+        # Get the user object for response
+        user = User.query.filter_by(email=user_email).first()
         
         return jsonify({
             'message': 'User added to pool successfully',
