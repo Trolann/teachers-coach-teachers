@@ -83,7 +83,7 @@ def create_pool():
         db.session.rollback()
         return jsonify({'error': 'Failed to create pool'}), 500
 
-@credits_bp.route('/pools/<int:pool_id>', methods=['PUT'], endpoint='update_pool')
+@credits_bp.route('/pools/<pool_id>', methods=['PUT'], endpoint='update_pool')
 @require_district_admin
 def update_pool(pool_id):
     """Update a credit pool"""
@@ -99,15 +99,19 @@ def update_pool(pool_id):
         if 'name' in data:
             pool.name = data['name']
         if 'is_active' in data:
-            pool.is_active = data['is_active']
+            pool.is_active = bool(data['is_active'])
             
         db.session.commit()
+        
         return jsonify({
             'message': 'Pool updated successfully',
             'pool': {
                 'id': pool.id,
                 'name': pool.name,
-                'is_active': pool.is_active
+                'is_active': pool.is_active,
+                'code': pool.pool_code,
+                'credits_available': pool.credits_available,
+                'created_at': pool.created_at.isoformat()
             }
         })
     except Exception as e:

@@ -245,35 +245,45 @@ async function loadPoolsForUser(userEmail) {
     }
 }
 
-// Initialize pools table with server-provided data
-function initializePools() {
-    const tbody = document.querySelector('#poolsTable tbody');
-    {% if credit_pools %}
-        tbody.innerHTML = `
-        {% for pool in credit_pools %}
-            <tr>
-                <td>{{ pool.name }}</td>
-                <td>{{ pool.pool_code }}</td>
-                <td>{{ pool.credits_available if pool.credits_available is not none else 'N/A' }}</td>
-                <td>{{ pool.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                <td>
-                    <span class="badge bg-{{ 'success' if pool.is_active else 'secondary' }}">
-                        {{ 'Active' if pool.is_active else 'Inactive' }}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="togglePoolStatus('{{ pool.id }}', {{ 'true' if not pool.is_active else 'false' }})">
-                        {{ 'Activate' if not pool.is_active else 'Deactivate' }}
-                    </button>
-                </td>
-            </tr>
-        {% endfor %}
-        `;
-    {% endif %}
+// Function to load and display pools
+async function loadPools() {
+    try {
+        const response = await fetch('/api/credits/pools');
+        const data = await response.json();
+        
+        const tbody = document.querySelector('#poolsTable tbody');
+        tbody.innerHTML = '';
+        
+        if (data.pools) {
+            data.pools.forEach(pool => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${pool.name}</td>
+                        <td>${pool.code}</td>
+                        <td>${pool.credits_available !== null ? pool.credits_available : 'N/A'}</td>
+                        <td>${new Date(pool.created_at).toLocaleString()}</td>
+                        <td>
+                            <span class="badge bg-${pool.is_active ? 'success' : 'secondary'}">
+                                ${pool.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="togglePoolStatus('${pool.id}', ${!pool.is_active})">
+                                ${pool.is_active ? 'Deactivate' : 'Activate'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    } catch (error) {
+        console.error('Error loading pools:', error);
+        alert('Failed to load credit pools');
+    }
 }
 
 // Initialize pools on page load and when switching to pools tab
-document.addEventListener('DOMContentLoaded', initializePools);
+document.addEventListener('DOMContentLoaded', loadPools);
 // When user email changes, load their pools
 document.getElementById('userEmail').addEventListener('change', async function(e) {
     const userEmail = e.target.value;
@@ -333,13 +343,17 @@ async function togglePoolStatus(poolId, newStatus) {
             body: JSON.stringify({ is_active: newStatus })
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
-            loadPools();  // Refresh the pools list
+            // Refresh the pools list
+            await loadPools();
         } else {
-            const data = await response.json();
-            alert('Error: ' + data.error);
+            console.error('Error updating pool status:', data.error);
+            alert('Error: ' + (data.error || 'Failed to update pool status'));
         }
     } catch (error) {
+        console.error('Error:', error);
         alert('Failed to update pool status');
     }
 }
