@@ -28,15 +28,17 @@ def require_district_admin(f):
 def list_pools():
     """List credit pools owned by a specific user"""
     user_email = request.args.get('user_email')
-    if not user_email:
-        return jsonify({'error': 'User email required'}), 400
-
+    
     try:
-        user = User.query.filter_by(email=user_email).first()
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-            
-        pools = CreditPool.query.filter_by(owner_id=user.id).all()
+        if user_email:
+            # If email provided, get pools for that user
+            user = User.query.filter_by(email=user_email).first()
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
+            pools = CreditPool.query.filter_by(owner_id=user.id).all()
+        else:
+            # If no email, get pools for current user
+            pools = CreditPool.query.filter_by(owner_id=session.get('user_id')).all()
         return jsonify({
             'pools': [{
                 'id': pool.id,
