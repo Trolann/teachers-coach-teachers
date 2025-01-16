@@ -246,6 +246,8 @@ def redeem_credit():
     data = request.get_json()
     code = data.get('code')
     pool_id = data.get('pool_id')
+    verifier = CognitoTokenVerifier()
+    user_info = verifier.get_user_attributes(session.get('access_token'))
     
     if not code or not pool_id:
         return jsonify({'error': 'Missing required fields'}), 400
@@ -275,7 +277,7 @@ def redeem_credit():
             pool.credits_available = 0
             
         # Get user email from session and ensure it exists
-        user_email = session.get('email')
+        user_email = user_info.get('email')
         if not user_email:
             logger.error("No email found in session during redemption")
             return jsonify({'error': 'User email not found in session'}), 400
