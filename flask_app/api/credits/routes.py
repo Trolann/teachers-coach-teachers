@@ -23,7 +23,7 @@ def require_district_admin(f):
         return f(*args, **kwargs)
     return decorated
 
-@credits_bp.route('/pools', methods=['GET'])
+@credits_bp.route('/pools', methods=['GET'], endpoint='list_pools')
 @require_district_admin
 def list_pools():
     """List credit pools owned by the current user"""
@@ -47,7 +47,7 @@ def list_pools():
         logger.error(f"Error listing pools: {e}")
         return jsonify({'error': 'Failed to list pools'}), 500
 
-@credits_bp.route('/pools', methods=['POST'])
+@credits_bp.route('/pools', methods=['POST'], endpoint='create_pool')
 @require_district_admin
 def create_pool():
     """Create a new credit pool"""
@@ -82,7 +82,7 @@ def create_pool():
         db.session.rollback()
         return jsonify({'error': 'Failed to create pool'}), 500
 
-@credits_bp.route('/pools/<int:pool_id>', methods=['PUT'])
+@credits_bp.route('/pools/<int:pool_id>', methods=['PUT'], endpoint='update_pool')
 @require_district_admin
 def update_pool(pool_id):
     """Update a credit pool"""
@@ -114,7 +114,7 @@ def update_pool(pool_id):
         db.session.rollback()
         return jsonify({'error': 'Failed to update pool'}), 500
 
-@credits_bp.route('/pools/<int:pool_id>/users', methods=['POST'])
+@credits_bp.route('/pools/<int:pool_id>/users', methods=['POST'], endpoint='add_user_to_pool')
 @require_district_admin
 def add_user_to_pool(pool_id):
     """Add a user to a credit pool"""
@@ -158,7 +158,7 @@ def add_user_to_pool(pool_id):
         db.session.rollback()
         return jsonify({'error': 'Failed to add user to pool'}), 500
 
-@credits_bp.route('/pools/<int:pool_id>/users/<int:user_id>', methods=['DELETE'])
+@credits_bp.route('/pools/<int:pool_id>/users/<int:user_id>', methods=['DELETE'], endpoint='remove_user_from_pool')
 @require_district_admin
 def remove_user_from_pool(pool_id, user_id):
     """Remove a user from a credit pool"""
@@ -183,7 +183,7 @@ def remove_user_from_pool(pool_id, user_id):
         db.session.rollback()
         return jsonify({'error': 'Failed to remove user from pool'}), 500
 
-@credits_bp.route('/generate', methods=['POST'])
+@credits_bp.route('/generate', methods=['POST'], endpoint='generate_credits')
 @require_auth
 def generate_credits():
     """Generate credit codes - currently admin only"""
@@ -231,7 +231,7 @@ def generate_credits():
         db.session.rollback()
         return jsonify({'error': 'Failed to generate codes'}), 500
 
-@credits_bp.route('/redeem', methods=['POST'])
+@credits_bp.route('/redeem', methods=['POST'], endpoint='redeem_credit')
 @require_district_admin
 def redeem_credit():
     """Redeem a credit code to a credit pool"""
