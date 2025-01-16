@@ -36,5 +36,6 @@ def index():
 
     # Get all credit codes for display
     credit_codes = CreditRedemption.query.order_by(CreditRedemption.created_at.desc()).all()
-    
+    # TODO: Need to display CreditPool as well.
+    # TODO: Need an admin way to designate/remove a user as a CreditAdmin via admin_add_user_to_group in boto3 (add to district_admin group)
     return render_template('dashboard/credits.html', credit_codes=credit_codes)
