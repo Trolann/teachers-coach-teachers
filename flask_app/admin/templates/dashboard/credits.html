@@ -167,10 +167,28 @@
 
         <!-- Manage Users Tab -->
         <div class="tab-pane fade" id="manage" role="tabpanel">
-            <h3>Manage Users</h3>
-            <div class="alert alert-info">
-                User pool management coming soon. Here you'll be able to create user pools and assign users to them.
-            </div>
+            <h3>Manage Pool Access</h3>
+            <form id="addUserForm" class="mb-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="userEmailAccess">User Email</label>
+                            <input type="email" class="form-control" id="userEmailAccess" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="poolCode">Pool Code</label>
+                            <input type="text" class="form-control" id="poolCode" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary mt-4">Add User to Pool</button>
+                    </div>
+                </div>
+            </form>
+
+            <div id="accessMessage" class="alert" style="display: none;"></div>
         </div>
     </div>
 </div>
@@ -324,6 +342,51 @@ document.getElementById('generateForm').addEventListener('submit', async functio
         }
     } catch (error) {
         alert('Failed to generate codes. Please try again.');
+    }
+});
+
+// Handle adding user to pool
+document.getElementById('addUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const userEmail = document.getElementById('userEmailAccess').value;
+    const poolCode = document.getElementById('poolCode').value;
+    
+    try {
+        const response = await fetch('/api/credits/pools/access', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                user_email: userEmail,
+                pool_code: poolCode
+            })
+        });
+        
+        const data = await response.json();
+        const messageDiv = document.getElementById('accessMessage');
+        
+        if (response.ok) {
+            messageDiv.className = 'alert alert-success';
+            messageDiv.textContent = 'User successfully added to pool';
+            // Clear the form
+            document.getElementById('userEmailAccess').value = '';
+            document.getElementById('poolCode').value = '';
+        } else {
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.textContent = data.error || 'Failed to add user to pool';
+        }
+        messageDiv.style.display = 'block';
+        
+        // Hide message after 5 seconds
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to add user to pool. Please try again.');
     }
 });
 

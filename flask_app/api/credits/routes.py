@@ -115,36 +115,38 @@ def update_pool(pool_id):
         db.session.rollback()
         return jsonify({'error': 'Failed to update pool'}), 500
 
-@credits_bp.route('/pools/<int:pool_id>/users', methods=['POST'], endpoint='add_user_to_pool')
+@credits_bp.route('/pools/access', methods=['POST'], endpoint='add_pool_access')
 @require_district_admin
-def add_user_to_pool(pool_id):
-    """Add a user to a credit pool"""
-    pool = CreditPool.query.get(pool_id)
-    if not pool:
-        return jsonify({'error': 'Pool not found'}), 404
-        
-    if pool.owner_id != session.get('user_id'):
-        return jsonify({'error': 'Unauthorized to modify this pool'}), 403
-        
+def add_pool_access():
+    """Add a user access to a credit pool by pool code"""
     data = request.get_json()
-    user_identifier = data.get('user_identifier')  # email or cognito_sub
+    user_email = data.get('user_email')
+    pool_code = data.get('pool_code')
     
-    if not user_identifier:
-        return jsonify({'error': 'User identifier required'}), 400
+    if not user_email or not pool_code:
+        return jsonify({'error': 'User email and pool code are required'}), 400
         
     try:
-        user = User.query.filter(
-            (User.email == user_identifier) |
-            (User.cognito_sub == user_identifier)
+        # Find the pool by code
+        pool = CreditPool.query.filter_by(pool_code=pool_code).first()
+        if not pool:
+            return jsonify({'error': 'Pool not found'}), 404
+            
+        # Check if user already has access
+        existing_access = CreditPoolAccess.query.filter_by(
+            pool_id=pool.id,
+            user_email=user_email
         ).first()
         
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
+        if existing_access:
+            return jsonify({'error': 'User already has access to this pool'}), 400
             
-        if user in pool.users:
-            return jsonify({'error': 'User already in pool'}), 400
-            
-        pool.users.append(user)
+        # Create new access record
+        access = CreditPoolAccess(
+            pool_id=pool.id,
+            user_email=user_email
+        )
+        db.session.add(access)
         db.session.commit()
         
         return jsonify({
