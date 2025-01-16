@@ -321,12 +321,11 @@ document.getElementById('redeemForm').addEventListener('submit', async function(
                 row => row.cells[0].textContent.trim() === data.code
             );
             if (row) {
-                row.classList.add('table-secondary');
-                row.cells[3].innerHTML = '<span class="badge bg-secondary">Redeemed</span>';
+               row.classList.add('table-secondary');
+               row.cells[3].innerHTML = '<span class="badge bg-secondary">Redeemed</span>';
             }
             // Clear the form
             document.getElementById('code').value = '';
-            document.getElementById('user_identifier').value = '';
         } else {
             alert('Error: ' + data.error);
         }
