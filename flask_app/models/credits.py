@@ -40,9 +40,6 @@ class CreditPool(db.Model):
         index=True
     )
 
-    # Relationships
-    access_grants = relationship("CreditPoolAccess", back_populates="pool", cascade="all, delete-orphan")
-    redemptions = relationship("CreditRedemption", back_populates="credit_pool")
     
     @classmethod
     def generate_unique_code(cls):
@@ -79,8 +76,6 @@ class CreditPoolAccess(db.Model):
         server_default=db.func.now()
     )
 
-    # Relationships
-    pool = relationship("CreditPool", back_populates="access_grants")
 
 class CreditRedemption(db.Model):
     """CreditRedemption Model for tracking credit code creation and redemption"""
@@ -115,8 +110,6 @@ class CreditRedemption(db.Model):
     redeemed_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime, nullable=True)
     redeemed_by_email: Mapped[Optional[str]] = mapped_column(db.String(255), nullable=True)
 
-    # Relationships
-    credit_pool = relationship("CreditPool", back_populates="redemptions")
 
     @classmethod
     def generate_unique_code(cls):

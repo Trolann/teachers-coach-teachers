@@ -25,11 +25,6 @@ class User(db.Model):
     email: Mapped[str] = mapped_column(db.String(120), unique=True, nullable=False)
     cognito_sub: Mapped[Optional[str]] = mapped_column(db.String(100), unique=True, nullable=True)
 
-    # Relationships
-    owned_pools = relationship("CreditPool", 
-                             primaryjoin="User.id==CreditPool.owner_id",
-                             backref="owner",
-                             cascade="all, delete-orphan")
 
     def __init__(self, email, cognito_sub=None):
         logger.debug(f"Creating new User with email: {email[:3]}***{email[-4:]}")
@@ -43,20 +38,23 @@ class User(db.Model):
         """Create a new credit pool owned by this user"""
         from .credits import CreditPool
         pool = CreditPool(owner_id=self.id, name=name)
-        self.owned_pools.append(pool)
+        db.session.add(pool)
         return pool
 
     def get_accessible_pools(self) -> List["CreditPool"]:
         """Get all credit pools this user has access to (owned + granted access)"""
         from .credits import CreditPool, CreditPoolAccess
+        
         # Get pools user owns
-        owned_pools = set(self.owned_pools)
+        owned_pools = CreditPool.query.filter_by(owner_id=self.id).all()
         
         # Get pools user has been granted access to
         access_grants = CreditPoolAccess.query.filter_by(user_email=self.email).all()
-        accessible_pools = set(grant.pool for grant in access_grants)
+        pool_ids = [grant.pool_id for grant in access_grants]
+        accessible_pools = CreditPool.query.filter(CreditPool.id.in_(pool_ids)).all()
         
-        return list(owned_pools | accessible_pools)
+        # Combine both sets of pools
+        return list(set(owned_pools + accessible_pools))
 
     def has_pool_access(self, pool_id: str) -> bool:
         """Check if user has access to a specific pool"""
