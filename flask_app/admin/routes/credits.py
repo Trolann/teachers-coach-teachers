@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, request, flash, session, redirect, url_for
+from flask import Blueprint, render_template, request, flash, session, redirect, url_for, jsonify
 from extensions.logging import get_logger
 from os import path
 from models.credits import CreditRedemption, CreditTransfer
+from models.user import User
 from extensions.database import db
 from extensions.cognito import require_auth
 
@@ -18,6 +19,20 @@ admin_credits_bp = Blueprint('admin_credits', __name__,
                                static_url_path='/admin/static',
                                template_folder=template_dir)
 
+
+@admin_credits_bp.route('/search-users', methods=['GET'])
+@require_auth
+def search_users():
+    """Search users by email"""
+    query = request.args.get('q', '').lower()
+    if not query:
+        return jsonify([])
+    
+    users = User.query.filter(User.email.ilike(f'%{query}%')).limit(10).all()
+    return jsonify([{
+        'email': user.email,
+        'id': user.id
+    } for user in users])
 
 @admin_credits_bp.route('/', methods=['GET', 'POST'])
 @require_auth

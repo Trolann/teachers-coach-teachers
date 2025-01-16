@@ -95,14 +95,24 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="code">Credit Code</label>
-                            <input type="text" class="form-control" id="code" name="code" required>
+                            <label for="userEmail">User Email</label>
+                            <input type="text" class="form-control" id="userEmail" 
+                                   list="userSuggestions" autocomplete="off" required>
+                            <datalist id="userSuggestions"></datalist>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
+                            <label for="code">Credit Code</label>
+                            <input type="text" class="form-control" id="code" name="code" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
                             <label for="pool_id">Select Pool</label>
-                            <select class="form-control" id="pool_id" name="pool_id" required>
+                            <select class="form-control" id="pool_id" name="pool_id" required disabled>
                                 <option value="">Choose a pool...</option>
                             </select>
                         </div>
@@ -164,8 +174,8 @@
 </div>
 
 <script>
-// Load pools on page load and tab switch
-async function loadPools() {
+// Load pools for a specific user
+async function loadPoolsForUser(userEmail) {
     try {
         const response = await fetch('/api/credits/pools');
         const data = await response.json();
@@ -209,8 +219,51 @@ async function loadPools() {
 }
 
 // Load pools when switching to pools tab
-document.querySelector('#pools-tab').addEventListener('click', loadPools);
-document.querySelector('#redeem-tab').addEventListener('click', loadPools);
+// User email search functionality
+let userSearchTimeout;
+document.getElementById('userEmail').addEventListener('input', function(e) {
+    clearTimeout(userSearchTimeout);
+    const query = e.target.value;
+    
+    if (query.length < 2) {
+        document.getElementById('userSuggestions').innerHTML = '';
+        document.getElementById('pool_id').disabled = true;
+        return;
+    }
+    
+    userSearchTimeout = setTimeout(async () => {
+        try {
+            const response = await fetch(`/admin/credits/search-users?q=${encodeURIComponent(query)}`);
+            const users = await response.json();
+            
+            const datalist = document.getElementById('userSuggestions');
+            datalist.innerHTML = users.map(user => 
+                `<option value="${user.email}">`
+            ).join('');
+        } catch (error) {
+            console.error('Error searching users:', error);
+        }
+    }, 300);
+});
+
+// When user email is selected, load their pools
+document.getElementById('userEmail').addEventListener('change', async function(e) {
+    const userEmail = e.target.value;
+    if (userEmail) {
+        document.getElementById('pool_id').disabled = false;
+        await loadPoolsForUser(userEmail);
+    } else {
+        document.getElementById('pool_id').disabled = true;
+    }
+});
+
+document.querySelector('#pools-tab').addEventListener('click', () => loadPoolsForUser(''));
+document.querySelector('#redeem-tab').addEventListener('click', () => {
+    const userEmail = document.getElementById('userEmail').value;
+    if (userEmail) {
+        loadPoolsForUser(userEmail);
+    }
+});
 
 // Create new pool
 document.getElementById('createPoolForm').addEventListener('submit', async function(e) {
@@ -297,6 +350,7 @@ document.getElementById('redeemForm').addEventListener('submit', async function(
     
     const code = document.getElementById('code').value;
     const pool_id = document.getElementById('pool_id').value;
+    const userEmail = document.getElementById('userEmail').value;
     
     if (!pool_id) {
         alert('Please select a pool');
