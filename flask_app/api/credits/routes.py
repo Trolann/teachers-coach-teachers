@@ -227,6 +227,17 @@ def generate_credits():
         db.session.rollback()
         return jsonify({'error': 'Failed to generate codes'}), 500
 
+@credits_bp.route('/debug/session', methods=['GET'])
+@require_district_admin
+def debug_session():
+    """Debug endpoint to check session contents"""
+    return jsonify({
+        'session_contents': {k: v for k, v in session.items()},
+        'user_id': session.get('user_id'),
+        'email': session.get('email'),
+        'access_token': bool(session.get('access_token'))  # Just return if present
+    })
+
 @credits_bp.route('/redeem', methods=['POST'], endpoint='redeem_credit')
 @require_district_admin
 def redeem_credit():
@@ -261,16 +272,31 @@ def redeem_credit():
         # Add credits to pool
         if pool.credits_available is None:
             pool.credits_available = 0
+            
+        # Get user email from session
+        user_email = session.get('email')
+        logger.info(f"Attempting redemption with email: {user_email}")
+        
         pool.credits_available += credit.amount
         credit.credit_pool_id = pool.id
         credit.redeemed_at = datetime.utcnow()
-        credit.redeemed_by_email = session.get('email')
+        credit.redeemed_by_email = user_email
+        
+        # Log state before commit
+        logger.info(f"Pre-commit state - Pool {pool_id}: credits_available={pool.credits_available}, "
+                   f"code: {code}, redeemed_by_email: {credit.redeemed_by_email}")
         
         # Commit the nested transaction
         db.session.commit()
         
-        # Log successful redemption
-        logger.info(f"Successfully redeemed code {code} for {credit.amount} credits to pool {pool_id}")
+        # Verify the changes after commit
+        db.session.refresh(credit)
+        db.session.refresh(pool)
+        
+        # Log final state
+        logger.info(f"Successfully redeemed code {code} for {credit.amount} credits to pool {pool_id}. "
+                   f"Final state - redeemed_by_email: {credit.redeemed_by_email}, "
+                   f"credits_available: {pool.credits_available}")
         
         return jsonify({
             'success': True,
