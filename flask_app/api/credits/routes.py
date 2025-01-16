@@ -61,6 +61,7 @@ def generate_credits():
 #@require_auth
 def redeem_credit():
     """Redeem a credit code for a user"""
+    # TODO: This should redeem a credit to the new CreditPool instead of a user.
     data = request.get_json()
     code = data.get('code')
     user_identifier = data.get('user_identifier')  # Can be cognito_sub or email
@@ -100,3 +101,8 @@ def redeem_credit():
         logger.error(f"Error redeeming credits: {e}")
         db.session.rollback()
         return jsonify({'error': 'Failed to redeem credits'}), 500
+
+
+# TODO: Need routes for: CRUD operations (new pool, add credits, add users,
+#  users can see # of credits, disable) on CreditPool.
+
