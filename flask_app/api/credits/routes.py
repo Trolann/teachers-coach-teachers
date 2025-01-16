@@ -60,8 +60,7 @@ def create_pool():
     try:
         pool = CreditPool(
             name=name,
-            owner_id=session.get('user_id'),
-            is_active=True
+            owner_id=session.get('user_id')
         )
         db.session.add(pool)
         db.session.commit()
