@@ -57,7 +57,12 @@ class CreditPool(db.Model):
         self.name = name
         self.pool_code = self.generate_unique_code()
         self.is_active = is_active
-        self.credits_available = 0
+        self.credits_available = 0  # Explicitly initialize to 0
+        
+        # Validate initialization
+        if self.credits_available is None:
+            logger.error("credits_available was None after initialization")
+            raise ValueError("credits_available cannot be None")
 
 class CreditPoolAccess(db.Model):
     """Model for managing access to credit pools"""

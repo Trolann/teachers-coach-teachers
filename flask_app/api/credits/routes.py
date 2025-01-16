@@ -239,13 +239,18 @@ def redeem_credit():
         return jsonify({'error': 'Missing required fields'}), 400
         
     try:
-        # Find the credit code
-        credit = CreditRedemption.query.filter_by(code=code, credit_pool_id=None).first()
+        # Start a transaction with strong isolation
+        db.session.begin_nested()
+        
+        # Find and lock the credit code for update
+        credit = CreditRedemption.query.filter_by(code=code, credit_pool_id=None)\
+            .with_for_update().first()
         if not credit:
             return jsonify({'error': 'Invalid or already redeemed code'}), 400
             
-        # Find the pool
-        pool = CreditPool.query.get(pool_id)
+        # Find and lock the pool for update
+        pool = CreditPool.query.filter_by(id=pool_id)\
+            .with_for_update().first()
         if not pool:
             return jsonify({'error': 'Pool not found'}), 404
             
@@ -254,12 +259,18 @@ def redeem_credit():
             return jsonify({'error': 'Unauthorized to redeem to this pool'}), 403
 
         # Add credits to pool
+        if pool.credits_available is None:
+            pool.credits_available = 0
         pool.credits_available += credit.amount
         credit.credit_pool_id = pool.id
         credit.redeemed_at = datetime.utcnow()
         credit.redeemed_by_email = session.get('email')
         
+        # Commit the nested transaction
         db.session.commit()
+        
+        # Log successful redemption
+        logger.info(f"Successfully redeemed code {code} for {credit.amount} credits to pool {pool_id}")
         
         return jsonify({
             'success': True,
