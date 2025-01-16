@@ -26,13 +26,17 @@ def require_district_admin(f):
 @credits_bp.route('/pools', methods=['GET'], endpoint='list_pools')
 @require_district_admin
 def list_pools():
-    """List credit pools owned by the current user"""
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({'error': 'Authentication required'}), 401
+    """List credit pools owned by a specific user"""
+    user_email = request.args.get('user_email')
+    if not user_email:
+        return jsonify({'error': 'User email required'}), 400
 
     try:
-        pools = CreditPool.query.filter_by(owner_id=user_id).all()
+        user = User.query.filter_by(email=user_email).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        pools = CreditPool.query.filter_by(owner_id=user.id).all()
         return jsonify({
             'pools': [{
                 'id': pool.id,

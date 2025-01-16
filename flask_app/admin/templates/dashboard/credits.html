@@ -109,18 +109,18 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="code">Credit Code</label>
-                            <input type="text" class="form-control" id="code" name="code" required>
+                            <label for="pool_id">Select Pool</label>
+                            <select class="form-control" id="pool_id" name="pool_id" required disabled>
+                                <option value="">Choose a pool...</option>
+                            </select>
                         </div>
                     </div>
                 </div>
                 <div class="row mt-3">
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="pool_id">Select Pool</label>
-                            <select class="form-control" id="pool_id" name="pool_id" required disabled>
-                                <option value="">Choose a pool...</option>
-                            </select>
+                            <label for="code">Credit Code</label>
+                            <input type="text" class="form-control" id="code" name="code" required>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -182,8 +182,15 @@
 <script>
 // Load pools for a specific user
 async function loadPoolsForUser(userEmail) {
+    if (!userEmail) {
+        const poolSelect = document.getElementById('pool_id');
+        poolSelect.innerHTML = '<option value="">Choose a pool...</option>';
+        poolSelect.disabled = true;
+        return;
+    }
+
     try {
-        const response = await fetch('/api/credits/pools');
+        const response = await fetch(`/api/credits/pools?user_email=${encodeURIComponent(userEmail)}`);
         const data = await response.json();
         
         // Update pools table
