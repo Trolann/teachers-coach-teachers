@@ -238,25 +238,28 @@ $(document).ready(function() {
         placeholder: 'Search for a user...',
         allowClear: true,
         minimumInputLength: 0,
+        width: '100%',
         ajax: {
             url: '/admin/credits/search-users',
             dataType: 'json',
             delay: 250,
             data: function(params) {
                 return {
-                    q: params.term
+                    q: params.term || ''  // Handle null/undefined
                 };
             },
             processResults: function(data) {
-                return {
-                    results: data.map(user => ({
-                        id: user.email,
-                        text: user.email
-                    }))
-                };
+                return data;  // API now returns properly formatted data
             },
             cache: true
         }
+    }).on('select2:open', function() {
+        // Trigger search immediately when opened
+        var select2 = $(this).data('select2');
+        setTimeout(function() {
+            select2.dropdown.$search.get(0).focus();
+            select2.dropdown.$search.trigger('input');
+        }, 0);
     });
 
     // When user email is selected, load their pools

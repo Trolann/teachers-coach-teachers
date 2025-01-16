@@ -31,10 +31,17 @@ def search_users():
         users = User.query.limit(10).all()
     else:
         users = User.query.filter(User.email.ilike(f'%{query}%')).limit(10).all()
-    return jsonify([{
-        'email': user.email,
-        'id': user.id
-    } for user in users])
+    
+    # Format response for select2
+    return jsonify({
+        'results': [{
+            'id': user.email,  # Use email as ID since that's what we need
+            'text': user.email  # Text to display in dropdown
+        } for user in users],
+        'pagination': {
+            'more': False  # No pagination for now
+        }
+    })
 
 @admin_credits_bp.route('/', methods=['GET', 'POST'])
 @require_auth
