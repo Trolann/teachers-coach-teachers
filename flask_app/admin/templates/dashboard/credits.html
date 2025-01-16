@@ -101,12 +101,14 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="user_identifier">User Email or ID</label>
-                            <input type="text" class="form-control" id="user_identifier" name="user_identifier" required>
+                            <label for="pool_id">Select Pool</label>
+                            <select class="form-control" id="pool_id" name="pool_id" required>
+                                <option value="">Choose a pool...</option>
+                            </select>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <button type="submit" class="btn btn-success mt-4">Redeem Code</button>
+                        <button type="submit" class="btn btn-success mt-4">Redeem to Pool</button>
                     </div>
                 </div>
             </form>
@@ -115,8 +117,39 @@
         <!-- Credit Pools Tab -->
         <div class="tab-pane fade" id="pools" role="tabpanel">
             <h3>Credit Pools</h3>
-            <div class="alert alert-info">
-                Credit pools management coming soon. This will show all credit pools, their owners, and available credits.
+            
+            <!-- Create Pool Form -->
+            <form id="createPoolForm" class="mb-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="poolName">Pool Name</label>
+                            <input type="text" class="form-control" id="poolName" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary mt-4">Create Pool</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Pools List -->
+            <div class="table-responsive">
+                <table class="table" id="poolsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Code</th>
+                            <th>Credits Available</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Pools will be populated here -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -131,6 +164,105 @@
 </div>
 
 <script>
+// Load pools on page load and tab switch
+async function loadPools() {
+    try {
+        const response = await fetch('/api/credits/pools');
+        const data = await response.json();
+        
+        // Update pools table
+        const tbody = document.querySelector('#poolsTable tbody');
+        tbody.innerHTML = '';
+        
+        // Update pool select in redeem form
+        const poolSelect = document.getElementById('pool_id');
+        poolSelect.innerHTML = '<option value="">Choose a pool...</option>';
+        
+        data.pools.forEach(pool => {
+            // Add to table
+            tbody.innerHTML += `
+                <tr>
+                    <td>${pool.name}</td>
+                    <td>${pool.code}</td>
+                    <td>${pool.credits_available}</td>
+                    <td>${new Date(pool.created_at).toLocaleString()}</td>
+                    <td>
+                        <span class="badge bg-${pool.is_active ? 'success' : 'secondary'}">
+                            ${pool.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="togglePoolStatus(${pool.id}, ${!pool.is_active})">
+                            ${pool.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            // Add to select
+            poolSelect.innerHTML += `<option value="${pool.id}">${pool.name}</option>`;
+        });
+    } catch (error) {
+        console.error('Error loading pools:', error);
+        alert('Failed to load credit pools');
+    }
+}
+
+// Load pools when switching to pools tab
+document.querySelector('#pools-tab').addEventListener('click', loadPools);
+document.querySelector('#redeem-tab').addEventListener('click', loadPools);
+
+// Create new pool
+document.getElementById('createPoolForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('poolName').value;
+    
+    try {
+        const response = await fetch('/api/credits/pools', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Pool created successfully');
+            document.getElementById('poolName').value = '';
+            loadPools();  // Refresh the pools list
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Failed to create pool');
+    }
+});
+
+// Toggle pool status
+async function togglePoolStatus(poolId, newStatus) {
+    try {
+        const response = await fetch(`/api/credits/pools/${poolId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ is_active: newStatus })
+        });
+        
+        if (response.ok) {
+            loadPools();  // Refresh the pools list
+        } else {
+            const data = await response.json();
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Failed to update pool status');
+    }
+}
+
 document.getElementById('generateForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -164,7 +296,12 @@ document.getElementById('redeemForm').addEventListener('submit', async function(
     e.preventDefault();
     
     const code = document.getElementById('code').value;
-    const user_identifier = document.getElementById('user_identifier').value;
+    const pool_id = document.getElementById('pool_id').value;
+    
+    if (!pool_id) {
+        alert('Please select a pool');
+        return;
+    }
     
     try {
         const response = await fetch('/api/credits/redeem', {
@@ -172,7 +309,7 @@ document.getElementById('redeemForm').addEventListener('submit', async function(
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ code, user_identifier })
+            body: JSON.stringify({ code, pool_id })
         });
         
         const data = await response.json();
