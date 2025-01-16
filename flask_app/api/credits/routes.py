@@ -238,25 +238,27 @@ def redeem_credit():
     if not code or not pool_id:
         return jsonify({'error': 'Missing required fields'}), 400
         
-    # Find the credit code
-    credit = CreditRedemption.query.filter_by(code=code, credit_pool_id=None).first()
-    if not credit:
-        return jsonify({'error': 'Invalid or already redeemed code'}), 400
-        
-    # Find the pool
-    pool = CreditPool.query.get(pool_id)
-    if not pool:
-        return jsonify({'error': 'Pool not found'}), 404
-        
-    # Verify pool ownership
-    if pool.owner_id != session.get('user_id'):
-        return jsonify({'error': 'Unauthorized to redeem to this pool'}), 403
-        
     try:
+        # Find the credit code
+        credit = CreditRedemption.query.filter_by(code=code, credit_pool_id=None).first()
+        if not credit:
+            return jsonify({'error': 'Invalid or already redeemed code'}), 400
+            
+        # Find the pool
+        pool = CreditPool.query.get(pool_id)
+        if not pool:
+            return jsonify({'error': 'Pool not found'}), 404
+            
+        # Verify pool ownership
+        if pool.owner_id != session.get('user_id'):
+            return jsonify({'error': 'Unauthorized to redeem to this pool'}), 403
+
         # Add credits to pool
-        pool.credits_available = (pool.credits_available or 0) + credit.amount
+        pool.credits_available += credit.amount
         credit.credit_pool_id = pool.id
         credit.redeemed_at = datetime.utcnow()
+        credit.redeemed_by_email = session.get('email')
+        
         db.session.commit()
         
         return jsonify({

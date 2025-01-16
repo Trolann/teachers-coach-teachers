@@ -52,12 +52,12 @@ class CreditPool(db.Model):
             if not exists:
                 return code
 
-    def __init__(self, owner_id: str, name: str, is_active: bool = True, credits_available: int = 0):
+    def __init__(self, owner_id: str, name: str, is_active: bool = True):
         self.owner_id = owner_id
         self.name = name
         self.pool_code = self.generate_unique_code()
         self.is_active = is_active
-        self.credits_available = credits_available
+        self.credits_available = 0
 
 class CreditPoolAccess(db.Model):
     """Model for managing access to credit pools"""
