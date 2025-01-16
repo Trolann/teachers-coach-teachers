@@ -71,12 +71,12 @@
         </thead>
         <tbody>
             {% for code in credit_codes %}
-            <tr class="{{ 'table-secondary' if code.redeemed_by else '' }}">
+            <tr class="{{ 'table-secondary' if code.redeemed_by_email else '' }}">
                 <td>{{ code.code }}</td>
                 <td>{{ code.amount }}</td>
                 <td>{{ code.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                 <td>
-                    {% if code.redeemed_by %}
+                    {% if code.redeemed_by_email %}
                         <span class="badge bg-secondary">Redeemed</span>
                     {% else %}
                         <span class="badge bg-success">Available</span>
