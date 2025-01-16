@@ -25,10 +25,12 @@ admin_credits_bp = Blueprint('admin_credits', __name__,
 def search_users():
     """Search users by email"""
     query = request.args.get('q', '').lower()
-    if not query:
-        return jsonify([])
     
-    users = User.query.filter(User.email.ilike(f'%{query}%')).limit(10).all()
+    # If query is empty, return first 10 users
+    if not query:
+        users = User.query.limit(10).all()
+    else:
+        users = User.query.filter(User.email.ilike(f'%{query}%')).limit(10).all()
     return jsonify([{
         'email': user.email,
         'id': user.id

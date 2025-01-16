@@ -237,7 +237,7 @@ $(document).ready(function() {
     $('.select2-user-search').select2({
         placeholder: 'Search for a user...',
         allowClear: true,
-        minimumInputLength: 2,
+        minimumInputLength: 0,
         ajax: {
             url: '/admin/credits/search-users',
             dataType: 'json',
