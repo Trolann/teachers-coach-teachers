@@ -33,13 +33,14 @@ cp .env.example .env
   - The `.env` must remain in the repository root
   - LOG_LEVEL is the log level for our backend. 
   - FLASK_LOG_LEVEL is the log level for the Flask/Waitress web server
+  - UID/GID are the User ID/Group ID the docker container should run at. This should be the output from `id -u` and `id -g` on your local machine.
   - POSTGRES_USER, POSTGRES_PASSWORD can be any value for local development
   - POSTGRES_DB should remain as tct_database
   - SQLALCHEMY_DATABASE_URI should remain as is to reach the database over the docker network
-  - COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET get from Trevor
   - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
   - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
   - FLASK_ENV should remain as development for local development
+  - COGNITO_* and AWS_* you must get from Trevor
 ---
 
 ## **Project Structure**
@@ -84,6 +85,19 @@ The project structure looks like this:
 Use Docker Compose to build the project images:
 ```bash
 docker compose build
+```
+
+## **1.a. Initalize the database and apply the first migration/upgrade**
+This is necessary to initially build the database or after removing the `tct_postgres_data` volums such as `docker volume rm flaskproject_tct_postgres_data`. You can skip this step if you have ran the database before.
+```bash
+# Initalize Flask-Migrate
+docker compose run --rm -e FLASK_APP=manage.py backend flask db init
+
+# Create an initial migration
+docker compose run --rm -e FLASK_APP=manage.py backend flask db migrate
+
+# Apply migration
+docker compose run --rm -e FLASK_APP=manage.py backend flask db upgrade
 ```
 
 ---
@@ -163,12 +177,16 @@ Or for a single service in the stack with
 docker compose logs -f <service_name>
 ```
 
+If you have previously ran the containers, some of your files may be owned by root. Run the following to change the ownership of all files from the top level directory down to the current user:
+```bash
+sudo chown -R $USER:$USER .
+```
+
+Then rerun `docker compose up` to start the services.
+
 ### **4. Flask database migrations and management**
 To run database migrations, you can use the following commands:
 ```bash
-# Initialize migrations (first time only)
-docker compose run --rm -e FLASK_APP=manage.py backend flask db init
-
 # Create new migration
 docker compose run --rm -e FLASK_APP=manage.py backend flask db migrate -m "Description"
 
@@ -176,7 +194,7 @@ docker compose run --rm -e FLASK_APP=manage.py backend flask db migrate -m "Desc
 docker compose run --rm -e FLASK_APP=manage.py backend flask db upgrade
 ```
 This will initialize the migrations directory, create an initial migration, and apply the migration to the database.
-A migration is necessary whenever the database models change.
+A migration is necessary whenever the database models change or during the first startup.
 
 *Note*: If you are not having success ensure you have imported the new models within the flask application.
 
@@ -184,7 +202,7 @@ A migration is necessary whenever the database models change.
 You can completely blow-out the database you have locally and start fresh with:
 ```bash
 docker compose down -v --remove-orphans && \
-docker volume rm flaskproject_postgres_data && \
+docker volume rm flaskproject_tct_postgres_data && \
 docker compose up --build -d
 ```
 **THIS WILL DELETE ALL DATA IN THE DATABASE**
