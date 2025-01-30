@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Credits Management</h2>
+
+    <ul class="nav nav-tabs mb-4" id="creditTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab">
+                Generate Codes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="redeem-tab" data-bs-toggle="tab" data-bs-target="#redeem" type="button" role="tab">
+                Redeem Credits
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pools-tab" data-bs-toggle="tab" data-bs-target="#pools" type="button" role="tab">
+                Credit Pools
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="manage-tab" data-bs-toggle="tab" data-bs-target="#manage" type="button" role="tab">
+                Manage Users
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="creditTabsContent">
+        <!-- Generate Codes Tab -->
+        <div class="tab-pane fade show active" id="generate" role="tabpanel">
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form id="generateForm" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="num_codes">Number of Codes</label>
+                    <input type="number" class="form-control" id="num_codes" name="num_codes" value="1" min="1" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="credits_per_code">Credits per Code</label>
+                    <input type="number" class="form-control" id="credits_per_code" name="credits_per_code" value="1" min="1" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary mt-4">Generate Codes</button>
+            </div>
+        </div>
+    </form>
+
+    <h3>Generated Codes</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Credits</th>
+                <th>Created</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for code in credit_codes %}
+            <tr class="{{ 'table-secondary' if code.redeemed_by_email else '' }}">
+                <td>{{ code.code }}</td>
+                <td>{{ code.amount }}</td>
+                <td>{{ code.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>
+                    {% if code.redeemed_by_email %}
+                        <span class="badge bg-secondary">Redeemed</span>
+                    {% else %}
+                        <span class="badge bg-success">Available</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+        </div>
+
+        <!-- Redeem Credits Tab -->
+        <div class="tab-pane fade" id="redeem" role="tabpanel">
+            <h3>Redeem Code</h3>
+            <form id="redeemForm" class="mb-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="userEmail">User Email</label>
+                            <input type="email" class="form-control" id="userEmail" 
+                                   placeholder="Enter user email" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="pool_id">Select Pool</label>
+                            <select class="form-control" id="pool_id" name="pool_id" required disabled>
+                                <option value="">Choose a pool...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="code">Credit Code</label>
+                            <input type="text" class="form-control" id="code" name="code" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-success mt-4">Redeem to Pool</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Credit Pools Tab -->
+        <div class="tab-pane fade" id="pools" role="tabpanel">
+            <h3>Credit Pools</h3>
+            
+            <!-- Create Pool Form -->
+            <form id="createPoolForm" class="mb-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="poolName">Pool Name</label>
+                            <input type="text" class="form-control" id="poolName" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary mt-4">Create Pool</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Pools List -->
+            <div class="table-responsive">
+                <table class="table" id="poolsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Code</th>
+                            <th>Credits Available</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Pools will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Users Tab -->
+        <div class="tab-pane fade" id="manage" role="tabpanel">
+            <h3>Manage Pool Access</h3>
+            <form id="addUserForm" class="mb-4">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="userEmailAccess">User Email</label>
+                            <input type="email" class="form-control" id="userEmailAccess" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="poolCode">Pool Code</label>
+                            <input type="text" class="form-control" id="poolCode" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary mt-4">Add User to Pool</button>
+                    </div>
+                </div>
+            </form>
+
+            <div id="accessMessage" class="alert" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load pools for a specific user
+async function loadPoolsForUser(userEmail) {
+    if (!userEmail) {
+        const poolSelect = document.getElementById('pool_id');
+        poolSelect.innerHTML = '<option value="">Choose a pool...</option>';
+        poolSelect.disabled = true;
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/credits/pools?user_email=${encodeURIComponent(userEmail)}`);
+        const data = await response.json();
+        
+        // Update pools table
+        const tbody = document.querySelector('#poolsTable tbody');
+        tbody.innerHTML = '';
+        
+        // Update pool select in redeem form
+        const poolSelect = document.getElementById('pool_id');
+        poolSelect.innerHTML = '<option value="">Choose a pool...</option>';
+        
+        data.pools.forEach(pool => {
+            // Add to table
+            tbody.innerHTML += `
+                <tr>
+                    <td>${pool.name}</td>
+                    <td>${pool.code}</td>
+                    <td>${pool.credits_available !== null ? pool.credits_available : 'N/A'}</td>
+                    <td>${new Date(pool.created_at).toLocaleString()}</td>
+                    <td>
+                        <span class="badge bg-${pool.is_active ? 'success' : 'secondary'}">
+                            ${pool.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="togglePoolStatus(${pool.id}, ${!pool.is_active})">
+                            ${pool.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            // Add to select
+            poolSelect.innerHTML += `<option value="${pool.id}">${pool.name}</option>`;
+        });
+    } catch (error) {
+        console.error('Error loading pools:', error);
+        alert('Failed to load credit pools');
+    }
+}
+
+// Function to load and display pools
+async function loadPools() {
+    try {
+        const response = await fetch('/api/credits/pools');
+        const data = await response.json();
+        
+        const tbody = document.querySelector('#poolsTable tbody');
+        tbody.innerHTML = '';
+        
+        if (data.pools) {
+            data.pools.forEach(pool => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${pool.name}</td>
+                        <td>${pool.code}</td>
+                        <td>${pool.credits_available !== null ? pool.credits_available : 'N/A'}</td>
+                        <td>${new Date(pool.created_at).toLocaleString()}</td>
+                        <td>
+                            <span class="badge bg-${pool.is_active ? 'success' : 'secondary'}">
+                                ${pool.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="togglePoolStatus('${pool.id}', ${!pool.is_active})">
+                                ${pool.is_active ? 'Deactivate' : 'Activate'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    } catch (error) {
+        console.error('Error loading pools:', error);
+        alert('Failed to load credit pools');
+    }
+}
+
+// Initialize pools on page load and when switching to pools tab
+document.addEventListener('DOMContentLoaded', loadPools);
+// When user email changes, load their pools
+document.getElementById('userEmail').addEventListener('change', async function(e) {
+    const userEmail = e.target.value;
+    if (userEmail) {
+        document.getElementById('pool_id').disabled = false;
+        await loadPoolsForUser(userEmail);
+    } else {
+        document.getElementById('pool_id').disabled = true;
+    }
+});
+
+document.querySelector('#pools-tab').addEventListener('click', () => loadPoolsForUser(''));
+document.querySelector('#redeem-tab').addEventListener('click', () => {
+    const userEmail = document.getElementById('userEmail').value;
+    if (userEmail) {
+        loadPoolsForUser(userEmail);
+    }
+});
+
+// Create new pool
+document.getElementById('createPoolForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('poolName').value;
+    
+    try {
+        const response = await fetch('/api/credits/pools', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Pool created successfully');
+            document.getElementById('poolName').value = '';
+            loadPools();  // Refresh the pools list
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Failed to create pool');
+    }
+});
+
+// Toggle pool status
+async function togglePoolStatus(poolId, newStatus) {
+    try {
+        const response = await fetch(`/api/credits/pools/${poolId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ is_active: newStatus })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Refresh the pools list
+            await loadPools();
+        } else {
+            console.error('Error updating pool status:', data.error);
+            alert('Error: ' + (data.error || 'Failed to update pool status'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to update pool status');
+    }
+}
+
+document.getElementById('generateForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const num_codes = parseInt(document.getElementById('num_codes').value);
+    const credits_per_code = parseInt(document.getElementById('credits_per_code').value);
+    
+    try {
+        const response = await fetch('/api/credits/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ num_codes, credits_per_code })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Success: ' + data.message);
+            // Reload the page to show new codes
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Failed to generate codes. Please try again.');
+    }
+});
+
+// Handle adding user to pool
+document.getElementById('addUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const userEmail = document.getElementById('userEmailAccess').value;
+    const poolCode = document.getElementById('poolCode').value;
+    
+    try {
+        const response = await fetch('/api/credits/pools/access', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                user_email: userEmail,
+                pool_code: poolCode
+            })
+        });
+        
+        const data = await response.json();
+        const messageDiv = document.getElementById('accessMessage');
+        
+        if (response.ok) {
+            messageDiv.className = 'alert alert-success';
+            messageDiv.textContent = 'User successfully added to pool';
+            // Clear the form
+            document.getElementById('userEmailAccess').value = '';
+            document.getElementById('poolCode').value = '';
+        } else {
+            messageDiv.className = 'alert alert-danger';
+            messageDiv.textContent = data.error || 'Failed to add user to pool';
+        }
+        messageDiv.style.display = 'block';
+        
+        // Hide message after 5 seconds
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to add user to pool. Please try again.');
+    }
+});
+
+document.getElementById('redeemForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const code = document.getElementById('code').value;
+    const pool_id = document.getElementById('pool_id').value;
+    const userEmail = document.getElementById('userEmail').value;
+    
+    if (!pool_id) {
+        alert('Please select a pool');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/credits/redeem', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code, pool_id })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Success: ' + data.message);
+            // Find and update the specific row
+            const row = Array.from(document.querySelectorAll('table tr')).find(
+                row => row.cells[0].textContent.trim() === data.code
+            );
+            if (row) {
+               row.classList.add('table-secondary');
+               row.cells[3].innerHTML = '<span class="badge bg-secondary">Redeemed</span>';
+            }
+            // Clear the form
+            document.getElementById('code').value = '';
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Failed to redeem code. Please try again.');
+    }
+});
+</script>
+{% endblock %}

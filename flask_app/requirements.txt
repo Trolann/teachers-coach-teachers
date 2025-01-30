@@ -1,0 +1,10 @@
+flask
+flask-sqlalchemy
+psycopg2-binary
+python-dotenv
+python-jose
+Flask-Migrate
+waitress
+boto3
+faker
+numpy

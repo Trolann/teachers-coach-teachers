@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Logs{% endblock %}
+
+{% block content %}
+<style>
+    .log-viewer {
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+        font-family: 'Consolas', 'Monaco', monospace;
+        padding: 8px;
+        border-radius: 5px;
+        height: 800px;
+        overflow-y: auto;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        font-size: 13px;
+        line-height: 1.4;
+    }
+    .log-line {
+        white-space: pre;
+        padding: 1px 4px;
+        color: #d4d4d4;
+    }
+    .log-line:hover {
+        background-color: rgba(255,255,255,0.05);
+    }
+
+    /* Color different log levels */
+    .log-DEBUG { color: #9cdcfe !important; }
+    .log-INFO { color: #3c9c3c !important; }
+    .log-WARNING { color: #ff8c00 !important; }
+    .log-ERROR { color: #f14c4c !important; }
+    .log-CRITICAL {
+        color: #ffffff !important;
+        background-color: #ff0000;
+    }
+
+    /* Filter controls */
+    .log-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 8px;
+        background: #2d2d2d;
+        border-radius: 4px;
+    }
+
+    .filter-controls {
+        margin-left: auto;
+    }
+
+    .filter-controls .btn {
+        padding: 4px 12px;
+        border: 1px solid #444;
+        background: transparent;
+        color: #d4d4d4;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .filter-controls .btn:hover {
+        background: rgba(255,255,255,0.1);
+    }
+
+    .filter-controls .btn.active {
+        background-color: #0078d4;
+        border-color: #0078d4;
+        color: white;
+    }
+</style>
+
+<div class="log-controls">
+    <select id="logFile" class="form-select" style="width: auto;" onchange="changeLog(this.value)">
+        {% for file, timestamp in log_files %}
+        <option value="{{ file }}" {% if file == selected_log %}selected{% endif %}>
+            {{ file }} ({{ timestamp }})
+        </option>
+        {% endfor %}
+    </select>
+
+    <button class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">🔄 Refresh</button>
+    
+    <div class="btn-group filter-controls" role="group">
+        <button type="button" class="btn btn-sm" data-level="all">All</button>
+        <button type="button" class="btn btn-sm" data-level="DEBUG">Debug</button>
+        <button type="button" class="btn btn-sm" data-level="INFO">Info</button>
+        <button type="button" class="btn btn-sm" data-level="WARNING">Warning</button>
+        <button type="button" class="btn btn-sm" data-level="ERROR">Error</button>
+    </div>
+</div>
+
+<div id="logViewer" class="log-viewer" data-content='{{ current_log | tojson }}'></div>
+
+<script>
+let currentFilter = 'all';
+
+function formatLogLine(logEntry) {
+    if (!logEntry.content) return '';
+
+    const line = logEntry.content;
+    let logLevel = '';
+
+    // Detect log level from the line
+    if (line.includes(' DEBUG ')) logLevel = 'DEBUG';
+    else if (line.includes(' INFO ')) logLevel = 'INFO';
+    else if (line.includes(' WARNING ')) logLevel = 'WARNING';
+    else if (line.includes(' ERROR ')) logLevel = 'ERROR';
+    else if (line.includes(' CRITICAL ')) logLevel = 'CRITICAL';
+
+    // Add color styling classes based on the detected level
+    return `<div class="log-line log-${logLevel}" data-level="${logLevel}">${line}</div>`;
+}
+
+function filterLogs(level) {
+    currentFilter = level;
+    const lines = document.querySelectorAll('.log-line');
+
+    lines.forEach(line => {
+        if (level === 'all' || line.textContent.includes(` ${level} `)) {
+            line.style.display = '';
+        } else {
+            line.style.display = 'none';
+        }
+    });
+}
+
+function updateLogView(content) {
+    const logViewer = document.getElementById('logViewer');
+    logViewer.innerHTML = content.map(formatLogLine).join('');
+    
+    // Apply current filter
+    filterLogs(currentFilter);
+    
+}
+
+// Initial load
+updateLogView({{ current_log | tojson }});
+
+function refreshLogs() {
+    const currentFile = document.getElementById('logFile').value;
+    // Use fetch to get updated logs without full page reload
+    fetch(`?file=${currentFile}`)
+        .then(response => response.text())
+        .then(html => {
+            // Extract log content from the response
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = JSON.parse(doc.getElementById('logViewer').getAttribute('data-content'));
+            updateLogView(newContent);
+        });
+}
+
+function changeLog(filename) {
+    window.location.href = `?file=${filename}`;
+}
+
+
+// Set up filter buttons
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('.filter-controls .btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+
+            // Add active class to clicked button
+            button.classList.add('active');
+
+            // Apply filter
+            const level = button.getAttribute('data-level');
+            filterLogs(level);
+        });
+    });
+});
+
+// Initialize with 'all' filter
+filterLogs('all');
+</script>
+{% endblock %}
