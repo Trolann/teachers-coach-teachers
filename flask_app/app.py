@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from admin.routes import create_admin_blueprint
 from api import create_api_blueprint
 from config import FlaskConfig
@@ -16,6 +17,7 @@ def create_app(config_class=FlaskConfig()):
     # Initialize Flask app
     logger.info('Creating Flask application instance')
     app = Flask(__name__)
+    CORS(app)
     app.config.from_object(config_class)
     
     # Log configuration details at debug level
