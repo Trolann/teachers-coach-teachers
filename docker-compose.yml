@@ -39,20 +39,20 @@ services:
       retries: 15
       start_period: 1s
 
-  expo-frontend:
-    container_name: expo-frontend
-    build:
-      context: ./mobile
-    ports:
-      - "19000:19000"
-      - "8081:8081"
-    volumes:
-      - ./mobile:/app
-      - /app/node_modules
-    command: npx expo start
-    user: "${UID}:${GID}"
-    environment:
-      - NODE_ENV=development
+#  expo-frontend:
+#    container_name: expo-frontend
+#    build:
+#      context: ./mobile
+#    ports:
+#      - "19000:19000"
+#      - "8081:8081"
+#    volumes:
+#      - ./mobile:/app
+#      - /app/node_modules
+#    command: npx expo start
+#    user: "${UID}:${GID}"
+#    environment:
+#      - NODE_ENV=development
 
 volumes:
   tct_postgres_data:
