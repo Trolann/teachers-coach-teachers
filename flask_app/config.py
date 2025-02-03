@@ -47,20 +47,10 @@ class CognitoConfig:
             if not self.COGNITO_REGION:
                 logger.error("COGNITO_REGION environment variable not set")
                 raise ValueError("Missing required COGNITO_REGION configuration")
-            
-            # Admin users configuration    
-            admin_usernames = environ.get('ADMIN_USERNAMES')
-            if not admin_usernames:
-                logger.warning("ADMIN_USERNAMES environment variable not set - no admin users will be available")
-                self.ADMIN_USERNAMES = []
-            else:
-                self.ADMIN_USERNAMES = [u.strip() for u in admin_usernames.split(',') if u.strip()]
-                logger.info(f"Successfully configured {len(self.ADMIN_USERNAMES)} admin users")
                 
             # Log configuration details (excluding sensitive data)
             logger.debug(f"Cognito config initialized with region={self.COGNITO_REGION}")
             logger.debug("User pool and client IDs configured (hidden for security)")
-            logger.debug(f"Number of admin users configured: {len(self.ADMIN_USERNAMES)}")
             logger.info("Cognito authentication configuration completed successfully")
             
         except Exception as e:
