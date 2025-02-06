@@ -9,6 +9,8 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import LoginScreen from '../auth/login';
+import SignupScreen from '../auth/signup';
+
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -34,6 +36,7 @@ export default function TabLayout() {
   }
 
   if (!isAuthenticated) {
+    // return <SignupScreen />;
     return <LoginScreen />;
   }
 

@@ -1,10 +1,10 @@
-// app/(auth)/login.tsx
+// app/auth/login.tsx
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -42,7 +42,7 @@ export default function LoginScreen() {
           {/* Input Fields */}
           <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
-              <IconSymbol name="person.fill" size={20} color="#666" style={styles.inputIcon} />
+              <Ionicons name="person-outline" size={20} color="#848282" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Enter your email"
@@ -50,35 +50,29 @@ export default function LoginScreen() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                placeholderTextColor="#666"
+                placeholderTextColor="#848282"
               />
             </View>
 
             <View style={styles.inputWrapper}>
-              <IconSymbol name="lock.fill" size={20} color="#666" style={styles.inputIcon} />
+              <Ionicons name="lock-closed-outline" size={20} color="#848282" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Enter your password"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                placeholderTextColor="#666"
+                placeholderTextColor="#848282"
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <IconSymbol 
-                  name={showPassword ? "eye.fill" : "eye.slash.fill"} 
-                  size={20} 
-                  color="#666" 
-                />
+              <Ionicons 
+                name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                size={20}
+                color="#848282" 
+              />
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Google Sign In Button */}
-          <TouchableOpacity style={styles.googleButton}>
-            <IconSymbol name="g.circle.fill" size={24} color="#4285F4" />
-            <ThemedText style={styles.googleButtonText}>Log in with Google</ThemedText>
-          </TouchableOpacity>
 
           {/* Login Button */}
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
@@ -120,6 +114,7 @@ const styles = StyleSheet.create({
     padding: 20,
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   logoContainer: {
     alignItems: 'center',
@@ -144,11 +139,12 @@ const styles = StyleSheet.create({
   },
   pleaseLogin: {
     fontSize: 20,
-    color: '#666',
+    color: '#848282',
   },
   inputContainer: {
     gap: 15,
     marginBottom: 20,
+    width: '85%',
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -166,28 +162,13 @@ const styles = StyleSheet.create({
     color: '#333',
     paddingVertical: 8,
   },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 25,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginBottom: 15,
-  },
-  googleButtonText: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#666',
-  },
   loginButton: {
-    backgroundColor: '#69B4FF',
+    backgroundColor: '#48B2EE',
     padding: 16,
     borderRadius: 25,
     alignItems: 'center',
     marginBottom: 15,
+    width: '85%',
   },
   loginButtonText: {
     color: 'white',
@@ -198,6 +179,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 15,
+    width: '85%',
   },
   divider: {
     flex: 1,
@@ -206,13 +188,14 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     marginHorizontal: 10,
-    color: '#666',
+    color: '#848282',
   },
   signUpButton: {
-    backgroundColor: '#69B4FF',
+    backgroundColor: '#48B2EE99',
     padding: 16,
     borderRadius: 25,
     alignItems: 'center',
+    width: '85%',
   },
   signUpButtonText: {
     color: 'white',
