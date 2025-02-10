@@ -1,4 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthTokens {
   accessToken: string;
@@ -6,31 +8,6 @@ interface AuthTokens {
   idToken: string;
   expiresIn: number;
 }
-
-/**
- * Notes from GitHub:
- * import * as SecureStore from "expo-secure-store";
- * import {Platform} from "react-native";
- * import AsyncStorage from "@react-native-async-storage/async-storage";
- *
- * const storageUtil = {
- *   setItem: async (k: string, v: string) => {
- *     if (Platform.OS === 'web') { // web
- *       await AsyncStorage.setItem(k, v);
- *     } else { // mobile
- *       await SecureStore.setItemAsync(k, v.toString()); // v must be string,
- *     }
- *   },
- *   getItem: async (k: string) => {
- *     if (Platform.OS === 'web') { // web
- *       return await AsyncStorage.getItem(k);
- *     } else { // mobile
- *       return await SecureStore.getItemAsync(k);
- *     }
- *   }
- * }
- * export default storageUtil
- */
 
 /**
  * TokenManager handles the storage and retrieval of authentication tokens
@@ -55,12 +32,33 @@ class TokenManager {
   /**
    * Store authentication tokens securely
    */
+  private async setStorageItem(key: string, value: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      await AsyncStorage.setItem(key, value);
+    } else {
+      await SecureStore.setItemAsync(key, value);
+    }
+  }
+
+  private async getStorageItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return await AsyncStorage.getItem(key);
+    } else {
+      return await SecureStore.getItemAsync(key);
+    }
+  }
+
+  private async removeStorageItem(key: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      await AsyncStorage.removeItem(key);
+    } else {
+      await SecureStore.deleteItemAsync(key);
+    }
+  }
+
   public async setTokens(tokens: AuthTokens): Promise<void> {
     try {
-      await SecureStore.setItemAsync(
-        this.TOKEN_KEY,
-        JSON.stringify(tokens)
-      );
+      await this.setStorageItem(this.TOKEN_KEY, JSON.stringify(tokens));
     } catch (error) {
       console.error('Error storing tokens:', error);
       throw error;
@@ -72,7 +70,7 @@ class TokenManager {
    */
   public async getTokens(): Promise<AuthTokens | null> {
     try {
-      const tokensStr = await SecureStore.getItemAsync(this.TOKEN_KEY);
+      const tokensStr = await this.getStorageItem(this.TOKEN_KEY);
       return tokensStr ? JSON.parse(tokensStr) : null;
     } catch (error) {
       console.error('Error retrieving tokens:', error);
@@ -85,7 +83,7 @@ class TokenManager {
    */
   public async clearTokens(): Promise<void> {
     try {
-      await SecureStore.deleteItemAsync(this.TOKEN_KEY);
+      await this.removeStorageItem(this.TOKEN_KEY);
     } catch (error) {
       console.error('Error clearing tokens:', error);
       throw error;
