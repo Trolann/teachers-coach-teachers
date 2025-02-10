@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { API_URL } from '../../config/api';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import TokenManager from '../auth/tokenmanager';
 
 export default function HomeScreen() {
   const [dbStatus, setDbStatus] = useState('Checking database...');
@@ -10,9 +11,16 @@ export default function HomeScreen() {
     const checkDatabase = async () => {
       console.log('Fetching from:', `${API_URL}/admin/debug/check-database`);
       try {
-        const accessToken = "test-1234" // TODO: Replace with accesstoken from cognito
+        const tokenManager = TokenManager.getInstance();
+        const tokens = await tokenManager.getTokens();
+        
+        if (!tokens) {
+          setDbStatus('No authentication tokens found');
+          return;
+        }
+
         const headers = new Headers();
-        headers.append('Authorization', `Bearer ${accessToken}`);
+        headers.append('Authorization', `Bearer ${tokens.accessToken}`);
         const response = await fetch(`${API_URL}/admin/debug/check-database`, {
             method: 'GET',
             headers: headers
