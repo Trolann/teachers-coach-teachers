@@ -10,15 +10,17 @@ export default function HomeScreen() {
   useEffect(() => {
     const checkDatabase = async () => {
       try {
+        // TODO: REMOVE THIS WHEN WE GET COGNITO TOKENS
         // Set debug tokens
-        const tokenManager = TokenManager.getInstance();
-        await tokenManager.setTokens({
-          accessToken: 'test-1234',
-          refreshToken: 'refresh-test',
-          idToken: 'id-test',
-          expiresIn: 3600
-        });
-
+        // const tokenManager = TokenManager.getInstance();
+        // await tokenManager.clearTokens();
+        // await tokenManager.setTokens({
+        //   accessToken: 'test-mobile-5678',
+        //   refreshToken: 'refresh-test',
+        //   idToken: 'id-test',
+        //   expiresIn: 3600
+        // });
+        // TODO: STOP REMOVING HERE
         const backend = BackendManager.getInstance();
         const message = await backend.checkDatabase();
         setDbStatus(message);
