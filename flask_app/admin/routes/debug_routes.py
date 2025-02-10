@@ -54,6 +54,7 @@ def submit_mentor_application():
 
 
 @debug_bps.route('/check-database', methods=['GET'])
+@require_auth
 def check_database():
     logger.info("Checking database connection")
     try:
