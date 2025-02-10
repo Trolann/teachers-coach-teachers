@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import BackendManager from '../auth/backendmanager';
-import TokenManager from '../auth/tokenmanager';
+import BackendManager from '../auth/BackendManager';
+import TokenManager from '../auth/TokenManager';
 
 export default function HomeScreen() {
   const [dbStatus, setDbStatus] = useState('Checking database...');

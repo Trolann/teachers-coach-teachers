@@ -1,5 +1,5 @@
 import { API_URL } from '../../config/api';
-import TokenManager from './tokenmanager';
+import TokenManager from './TokenManager';
 
 /**
  * BackendManager handles all API calls to the backend,
