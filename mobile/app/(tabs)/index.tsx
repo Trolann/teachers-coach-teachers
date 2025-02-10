@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import BackendManager from '../auth/backendmanager';
+import TokenManager from '../auth/tokenmanager';
 
 export default function HomeScreen() {
   const [dbStatus, setDbStatus] = useState('Checking database...');
@@ -9,6 +10,15 @@ export default function HomeScreen() {
   useEffect(() => {
     const checkDatabase = async () => {
       try {
+        // Set debug tokens
+        const tokenManager = TokenManager.getInstance();
+        await tokenManager.setTokens({
+          accessToken: 'test-1234',
+          refreshToken: 'refresh-test',
+          idToken: 'id-test',
+          expiresIn: 3600
+        });
+
         const backend = BackendManager.getInstance();
         const message = await backend.checkDatabase();
         setDbStatus(message);
