@@ -34,6 +34,9 @@ class BackendManager {
 
         const headers = new Headers();
         headers.append('Authorization', `Bearer ${tokens.accessToken}`);
+        headers.append('X-Refresh-Token', tokens.refreshToken);
+        headers.append('X-Id-Token', tokens.idToken);
+        headers.append('X-Token-Expires', tokens.expiresIn.toString());
         return headers;
     }
 
