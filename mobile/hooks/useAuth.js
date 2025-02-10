@@ -1,28 +1,27 @@
 import { useState, useMemo, useEffect } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthRequest, exchangeCodeAsync, revokeAsync, ResponseType } from 'expo-auth-session';
+import { COGNITO_CLIENT_ID, COGNITO_USER_POOL_URL} from '@env';
 
 WebBrowser.maybeCompleteAuthSession();
 
-// Still need to update the following
-const clientId = '<your-client-id-here>'; 
-const userPoolUrl = 'https://<your-user-pool-domain>.auth.<your-region>.amazoncognito.com';
-const redirectUri = '<your-redirect-uri>';
+const redirectUri = 'http://localhost:8081';
 
 const discoveryDocument = {
-  authorizationEndpoint: `${userPoolUrl}/oauth2/authorize`,
-  tokenEndpoint: `${userPoolUrl}/oauth2/token`,
-  revocationEndpoint: `${userPoolUrl}/oauth2/revoke`,
+  authorizationEndpoint: `${COGNITO_USER_POOL_URL}/oauth2/authorize`,
+  tokenEndpoint: `${COGNITO_USER_POOL_URL}/oauth2/token`,
+  revocationEndpoint: `${COGNITO_USER_POOL_URL}/oauth2/revoke`,
 };
 
 export function useAuth() {
   const [authTokens, setAuthTokens] = useState(null);
 
+  // Uses Proof of Key Code Exchange
   const [request, response, promptAsync] = useAuthRequest(
     {
-      clientId,
+      clientId: COGNITO_CLIENT_ID,
       responseType: ResponseType.Code,
-      redirectUri,
+      redirectUri: COGNITO_REDIRECT_URI,
       usePKCE: true,
     },
     discoveryDocument
@@ -43,9 +42,9 @@ export function useAuth() {
 
     if (response?.type === 'success') {
       exchangeFn({
-        clientId,
+        clientId: COGNITO_CLIENT_ID,
         code: response.params.code,
-        redirectUri,
+        redirectUri: COGNITO_REDIRECT_URI,
         extraParams: {
           code_verifier: request.codeVerifier,
         },
@@ -53,12 +52,40 @@ export function useAuth() {
     }
   }, [request, response]);
 
+  // Uses Resource Owner Password Credentials
+  const loginWithCredentials = async (username, password) => {
+    try {
+      const response = await fetch(`${COGNITO_USER_POOL_URL}/oauth2/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'password',
+          client_id: COGNITO_CLIENT_ID,
+          username,
+          password,
+        }).toString(),
+      });
+
+      const data = await response.json();
+      if (data.access_token) {
+        setAuthTokens(data);
+      } else {
+        console.error('Login failed:', data);
+      }
+    } catch (error) {
+      console.error('Error logging in with credentials:', error);
+    }
+  };
+
+  // Logout function
   const logout = async () => {
     if (!authTokens?.refreshToken) return;
     try {
       await revokeAsync(
         {
-          clientId,
+          clientId: COGNITO_CLIENT_ID,
           token: authTokens.refreshToken,
         },
         discoveryDocument
@@ -71,7 +98,8 @@ export function useAuth() {
 
   return {
     authTokens,
-    login: () => promptAsync(),
+    login: () => promptAsync(), // PKCE
+    loginWithCredentials, // ROPC
     logout,
   };
 }
