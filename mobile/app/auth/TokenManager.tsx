@@ -143,4 +143,4 @@ class TokenManager {
   }
 }
 
-export default TokenManager;
+export = TokenManager;

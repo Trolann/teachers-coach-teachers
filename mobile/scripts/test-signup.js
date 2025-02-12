@@ -1,8 +1,5 @@
-import TokenManager from '../app/auth/TokenManager.js';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+const TokenManager = require('../app/auth/TokenManager').default;
+require('dotenv').config();
 
 async function testSignup() {
     try {
