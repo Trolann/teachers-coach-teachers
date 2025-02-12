@@ -3,10 +3,13 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+      "@/*": ["./*"]
+    },
+    "outDir": "./dist",
+    "noEmit": false,
+    "module": "commonjs",
+    "allowJs": true,
+    "esModuleInterop": true
   },
   "include": [
     "**/*.ts",
