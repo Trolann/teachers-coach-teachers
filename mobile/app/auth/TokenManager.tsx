@@ -140,6 +140,7 @@ class TokenManager {
         // Successful signup, user needs to confirm their account
         return true;
       }
+      // Something went wrong
       return false;
     } catch (error) {
       console.error('Error during signup:', error);
