@@ -10,11 +10,10 @@ async function testSignup() {
         
         // Test user details - replace with your test values
         const testUser = {
-            username: "testuser@example.com",
+            username: "trevor.mathisen@sjsu.edu",
             password: "TestPassword123!",
-            email: "testuser@example.com",
-            name: "Test User",
-            'custom:role': "user"
+            email: "trevor.mathisen@sjsu.edu",
+            name: "Test User"
         };
 
         console.log('Attempting to sign up user:', testUser.username);
