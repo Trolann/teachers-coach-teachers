@@ -1,39 +1,38 @@
 const dotenv = require('dotenv');
 const path = require('path');
-const { CognitoIdentityProviderClient, InitiateAuthCommand } = require("@aws-sdk/client-cognito-identity-provider");
 
 // Load environment variables from the root .env file
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 async function testAuth(username, password) {
-    const cognitoClient = new CognitoIdentityProviderClient({
-        region: 'us-east-1',
-        credentials: {
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        }
-    });
-
     try {
-        const command = new InitiateAuthCommand({
-            AuthFlow: "USER_PASSWORD_AUTH",
-            ClientId: '3umm6mktk1e6jib36iffor7g2a',
-            AuthParameters: {
-                USERNAME: username,
-                PASSWORD: password,
+        const response = await fetch(`${process.env.COGNITO_USER_POOL_URL}/oauth2/token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
+            body: new URLSearchParams({
+                grant_type: 'password',
+                client_id: process.env.COGNITO_CLIENT_ID,
+                username,
+                password,
+            }).toString(),
         });
 
-        console.log('Attempting authentication...');
-        const response = await cognitoClient.send(command);
-        console.log('Authentication successful!');
-        console.log('Tokens:', {
-            accessToken: response.AuthenticationResult.AccessToken.substring(0, 20) + '...',
-            refreshToken: response.AuthenticationResult.RefreshToken.substring(0, 20) + '...',
-            idToken: response.AuthenticationResult.IdToken.substring(0, 20) + '...',
-            expiresIn: response.AuthenticationResult.ExpiresIn,
-        });
-        return response;
+        const data = await response.json();
+        
+        if (data.access_token) {
+            console.log('Authentication successful!');
+            console.log('Tokens:', {
+                accessToken: data.access_token.substring(0, 20) + '...',
+                refreshToken: data.refresh_token?.substring(0, 20) + '...',
+                idToken: data.id_token?.substring(0, 20) + '...',
+                expiresIn: data.expires_in,
+            });
+            return data;
+        } else {
+            throw new Error(data.error || 'Authentication failed');
+        }
     } catch (error) {
         console.error('Authentication failed:', error);
         throw error;
