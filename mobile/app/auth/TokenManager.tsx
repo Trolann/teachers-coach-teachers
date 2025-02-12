@@ -116,7 +116,7 @@ class TokenManager {
    * Sign up a new user with Cognito
    * @param kwargs - Object containing at minimum username and password, plus any additional attributes
    */
-  public async signUp(kwargs: { [key: string]: string }): Promise<void> {
+  public async signUp(kwargs: { [key: string]: string }): Promise<boolean> {
     const { username, password, ...userAttributes } = kwargs;
     
     // Transform additional attributes to Cognito format
@@ -135,7 +135,12 @@ class TokenManager {
     try {
       const command = new SignUpCommand(input);
       const response = await this.cognitoClient.send(command);
-      console.log('Signup successful:', response);
+      
+      if (response.UserSub && !response.UserConfirmed) {
+        // Successful signup, user needs to confirm their account
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Error during signup:', error);
       throw error;
