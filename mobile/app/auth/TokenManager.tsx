@@ -1,6 +1,11 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { 
+  CognitoIdentityProviderClient,
+  SignUpCommand,
+  SignUpCommandInput
+} from "@aws-sdk/client-cognito-identity-provider";
 
 interface AuthTokens {
   accessToken: string;
@@ -17,7 +22,15 @@ class TokenManager {
   private static instance: TokenManager;
   private readonly TOKEN_KEY = 'auth_tokens';
 
-  private constructor() {}
+  private cognitoClient: CognitoIdentityProviderClient;
+  private readonly COGNITO_CLIENT_ID = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '';
+  private readonly COGNITO_USER_POOL_REGION = process.env.EXPO_PUBLIC_COGNITO_USER_POOL_REGION || '';
+
+  private constructor() {
+    this.cognitoClient = new CognitoIdentityProviderClient({
+      region: this.COGNITO_USER_POOL_REGION
+    });
+  }
 
   /**
    * Get the singleton instance of TokenManager
@@ -97,6 +110,36 @@ class TokenManager {
     const tokens = await this.getTokens();
     return tokens !== null;
     // TODO: Add token expiration check when implementing refresh flow
+  }
+
+  /**
+   * Sign up a new user with Cognito
+   * @param kwargs - Object containing at minimum username and password, plus any additional attributes
+   */
+  public async signUp(kwargs: { [key: string]: string }): Promise<void> {
+    const { username, password, ...userAttributes } = kwargs;
+    
+    // Transform additional attributes to Cognito format
+    const attributes = Object.entries(userAttributes).map(([Name, Value]) => ({
+      Name,
+      Value
+    }));
+
+    const input: SignUpCommandInput = {
+      ClientId: this.COGNITO_CLIENT_ID,
+      Username: username,
+      Password: password,
+      UserAttributes: attributes
+    };
+
+    try {
+      const command = new SignUpCommand(input);
+      const response = await this.cognitoClient.send(command);
+      console.log('Signup successful:', response);
+    } catch (error) {
+      console.error('Error during signup:', error);
+      throw error;
+    }
   }
 }
 
