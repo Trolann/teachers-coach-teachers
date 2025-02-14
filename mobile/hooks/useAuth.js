@@ -1,65 +1,34 @@
-import { useState, useMemo, useEffect } from 'react';
-import * as WebBrowser from 'expo-web-browser';
-import { useAuthRequest, exchangeCodeAsync, revokeAsync, ResponseType } from 'expo-auth-session';
-import { COGNITO_CLIENT_ID, COGNITO_USER_POOL_URL} from '@env';
+import {useState, useContext, createContext} from 'react';
+import {COGNITO_CLIENT_ID, COGNITO_USER_POOL_ID, COGNITO_REGION} from '@env';
 
-WebBrowser.maybeCompleteAuthSession();
+const COGNITO_DOMAIN = `https://${COGNITO_USER_POOL_ID}.auth.${COGNITO_REGION}.amazoncognito.com`;
+const TOKEN_ENDPOINT = `${COGNITO_DOMAIN}/oauth2/token`;
 
-const redirectUri = 'http://localhost:8081';
+const AuthContext = createContext(null);
 
-const discoveryDocument = {
-  authorizationEndpoint: `${COGNITO_USER_POOL_URL}/oauth2/authorize`,
-  tokenEndpoint: `${COGNITO_USER_POOL_URL}/oauth2/token`,
-  revocationEndpoint: `${COGNITO_USER_POOL_URL}/oauth2/revoke`,
+export function AuthProvider({ children }) {
+  const auth = useProvideAuth();
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+}
+
+export const useAuth = () => {
+  return useContext(AuthContext);
 };
 
 export function useAuth() {
   const [authTokens, setAuthTokens] = useState(null);
-
-  // Uses Proof of Key Code Exchange
-  const [request, response, promptAsync] = useAuthRequest(
-    {
-      clientId: COGNITO_CLIENT_ID,
-      responseType: ResponseType.Code,
-      redirectUri: COGNITO_REDIRECT_URI,
-      usePKCE: true,
-    },
-    discoveryDocument
-  );
-
-  useEffect(() => {
-    const exchangeFn = async (exchangeTokenReq) => {
-      try {
-        const exchangeTokenResponse = await exchangeCodeAsync(
-          exchangeTokenReq,
-          discoveryDocument
-        );
-        setAuthTokens(exchangeTokenResponse);
-      } catch (error) {
-        console.error('Token exchange failed:', error);
-      }
-    };
-
-    if (response?.type === 'success') {
-      exchangeFn({
-        clientId: COGNITO_CLIENT_ID,
-        code: response.params.code,
-        redirectUri: COGNITO_REDIRECT_URI,
-        extraParams: {
-          code_verifier: request.codeVerifier,
-        },
-      });
-    }
-  }, [request, response]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Uses Resource Owner Password Credentials
   const loginWithCredentials = async (username, password) => {
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch(`${COGNITO_USER_POOL_URL}/oauth2/token`, {
+      const response = await fetch(TOKEN_ENDPOINT, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: new URLSearchParams({
           grant_type: 'password',
           client_id: COGNITO_CLIENT_ID,
@@ -76,30 +45,21 @@ export function useAuth() {
       }
     } catch (error) {
       console.error('Error logging in with credentials:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   // Logout function
-  const logout = async () => {
-    if (!authTokens?.refreshToken) return;
-    try {
-      await revokeAsync(
-        {
-          clientId: COGNITO_CLIENT_ID,
-          token: authTokens.refreshToken,
-        },
-        discoveryDocument
-      );
-      setAuthTokens(null);
-    } catch (error) {
-      console.error('Error revoking token:', error);
-    }
+  const logout = () => {
+    setAuthTokens(null);
   };
 
   return {
     authTokens,
-    login: () => promptAsync(), // PKCE
     loginWithCredentials, // ROPC
     logout,
+    loading,
+    error
   };
 }
