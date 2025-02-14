@@ -1,8 +1,6 @@
 import {useState, useContext, createContext} from 'react';
-import {COGNITO_CLIENT_ID, COGNITO_USER_POOL_ID, COGNITO_REGION} from '@env';
-
-const COGNITO_DOMAIN = `https://${COGNITO_USER_POOL_ID}.auth.${COGNITO_REGION}.amazoncognito.com`;
-const TOKEN_ENDPOINT = `${COGNITO_DOMAIN}/oauth2/token`;
+import {CognitoIdentityProviderClient, InitiateAuthCommand} from "@aws-sdk/client-cognito-identity-provider";
+import {COGNITO_CLIENT_ID, COGNITO_REGION} from '@env';
 
 const AuthContext = createContext(null);
 
@@ -15,10 +13,12 @@ export const useAuth = () => {
   return useContext(AuthContext);
 };
 
-export function useAuth() {
+export function useProvideAuth() {
   const [authTokens, setAuthTokens] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const client = new CognitoIdentityProviderClient({region: COGNITO_REGION});
 
   // Uses Resource Owner Password Credentials
   const loginWithCredentials = async (username, password) => {
@@ -26,25 +26,25 @@ export function useAuth() {
     setError(null);
 
     try {
-      const response = await fetch(TOKEN_ENDPOINT, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({
-          grant_type: 'password',
-          client_id: COGNITO_CLIENT_ID,
-          username,
-          password,
-        }).toString(),
+      const command = new InitiateAuthCommand({
+        AuthFlow: 'USER_PASSWORD_AUTH',
+        ClientId: COGNITO_CLIENT_ID,
+        AuthParameters: {
+          USERNAME: username,
+          PASSWORD: password,
+        },
       });
 
-      const data = await response.json();
-      if (data.access_token) {
-        setAuthTokens(data);
+      const response = await client.send(command);
+
+      if (response.AuthenticationResult) {
+        setAuthTokens(response.AuthenticationResult);
       } else {
-        console.error('Login failed:', data);
+        setError.error('Login failed');
       }
     } catch (error) {
       console.error('Error logging in with credentials:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
