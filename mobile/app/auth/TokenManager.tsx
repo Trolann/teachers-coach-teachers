@@ -4,7 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   CognitoIdentityProviderClient,
   SignUpCommand,
-  SignUpCommandInput
+  SignUpCommandInput,
+  InitiateAuthCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 
 interface AuthTokens {
@@ -147,6 +148,43 @@ class TokenManager {
       throw error;
     }
   }
+
+  /**
+   * Login a user with their credentials to receive an access token from Cognito
+   */
+  public async loginWithCredentials(username: string, password: string): Promise<boolean> {
+    try {
+      const command = new InitiateAuthCommand({
+        AuthFlow: 'USER_PASSWORD_AUTH',
+        ClientId: this.COGNITO_CLIENT_ID,
+        AuthParameters: {
+          USERNAME: username,
+          PASSWORD: password,
+        },
+      });
+
+      const response = await this.cognitoClient.send(command);
+
+      if (response.AuthenticationResult) {
+        const tokens: AuthTokens = {
+          accessToken: response.AuthenticationResult.AccessToken!,
+          refreshToken: response.AuthenticationResult.RefreshToken!,
+          idToken: response.AuthenticationResult.IdToken!,
+          expiresIn: response.AuthenticationResult.ExpiresIn!,
+        };
+
+        // Store the tokens securely
+        await this.setTokens(tokens);
+        return true;
+      } else {
+        console.error('Login failed');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error logging in with credentials:', error);
+      throw error;
+    }
+  }
 }
 
-export = TokenManager;
+export default TokenManager;
