@@ -169,3 +169,5 @@ cython_debug/
 .aider*
 *.txt
 cognito-admin-policy.json
+*.expo/
+node_modules/

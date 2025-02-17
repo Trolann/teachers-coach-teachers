@@ -19,10 +19,12 @@ export default function TabLayout() {
   // Simulating authentication state (replace with actual auth logic)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
+  // TODO: No longer simulate auth state
   useEffect(() => {
     // Simulating fetching auth status
     setTimeout(() => {
-      setIsAuthenticated(false); // Change to true if user is logged in
+        // TODO: Trevor changed this to true to debug with index.tsx
+      setIsAuthenticated(true); // Change to true if user is logged in
     }, 1000);
   }, []);
   

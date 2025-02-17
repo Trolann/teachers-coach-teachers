@@ -236,18 +236,33 @@ def require_auth(f):
         if 'access_token' in session:
             token = session['access_token']
         else:
-            # Check Authorization header (for API)
+            # Parse tokens from request headers
             auth_header = request.headers.get('Authorization')
+            refresh_token = request.headers.get('X-Refresh-Token')
+            id_token = request.headers.get('X-Id-Token')
+            expires_in = request.headers.get('X-Token-Expires')
+            
             if auth_header:
                 token = auth_header.replace('Bearer ', '')
+                # Debug log first part of tokens
+                # TODO: Shorten characters shown in logs for security
+                logger.debug(f"Access Token: {token[:15] if token else 'None'}")
+                logger.debug(f"Refresh Token: {refresh_token[:15] if refresh_token else 'None'}")
+                logger.debug(f"ID Token: {id_token[:5] if id_token else 'None'}")
+                logger.debug(f"Token Expires In: {expires_in}")
         
         if not token:
             return redirect(url_for('admin.admin_dashboard.index'))
 
         try:
+            # This is left in if debugging is still needed. Uncomment and prefix your token with `test` to pass
+            # if token.startswith('test'):
+            #     logger.warning("Using development token")
+            #     return f(*args, **kwargs)
             verifier.verify_token(token)
             return f(*args, **kwargs)
         except Exception as e:
+            logger.error(f"Token verification failed: {str(e)}")
             session.clear()  # Clear invalid session
             return redirect(url_for('admin.admin_dashboard.index'))
 
