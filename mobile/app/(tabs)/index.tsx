@@ -10,7 +10,13 @@ export default function HomeScreen() {
     const checkDatabase = async () => {
       console.log('Fetching from:', `${API_URL}/admin/debug/check-database`);
       try {
-        const response = await fetch(`${API_URL}/admin/debug/check-database`);
+        const accessToken = "test-1234" // TODO: Replace with accesstoken from cognito
+        const headers = new Headers();
+        headers.append('Authorization', `Bearer ${accessToken}`);
+        const response = await fetch(`${API_URL}/admin/debug/check-database`, {
+            method: 'GET',
+            headers: headers
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch database status');
         }
