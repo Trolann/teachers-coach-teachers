@@ -260,6 +260,7 @@ def require_auth(f):
             # if token.startswith('test'):
             #     logger.warning("Using development token")
             #     return f(*args, **kwargs)
+            # logger.warn(f'Verifying token: {token}')
             verifier.verify_token(token)
             return f(*args, **kwargs)
         except Exception as e:
