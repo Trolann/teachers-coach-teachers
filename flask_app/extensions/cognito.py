@@ -259,6 +259,10 @@ def require_auth(f):
             return redirect(url_for('admin.admin_dashboard.index'))
 
         try:
+            # This is left in if debugging is still needed. Uncomment and prefix your token with `test` to pass
+            # if token.startswith('test'):
+            #     logger.warning("Using development token")
+            #     return f(*args, **kwargs)
             verifier.verify_token(token)
             return f(*args, **kwargs)
         except Exception as e:
