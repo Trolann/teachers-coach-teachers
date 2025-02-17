@@ -24,7 +24,7 @@ export default function TabLayout() {
     // Simulating fetching auth status
     setTimeout(() => {
         // TODO: Trevor changed this to true to debug with index.tsx
-      setIsAuthenticated(true); // Change to true if user is logged in
+      setIsAuthenticated(false); // Change to true if user is logged in
     }, 1000);
   }, []);
   
