@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { API_URL } from '../../config/api';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import BackendManager from '../auth/BackendManager';
 import TokenManager from '../auth/TokenManager';
@@ -10,7 +9,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const checkDatabase = async () => {
-      console.log('Fetching from:', `${API_URL}/admin/debug/check-database`);
       try {
         // TODO: REMOVE THIS WHEN WE GET COGNITO TOKENS
         // Set debug tokens
