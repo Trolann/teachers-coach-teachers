@@ -1,7 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { 
+
+import {
   CognitoIdentityProviderClient,
   SignUpCommand,
   SignUpCommandInput,
@@ -119,7 +120,7 @@ class TokenManager {
    */
   public async signUp(kwargs: { [key: string]: string }): Promise<boolean> {
     const { username, password, ...userAttributes } = kwargs;
-    
+
     // Transform additional attributes to Cognito format
     const attributes = Object.entries(userAttributes).map(([Name, Value]) => ({
       Name,
@@ -136,7 +137,7 @@ class TokenManager {
     try {
       const command = new SignUpCommand(input);
       const response = await this.cognitoClient.send(command);
-      
+
       if (response.UserSub && !response.UserConfirmed) {
         // Successful signup, user needs to confirm their account
         return true;

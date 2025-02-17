@@ -238,14 +238,15 @@ def require_auth(f):
         else:
             # Parse tokens from request headers
             auth_header = request.headers.get('Authorization')
+
+            # Parse tokens from request headers
+            auth_header = request.headers.get('Authorization')
             refresh_token = request.headers.get('X-Refresh-Token')
             id_token = request.headers.get('X-Id-Token')
             expires_in = request.headers.get('X-Token-Expires')
-            
             if auth_header:
                 token = auth_header.replace('Bearer ', '')
                 # Debug log first part of tokens
-                # TODO: Shorten characters shown in logs for security
                 logger.debug(f"Access Token: {token[:15] if token else 'None'}")
                 logger.debug(f"Refresh Token: {refresh_token[:15] if refresh_token else 'None'}")
                 logger.debug(f"ID Token: {id_token[:5] if id_token else 'None'}")
