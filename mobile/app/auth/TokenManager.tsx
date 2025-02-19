@@ -25,7 +25,7 @@ class TokenManager {
   private readonly TOKEN_KEY = 'auth_tokens';
 
   private cognitoClient: CognitoIdentityProviderClient;
-  private readonly COGNITO_CLIENT_ID = process.env.COGNITO_CLIENT_ID || '';
+  private readonly COGNITO_CLIENT_ID = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '';
   private readonly COGNITO_USER_POOL_REGION = process.env.COGNITO_REGION || 'us-east-1';
 
   private constructor() {
