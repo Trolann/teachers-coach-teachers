@@ -19,7 +19,10 @@ export default function SignupScreen() {
         username: email,
         password: password,
         email: email,
-        name: name
+        given_name: name,
+        family_name: " ", // Required by Cognito but we'll leave it blank for now
+        name: name,
+        'custom:role': 'user' // Default role for new signups
       });
 
       if (success) {
