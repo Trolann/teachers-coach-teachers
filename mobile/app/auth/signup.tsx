@@ -22,10 +22,13 @@ export default function SignupScreen() {
         given_name: name,
         family_name: " ", // Required by Cognito but we'll leave it blank for now
         name: name,
-        'custom:role': 'user' // Default role for new signups
+        locale: "en_US",
+        phone_number: '',
       });
+      console.error('Signup status:', success);
 
       if (success) {
+        // TODO: Alerts are not working. Update flow after signup and login (error handling)
         Alert.alert(
           "Success",
           "Please check your email for verification code",

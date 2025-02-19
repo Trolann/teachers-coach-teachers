@@ -137,7 +137,7 @@ class TokenManager {
     try {
       const command = new SignUpCommand(input);
       const response = await this.cognitoClient.send(command);
-
+      console.error('Signup response:', response);
       if (response.UserSub && !response.UserConfirmed) {
         // Successful signup, user needs to confirm their account
         return true;
@@ -173,7 +173,6 @@ class TokenManager {
           idToken: response.AuthenticationResult.IdToken!,
           expiresIn: response.AuthenticationResult.ExpiresIn!,
         };
-
         // Store the tokens securely
         await this.setTokens(tokens);
         return true;
@@ -183,8 +182,6 @@ class TokenManager {
       }
     } catch (error) {
       console.error('Error logging in with credentials:', error);
-      console.error('Credentials: ', username, password);
-      console.error('Client ID:', this.COGNITO_CLIENT_ID);
       throw error;
     }
   }
