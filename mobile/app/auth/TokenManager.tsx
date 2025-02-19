@@ -25,7 +25,7 @@ class TokenManager {
   private readonly TOKEN_KEY = 'auth_tokens';
 
   private cognitoClient: CognitoIdentityProviderClient;
-  private readonly COGNITO_CLIENT_ID = process.env.COGNITO_CLIENT_ID || '';
+  private readonly COGNITO_CLIENT_ID = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '';
   private readonly COGNITO_USER_POOL_REGION = process.env.COGNITO_REGION || 'us-east-1';
 
   private constructor() {
@@ -137,7 +137,7 @@ class TokenManager {
     try {
       const command = new SignUpCommand(input);
       const response = await this.cognitoClient.send(command);
-
+      console.error('Signup response:', response);
       if (response.UserSub && !response.UserConfirmed) {
         // Successful signup, user needs to confirm their account
         return true;
@@ -173,7 +173,6 @@ class TokenManager {
           idToken: response.AuthenticationResult.IdToken!,
           expiresIn: response.AuthenticationResult.ExpiresIn!,
         };
-
         // Store the tokens securely
         await this.setTokens(tokens);
         return true;
