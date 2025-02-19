@@ -15,6 +15,7 @@ export default function SignupScreen() {
   const handleSignup = async () => {
     try {
       // Add your signup logic here
+
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Signup failed:', error);
