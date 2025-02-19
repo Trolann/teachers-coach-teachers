@@ -183,6 +183,8 @@ class TokenManager {
       }
     } catch (error) {
       console.error('Error logging in with credentials:', error);
+      console.error('Credentials: ', username, password);
+      console.error('Client ID:', this.COGNITO_CLIENT_ID);
       throw error;
     }
   }

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
+import TokenManager from './TokenManager';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -14,12 +15,17 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      // Add your authentication logic here
-      router.replace('/(tabs)');
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
-  };
+        const success = await TokenManager.getInstance().loginWithCredentials(email, password);
+        console.error('Login status:', success);
+        if (success) {
+          router.replace('/(tabs)');
+        } else {
+          console.error('Invalid credentials');
+        }
+  } catch (error) {
+    console.error('Login failed:', error);
+  }
+};
 
   return (
     <ThemedView style={styles.container}>
