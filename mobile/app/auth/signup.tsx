@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
+import TokenManager from './TokenManager';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -14,11 +15,25 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     try {
-      // Add your signup logic here
+      const success = await TokenManager.getInstance().signUp({
+        username: email,
+        password: password,
+        email: email,
+        name: name
+      });
 
-      router.replace('/(tabs)');
+      if (success) {
+        Alert.alert(
+          "Success",
+          "Please check your email for verification code",
+          [{ text: "OK", onPress: () => router.push('/auth/login') }]
+        );
+      } else {
+        Alert.alert("Error", "Signup failed");
+      }
     } catch (error) {
       console.error('Signup failed:', error);
+      Alert.alert("Error", error instanceof Error ? error.message : "Signup failed");
     }
   };
 
