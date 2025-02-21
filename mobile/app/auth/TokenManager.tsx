@@ -16,6 +16,8 @@ interface AuthTokens {
   expiresIn: number;
 }
 
+type UserRole = 'mentor' | 'mentee';
+
 /**
  * TokenManager handles the storage and retrieval of authentication tokens
  * using SecureStore for persistent secure storage between app sessions.
@@ -23,6 +25,7 @@ interface AuthTokens {
 class TokenManager {
   private static instance: TokenManager;
   private readonly TOKEN_KEY = 'auth_tokens';
+  private readonly USER_ROLE_KEY = 'user_role';
 
   private cognitoClient: CognitoIdentityProviderClient;
   private readonly COGNITO_CLIENT_ID = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '';
@@ -94,13 +97,41 @@ class TokenManager {
   }
 
   /**
+   * Store the user's selected role
+   */
+  public async setUserRole(role: UserRole): Promise<void> {
+    try {
+      await this.setStorageItem(this.USER_ROLE_KEY, role);
+    } catch (error) {
+      console.error('Error storing user role:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve the user's role
+   */
+  public async getUserRole(): Promise<UserRole | null> {
+    try {
+      const role = await this.getStorageItem(this.USER_ROLE_KEY);
+      return role as UserRole | null;
+    } catch (error) {
+      console.error('Error retrieving user role:', error);
+      return null;
+    }
+  }
+
+  /**
    * Clear stored authentication tokens
    */
   public async clearTokens(): Promise<void> {
     try {
-      await this.removeStorageItem(this.TOKEN_KEY);
+      await Promise.all([
+        this.removeStorageItem(this.TOKEN_KEY),
+        this.removeStorageItem(this.USER_ROLE_KEY)
+      ]);
     } catch (error) {
-      console.error('Error clearing tokens:', error);
+      console.error('Error clearing tokens and role:', error);
       throw error;
     }
   }

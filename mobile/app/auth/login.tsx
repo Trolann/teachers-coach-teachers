@@ -18,7 +18,7 @@ export default function LoginScreen() {
         const success = await TokenManager.getInstance().loginWithCredentials(email, password);
         console.error('Login status:', success);
         if (success) {
-          router.replace('/(tabs)');
+          router.replace('/pre-application');
         } else {
           console.error('Invalid credentials');
         }
