@@ -14,6 +14,9 @@ def create_api_blueprint():
         from .credits.routes import credits_bp
         api_bp.register_blueprint(credits_bp, url_prefix='/credits')
 
+        from .mentors.routes import mentor_bp
+        api_bp.register_blueprint(mentor_bp, url_prefix='/mentors')
+
         return api_bp
 
     except Exception as e:
