@@ -21,7 +21,7 @@ services:
         condition: service_healthy
 
   db:
-    image: postgres:15
+    image: ankane/pgvector:latest
     container_name: tct_postgres
     volumes:
       - tct_postgres_data:/var/lib/postgresql/data
