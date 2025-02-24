@@ -2,15 +2,18 @@ from flask import Blueprint, request, jsonify
 from models.user import User
 from models.mentor_profiles import MentorProfile, MentorStatus
 from extensions.database import db
-from flask_app.extensions.cognito import require_auth, get_current_user
+from flask_app.extensions.cognito import require_auth, parse_headers, CognitoTokenVerifier
 
-mentor_bps = Blueprint('mentors', __name__)
+mentor_bp = Blueprint('mentors', __name__)
+verifier = CognitoTokenVerifier()
 
-@mentor_bps.route('/submit_application', methods=['POST'])
+@mentor_bp.route('/submit_application', methods=['POST'])
 @require_auth
 def submit_application():
     """Submit a mentor application"""
-    user = get_current_user()
+    auth_token, _, _, _ = parse_headers(request.headers)
+    user = verifier.get_user_attributes(auth_token)
+
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
@@ -35,7 +38,7 @@ def submit_application():
         'status': profile.application_status
     }), 201
 
-@mentor_bps.route('/update_application', methods=['POST'])
+@mentor_bp.route('/update_application', methods=['POST'])
 @require_auth
 def update_application():
     """Update a mentor application"""
@@ -67,7 +70,7 @@ def update_application():
         'status': profile.application_status
     })
 
-@mentor_bps.route('/get_application', methods=['GET'])
+@mentor_bp.route('/get_application', methods=['GET'])
 @require_auth
 def get_application():
     """Get a mentor application"""
@@ -86,7 +89,7 @@ def get_application():
         'profile_data': profile.profile_data
     })
 
-@mentor_bps.route('/get_application_status', methods=['GET'])
+@mentor_bp.route('/get_application_status', methods=['GET'])
 @require_auth
 def get_application_status():
     """Get the status of a mentor application"""
