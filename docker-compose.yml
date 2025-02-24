@@ -26,8 +26,8 @@ services:
     volumes:
       - tct_postgres_data:/var/lib/postgresql/data
     # Leave ports here even if commented out. Allows for easy debugging/direct connecting to the database locally
-#    ports:
-#      - "5432:5432"
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
