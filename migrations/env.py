@@ -2,6 +2,7 @@ import logging
 from logging.config import fileConfig
 
 from flask import current_app
+from pgvector.sqlalchemy import Vector
 
 from alembic import context
 

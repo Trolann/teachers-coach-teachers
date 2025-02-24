@@ -225,6 +225,19 @@ class CognitoTokenVerifier:
             logger.exception(e)
             return None
 
+def parse_headers(headers):
+    """Parse headers from a request object"""
+    logger.warning(f'Headers: {headers}')
+    auth_header = headers.get('Authorization')
+    refresh_token = headers.get('X-Refresh-Token')
+    id_token = headers.get('X-Id-Token')
+    expires_in = headers.get('X-Token-Expires')
+    logger.warning(f'Auth Header: {auth_header}')
+
+    if auth_header:
+        auth_header = auth_header.replace('Bearer ', '')
+
+    return auth_header, refresh_token, id_token, expires_in
 
 def require_auth(f):
     @wraps(f)
@@ -238,14 +251,17 @@ def require_auth(f):
         else:
             # Parse tokens from request headers
             auth_header = request.headers.get('Authorization')
-
+            logger.warning(f'Headers: {auth_header}')
             # Parse tokens from request headers
-            auth_header = request.headers.get('Authorization')
-            refresh_token = request.headers.get('X-Refresh-Token')
-            id_token = request.headers.get('X-Id-Token')
-            expires_in = request.headers.get('X-Token-Expires')
-            if auth_header:
+            if isinstance(auth_header, str):
                 token = auth_header.replace('Bearer ', '')
+                refresh_token = ''
+                id_token = ''
+                expires_in = ''
+            else:
+                token, refresh_token, id_token, expires_in = parse_headers(auth_header)
+            logger.warning(f'Token: {token}')
+            if token:
                 # Debug log first part of tokens
                 logger.debug(f"Access Token: {token[:15] if token else 'None'}")
                 logger.debug(f"Refresh Token: {refresh_token[:15] if refresh_token else 'None'}")
@@ -257,10 +273,10 @@ def require_auth(f):
 
         try:
             # This is left in if debugging is still needed. Uncomment and prefix your token with `test` to pass
-            # if token.startswith('test'):
-            #     logger.warning("Using development token")
-            #     return f(*args, **kwargs)
-            # logger.warn(f'Verifying token: {token}')
+            if token.startswith('test'):
+                logger.warning("Using development token")
+                return f(*args, **kwargs)
+            logger.warn(f'Verifying token: {token}')
             verifier.verify_token(token)
             return f(*args, **kwargs)
         except Exception as e:

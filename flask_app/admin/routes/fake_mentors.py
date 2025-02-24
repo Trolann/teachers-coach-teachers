@@ -1,21 +1,22 @@
 from flask import Blueprint, render_template, request, jsonify
 from flask_app.models.user import User, db
 from flask_app.models.mentor_profiles import MentorProfile, MentorStatus
-
+from flask_app.models.vector import MentorVector
 from extensions.logging import get_logger
 from faker import Faker
 import random
+import numpy as np
 
 logger = get_logger(__name__)
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
 fake = Faker('en_US')
 
-FAKER_MAPPINGS = {
-    'first_name': ['first_name', 'first_name_male', 'first_name_female'],
-    'last_name': ['last_name'],
-    'bio': ['text', 'paragraph'],
-    'expertise_areas': ['job', 'skill'],
-    'years_of_experience': ['random_int']
+PROFILE_FIELDS = {
+    'first_name': lambda: fake.first_name(),
+    'last_name': lambda: fake.last_name(),
+    'bio': lambda: fake.text(max_nb_chars=200),
+    'expertise_areas': lambda: [fake.job() for _ in range(random.randint(1, 3))],
+    'years_of_experience': lambda: random.randint(1, 20)
 }
 
 @fake_mentors_bp.route('/fake-mentors')
@@ -27,7 +28,7 @@ def fake_mentors_page():
     return render_template(
         'dashboard/fake_mentors.html',
         mentor_count=mentor_count,
-        faker_mappings=FAKER_MAPPINGS
+        profile_fields=list(PROFILE_FIELDS.keys())
     )
 
 @fake_mentors_bp.route('/fake-mentors/generate', methods=['POST'])
@@ -50,18 +51,32 @@ def generate_fake_mentors():
             db.session.flush()  # Get the user ID
             logger.debug(f'Created fake user with ID: {user.id}')
             
+            # Generate profile data
+            profile_data = {
+                field: generator() 
+                for field, generator in PROFILE_FIELDS.items()
+            }
+            
             # Create mentor profile
             mentor = MentorProfile(
                 user_id=user.id,
-                first_name=fake.first_name(),
-                last_name=fake.last_name(),
-                bio=fake.text(max_nb_chars=200),
-                expertise_areas=[fake.job() for _ in range(random.randint(1, 3))],
-                years_of_experience=random.randint(1, 20),
+                profile_data=profile_data,
                 application_status=MentorStatus.PENDING.value
             )
             db.session.add(mentor)
             logger.debug(f'Created fake mentor profile for user ID: {user.id}')
+
+            # Create a random vector for testing (1536 dimensions, normalized)
+            random_vector = np.random.randn(1536)
+            random_vector = random_vector / np.linalg.norm(random_vector)
+            
+            # Create vector entry
+            vector = MentorVector(
+                user_id=user.id,
+                embedding=random_vector.tolist()
+            )
+            db.session.add(vector)
+            logger.debug(f'Created fake vector for user ID: {user.id}')
         
         db.session.commit()
         logger.info(f'Successfully generated {num_profiles} fake mentor profiles')
