@@ -10,12 +10,12 @@ logger = get_logger(__name__)
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
 fake = Faker('en_US')
 
-FAKER_MAPPINGS = {
-    'first_name': ['first_name', 'first_name_male', 'first_name_female'],
-    'last_name': ['last_name'],
-    'bio': ['text', 'paragraph'],
-    'expertise_areas': ['job', 'skill'],
-    'years_of_experience': ['random_int']
+PROFILE_FIELDS = {
+    'first_name': lambda: fake.first_name(),
+    'last_name': lambda: fake.last_name(),
+    'bio': lambda: fake.text(max_nb_chars=200),
+    'expertise_areas': lambda: [fake.job() for _ in range(random.randint(1, 3))],
+    'years_of_experience': lambda: random.randint(1, 20)
 }
 
 @fake_mentors_bp.route('/fake-mentors')
@@ -27,7 +27,7 @@ def fake_mentors_page():
     return render_template(
         'dashboard/fake_mentors.html',
         mentor_count=mentor_count,
-        faker_mappings=FAKER_MAPPINGS
+        profile_fields=list(PROFILE_FIELDS.keys())
     )
 
 @fake_mentors_bp.route('/fake-mentors/generate', methods=['POST'])
@@ -50,14 +50,16 @@ def generate_fake_mentors():
             db.session.flush()  # Get the user ID
             logger.debug(f'Created fake user with ID: {user.id}')
             
+            # Generate profile data
+            profile_data = {
+                field: generator() 
+                for field, generator in PROFILE_FIELDS.items()
+            }
+            
             # Create mentor profile
             mentor = MentorProfile(
                 user_id=user.id,
-                first_name=fake.first_name(),
-                last_name=fake.last_name(),
-                bio=fake.text(max_nb_chars=200),
-                expertise_areas=[fake.job() for _ in range(random.randint(1, 3))],
-                years_of_experience=random.randint(1, 20),
+                profile_data=profile_data,
                 application_status=MentorStatus.PENDING.value
             )
             db.session.add(mentor)
