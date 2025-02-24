@@ -4,18 +4,28 @@ from models.mentor_profiles import MentorProfile, MentorStatus
 from extensions.database import db
 from flask_app.extensions.cognito import require_auth, parse_headers, CognitoTokenVerifier
 
-mentor_bp = Blueprint('mentors', __name__)
+mentor_bp = Blueprint('mentors', __name__, url_prefix='/api/mentors')
 verifier = CognitoTokenVerifier()
+
+def get_user_from_token(headers):
+    """Helper function to get user from token"""
+    auth_token = parse_headers(headers)[0]
+    if not auth_token:
+        return None
+    
+    user_info = verifier.get_user_attributes(auth_token)
+    if not user_info or 'sub' not in user_info:
+        return None
+        
+    return User.query.filter_by(cognito_sub=user_info['sub']).first()
 
 @mentor_bp.route('/submit_application', methods=['POST'])
 @require_auth
 def submit_application():
     """Submit a mentor application"""
-    auth_token, _, _, _ = parse_headers(request.headers)
-    user = verifier.get_user_attributes(auth_token)
-
+    user = get_user_from_token(request.headers)
     if not user:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': 'User not found or invalid token'}), 401
 
     # Get JSON data from request
     profile_data = request.get_json()
@@ -42,9 +52,9 @@ def submit_application():
 @require_auth
 def update_application():
     """Update a mentor application"""
-    user = get_current_user()
+    user = get_user_from_token(request.headers)
     if not user:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': 'User not found or invalid token'}), 401
 
     # Get JSON data from request
     profile_data = request.get_json()
@@ -74,9 +84,9 @@ def update_application():
 @require_auth
 def get_application():
     """Get a mentor application"""
-    user = get_current_user()
+    user = get_user_from_token(request.headers)
     if not user:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': 'User not found or invalid token'}), 401
 
     profile = MentorProfile.query.filter_by(user_id=user.id).first()
     if not profile:
@@ -93,9 +103,9 @@ def get_application():
 @require_auth
 def get_application_status():
     """Get the status of a mentor application"""
-    user = get_current_user()
+    user = get_user_from_token(request.headers)
     if not user:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': 'User not found or invalid token'}), 401
 
     profile = MentorProfile.query.filter_by(user_id=user.id).first()
     if not profile:
