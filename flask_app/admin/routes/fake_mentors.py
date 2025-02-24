@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template, request, jsonify
 from flask_app.models.user import User, db
 from flask_app.models.mentor_profiles import MentorProfile, MentorStatus
-
+from flask_app.models.vector import MentorVector
 from extensions.logging import get_logger
 from faker import Faker
 import random
+import numpy as np
 
 logger = get_logger(__name__)
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
@@ -64,6 +65,18 @@ def generate_fake_mentors():
             )
             db.session.add(mentor)
             logger.debug(f'Created fake mentor profile for user ID: {user.id}')
+
+            # Create a random vector for testing (1536 dimensions, normalized)
+            random_vector = np.random.randn(1536)
+            random_vector = random_vector / np.linalg.norm(random_vector)
+            
+            # Create vector entry
+            vector = MentorVector(
+                user_id=user.id,
+                embedding=random_vector.tolist()
+            )
+            db.session.add(vector)
+            logger.debug(f'Created fake vector for user ID: {user.id}')
         
         db.session.commit()
         logger.info(f'Successfully generated {num_profiles} fake mentor profiles')
