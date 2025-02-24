@@ -55,10 +55,3 @@ class MentorProfile(db.Model):
 
     # Vector embedding for matching
     vector_embedding = db.Column(db.ARRAY(db.Float), nullable=True)
-
-    # Relationships
-    sessions: Mapped[List["MentorshipSession"]] = relationship(
-        "flask_app.models.mentorship_session.MentorshipSession",
-        foreign_keys="flask_app.models.mentorship_session.MentorshipSession.mentor_id",
-        backref="mentor"
-    )
