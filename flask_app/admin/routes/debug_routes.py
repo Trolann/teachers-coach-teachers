@@ -54,13 +54,10 @@ def submit_mentor_application():
 
 
 @debug_bps.route('/check-database', methods=['GET'])
+@require_auth
 def check_database():
     logger.info("Checking database connection")
     try:
-        # pull out auth header and debug log it
-        auth_header = request.headers.get('Authorization')
-        logger.debug(f"Authorization header: {auth_header}")
-        logger.debug(f"Other headers: {dict(request.headers)}")
         db.session.execute(text('SELECT 1'))
         logger.info("Database connection successful")
         return jsonify({"message": "Database 'tct_database' exists and is accessible"})

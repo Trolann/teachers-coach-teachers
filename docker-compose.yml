@@ -44,10 +44,8 @@ services:
     build:
       context: ./mobile
     ports:
-      - "19000:19000"  # Metro Bundler
-      - "19001:19001"  # WebSocket debugger
-      - "19002:19002"  # Expo DevTools
-      - "8081:8081"    # React Native packager
+      - "19000:19000"
+      - "8081:8081"
     volumes:
       - ./mobile:/app
       - /app/node_modules
@@ -55,25 +53,6 @@ services:
     user: "${UID}:${GID}"
     environment:
       - NODE_ENV=development
-      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
-      - EXPO_PUBLIC_HOST=${EXPO_PUBLIC_HOST}
-      - EXPO_NO_CHROME=true
-      - REACT_NATIVE_PACKAGER_HOSTNAME=0.0.0.0
-
-#  expo-frontend:
-#    container_name: expo-frontend
-#    build:
-#      context: ./mobile
-#    ports:
-#      - "19000:19000"
-#      - "8081:8081"
-#    volumes:
-#      - ./mobile:/app
-#      - /app/node_modules
-#    command: npx expo start
-#    user: "${UID}:${GID}"
-#    environment:
-#      - NODE_ENV=development
 
 volumes:
   tct_postgres_data:
