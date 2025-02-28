@@ -29,22 +29,11 @@ export default function PreApplicationScreen() {
         router.replace('/mentor-application');
       }
       else if (role === 'mentee') {
-        router.replace('/mentor-application'); // TODO CHANGE TO MENTEE
+        router.replace('/mentee-application'); // TODO CHANGE TO MENTEE
       } else {
         // If mentee, go straight to tabs
         router.replace('/(tabs)');
       }
-
-      // Alert.alert(
-      //   "Success",
-      //   `Welcome! You've been registered as a ${role}.`,
-      //   [
-      //     {
-      //       text: "Continue",
-      //       onPress: () => router.replace('/(tabs)')
-      //     }
-      //   ]
-      // );
 
 
     } catch (error) {
