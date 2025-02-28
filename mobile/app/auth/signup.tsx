@@ -68,7 +68,7 @@ export default function SignupScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Name"
+                placeholder="Enter your name"
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
@@ -81,7 +81,7 @@ export default function SignupScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder="Enter your email"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -95,7 +95,7 @@ export default function SignupScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder="Enter your password"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -186,7 +186,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#666',
   },
-  
   inputContainer: {
     gap: 15,
     marginBottom: 20,
@@ -205,10 +204,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#848282',
+    color: '#333',
     paddingVertical: 8,
-    fontFamily: 'Montserrat',
-    fontWeight: '300',
   },
   signUpButton: {
     backgroundColor: '#48B2EE',

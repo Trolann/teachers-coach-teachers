@@ -23,16 +23,30 @@ export default function PreApplicationScreen() {
         console.error('Role storage mismatch!'); // Warning if there's an issue
       }
 
-      Alert.alert(
-        "Success",
-        `Welcome! You've been registered as a ${role}.`,
-        [
-          {
-            text: "Continue",
-            onPress: () => router.replace('/(tabs)')
-          }
-        ]
-      );
+      // Redirect based on role
+      if (role === 'mentor') {
+        // Redirect to mentor application page
+        router.replace('/mentor-application');
+      }
+      else if (role === 'mentee') {
+        router.replace('/mentor-application'); // TODO CHANGE TO MENTEE
+      } else {
+        // If mentee, go straight to tabs
+        router.replace('/(tabs)');
+      }
+
+      // Alert.alert(
+      //   "Success",
+      //   `Welcome! You've been registered as a ${role}.`,
+      //   [
+      //     {
+      //       text: "Continue",
+      //       onPress: () => router.replace('/(tabs)')
+      //     }
+      //   ]
+      // );
+
+
     } catch (error) {
       console.error('Role selection failed:', error);
       Alert.alert("Error", "Failed to set user role. Please try again.");
