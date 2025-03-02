@@ -8,26 +8,35 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import LoginScreen from '../auth/login';
 import SignupScreen from '../auth/signup';
-
+import TokenManager from '../auth/TokenManager';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
-
-  // Simulating authentication state (replace with actual auth logic)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  // TODO: No longer simulate auth state
   useEffect(() => {
-    // Simulating fetching auth status
-    setTimeout(() => {
-        // TODO: Trevor changed this to true to debug with index.tsx
-      setIsAuthenticated(false); // Change to true if user is logged in
-    }, 1000);
+    const checkAuth = async () => {
+      try {
+        const hasToken = await TokenManager.getInstance().hasValidTokens();
+
+        if (hasToken) {
+          console.log("User is authenticated. Redirecting to pre-application.");
+          router.replace('/pre-application'); 
+        } else {
+          console.log("No valid token found. Redirecting to signup.");
+          setIsAuthenticated(false); 
+        }
+      } catch (error) {
+        console.error('Error checking auth token:', error);
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
   }, []);
-  
+
   if (isAuthenticated === null) {
     // Show a loading indicator while checking auth state
     return (
@@ -38,8 +47,7 @@ export default function TabLayout() {
   }
 
   if (!isAuthenticated) {
-    // return <SignupScreen />;
-    return <LoginScreen />;
+    return <SignupScreen />;
   }
 
   return (
@@ -50,10 +58,7 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
+          ios: { position: 'absolute' },
           default: {},
         }),
       }}>

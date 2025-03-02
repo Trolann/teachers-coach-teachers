@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
