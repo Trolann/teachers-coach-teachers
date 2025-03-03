@@ -15,13 +15,16 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+
     const checkAuth = async () => {
       try {
         const hasToken = await TokenManager.getInstance().hasValidTokens();
 
-        if (hasToken) {
+        if (hasToken && isMounted) {
           console.log("User is authenticated. Redirecting to pre-application.");
           router.replace('/pre-application'); 
         } else {
@@ -35,10 +38,11 @@ export default function TabLayout() {
     };
 
     checkAuth();
-  }, []);
+
+    return () => setIsMounted(false);
+  }, [isMounted]);
 
   if (isAuthenticated === null) {
-    // Show a loading indicator while checking auth state
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={Colors[colorScheme ?? 'light'].tint} />
@@ -53,8 +57,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false, // ✅ Hides headers for all tab screens
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
@@ -66,6 +70,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
+          headerShown: false, // ✅ Ensure individual screens also have no headers
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
@@ -73,6 +78,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Explore',
+          headerShown: false, // ✅ Ensure no headers for Explore page
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />

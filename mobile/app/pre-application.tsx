@@ -4,6 +4,9 @@ import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import TokenManager from './auth/TokenManager';
+import { Href } from 'expo-router';
+import { Platform } from 'react-native';
+
 
 export default function PreApplicationScreen() {
   const router = useRouter();
@@ -12,33 +15,55 @@ export default function PreApplicationScreen() {
     try {
       console.log('Selected role:', role);
       await TokenManager.getInstance().setUserRole(role);
-
-      // Verify the role was stored by retrieving it
+  
       const storedRole = await TokenManager.getInstance().getUserRole();
-      console.log('Stored role:', storedRole); // Log the stored role
-      
+      console.log('Stored role:', storedRole); 
+  
       if (storedRole === role) {
-        console.log('Role successfully stored!'); // Confirmation log
+        console.log('Role successfully stored!');
       } else {
-        console.error('Role storage mismatch!'); // Warning if there's an issue
+        console.error('Role storage mismatch!');
       }
-
-      Alert.alert(
-        "Success",
-        `Welcome! You've been registered as a ${role}.`,
-        [
-          {
-            text: "Continue",
-            onPress: () => router.replace('/(tabs)')
-          }
-        ]
-      );
+  
+      const message = `Welcome! You've been registered as a ${role}.`;
+  
+      if (Platform.OS === 'web') {
+        // ✅ Web uses browser's alert function
+        alert(message);
+        if (role === 'mentee') {
+          router.replace('/pre-matching-mentee'); 
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else {
+        // ✅ Mobile uses React Native Alert
+        Alert.alert(
+          "Success",
+          message,
+          [
+            {
+              text: "Continue",
+              onPress: () => {
+                if (role === 'mentee') {
+                  router.replace('/pre-matching-mentee'); 
+                } else {
+                  router.replace('/(tabs)'); 
+                }
+              },
+            }
+          ]
+        );
+      }
     } catch (error) {
       console.error('Role selection failed:', error);
-      Alert.alert("Error", "Failed to set user role. Please try again.");
+      if (Platform.OS === 'web') {
+        alert("Error: Failed to set user role. Please try again.");
+      } else {
+        Alert.alert("Error", "Failed to set user role. Please try again.");
+      }
     }
   };
-
+  
   return (
     <ThemedView style={styles.container}>
       <View style={styles.card}>
