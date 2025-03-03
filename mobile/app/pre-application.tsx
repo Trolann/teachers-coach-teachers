@@ -28,7 +28,6 @@ export default function PreApplicationScreen() {
       const message = `Welcome! You've been registered as a ${role}.`;
   
       if (Platform.OS === 'web') {
-        // ✅ Web uses browser's alert function
         alert(message);
         if (role === 'mentee') {
           router.replace('/pre-matching-mentee'); 
@@ -36,7 +35,6 @@ export default function PreApplicationScreen() {
           router.replace('/(tabs)');
         }
       } else {
-        // ✅ Mobile uses React Native Alert
         Alert.alert(
           "Success",
           message,

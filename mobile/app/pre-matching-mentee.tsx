@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+
 
 export default function FindMentorScreen() {
   const [goal, setGoal] = useState('');
-
+  const router = useRouter();
   return (
     <SafeAreaView style={styles.container}>
       {/* Main Content */}
@@ -32,7 +34,10 @@ export default function FindMentorScreen() {
             value={goal}
             onChangeText={setGoal}
           />
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={() => router.push('/mentee-matching')}
+          >
             <Text style={styles.buttonText}>Find a Mentor</Text>
             <Ionicons name="paper-plane-outline" size={20} color="white" style={styles.buttonIcon} />
           </TouchableOpacity>
