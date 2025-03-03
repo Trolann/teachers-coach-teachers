@@ -1,34 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function MenteeLandingScreen() {
+  const [likedMentors, setLikedMentors] = useState({});
+  const [selectedFilter, setSelectedFilter] = useState('Popular'); // Default selected filter
+
   const mentors = [
-    {
-      id: 1,
-      name: 'Melissa Gao',
-      subject: 'Biology',
-      location: 'Austin, Texas',
-      rating: 4.8,
-      image: require('../assets/images/stock_mentor2.jpg'),
-    },
-    {
-      id: 2,
-      name: 'Mark Smith',
-      subject: 'Physics',
-      location: 'San Jose, CA',
-      rating: 4.6,
-      image: require('../assets/images/stock_mentor2.jpg'),
-    },
-    {
-        id: 3,
-        name: 'Regina Smith',
-        subject: 'Physics',
-        location: 'San Francisco, CA',
-        rating: 4.6,
-        image: require('../assets/images/stock_mentor2.jpg'),
-      },
+    { id: 1, name: 'Melissa Gao', subject: 'Biology', location: 'Austin, Texas', rating: 4.8, image: require('../assets/images/stock_mentor2.jpg') },
+    { id: 2, name: 'Mark Smith', subject: 'Physics', location: 'San Jose, CA', rating: 4.6, image: require('../assets/images/stock_mentor2.jpg') },
+    { id: 3, name: 'Regina Smith', subject: 'Physics', location: 'San Francisco, CA', rating: 4.6, image: require('../assets/images/stock_mentor2.jpg') },
   ];
+
+  const filters = ['Popular', 'Nearby', 'Organization', 'Teaching', 'STEM', 'Urban', 'Local', 'College', 'K-12', 'Powerpoints', 'Top-Rated'];
+
+  // Toggle the liked state
+  const handleLikeToggle = (mentor) => {
+    setLikedMentors((prev) => ({
+      ...prev,
+      [mentor.id]: !prev[mentor.id],
+    }));
+
+    console.log(`${mentor.name} is ${!likedMentors[mentor.id] ? "Liked" : "Unliked"}`);
+  };
+
+  // Handle filter selection with logging
+  const handleFilterSelection = (filter) => {
+    setSelectedFilter(filter);
+    console.log(`Selected Filter: ${filter}`); // ✅ Logs the selected filter
+  };
 
   return (
     <View style={styles.container}>
@@ -46,9 +46,15 @@ export default function MenteeLandingScreen() {
 
         {/* Tag Filters (Scrollable) */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagsContainer}>
-          {['Popular', 'Nearby', 'Organization', 'Teaching', 'STEM', 'Urban', 'Local', 'College', 'K-12', 'Powerpoints', 'Top-Rated'].map((tag, index) => (
-            <TouchableOpacity key={index} style={[styles.tag, index === 0 && styles.selectedTag]}>
-              <Text style={[styles.tagText, index === 0 && styles.selectedTagText]}>{tag}</Text>
+          {filters.map((filter, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.tag, selectedFilter === filter && styles.selectedTag]}
+              onPress={() => handleFilterSelection(filter)}
+            >
+              <Text style={[styles.tagText, selectedFilter === filter && styles.selectedTagText]}>
+                {filter}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -66,19 +72,30 @@ export default function MenteeLandingScreen() {
               <View style={styles.mentorOverlay}>
                 <Text style={styles.mentorName}>{item.name}, {item.subject}</Text>
                 <View style={styles.mentorMeta}>
-                  <Ionicons name="location-outline" size={14} color="#fff" />
-                  <Text style={styles.mentorLocation}>{item.location}</Text>
+                    <View style={styles.locationContainer}>
+                        <Ionicons name="location-outline" size={14} color="#fff" />
+                        <Text style={styles.mentorLocation}>{item.location}</Text>
+                    </View>
+                    <View style={styles.ratingContainer}>
+                        <Text style={styles.mentorRating}>⭐ {item.rating}</Text>
+                    </View>
                 </View>
-                <Text style={styles.mentorRating}>⭐ {item.rating}</Text>
               </View>
-              <TouchableOpacity style={styles.heartIcon}>
-                <Ionicons name="heart-outline" size={22} color="white" />
+              <TouchableOpacity 
+                style={styles.heartIcon} 
+                onPress={() => handleLikeToggle(item)}
+              >
+                <Ionicons 
+                  name={likedMentors[item.id] ? "heart" : "heart-outline"} 
+                  size={22} 
+                  color={likedMentors[item.id] ? "red" : "white"} 
+                />
               </TouchableOpacity>
             </TouchableOpacity>
           )}
         />
 
-        {/* CTA Button (Fixed Placement Above Navbar) */}
+        {/* CTA Button */}
         <View style={styles.ctaContainer}>
           <Text style={styles.noMatchText}>Not finding the right match?</Text>
           <TouchableOpacity style={styles.ctaButton}>
@@ -87,7 +104,7 @@ export default function MenteeLandingScreen() {
         </View>
       </ScrollView>
 
-      {/* Sticky Navbar (Fixed to Bottom) */}
+      {/* Sticky Navbar */}
       <View style={styles.navbar}>
         <Ionicons name="home" size={24} color="black" />
         <Ionicons name="time-outline" size={24} color="gray" />
@@ -197,9 +214,21 @@ const styles = StyleSheet.create({
   mentorMeta: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between', // ✅ Ensures spacing between location and rating
     marginTop: 2,
     paddingBottom: 5,
   },
+  
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end', // ✅ Aligns rating to the right
+  },  
   mentorLocation: {
     fontSize: 12,
     color: 'white',
