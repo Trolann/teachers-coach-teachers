@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+
 
 export default function MenteeLandingScreen() {
   const [likedMentors, setLikedMentors] = useState({});
-  const [selectedFilter, setSelectedFilter] = useState('Popular'); // Default selected filter
+  const [selectedFilter, setSelectedFilter] = useState('Popular'); 
+  const router = useRouter();
 
+  
   const mentors = [
     { id: 1, name: 'Melissa Gao', subject: 'Biology', location: 'Austin, Texas', rating: 4.8, image: require('../assets/images/stock_mentor2.jpg') },
-    { id: 2, name: 'Mark Smith', subject: 'Physics', location: 'San Jose, CA', rating: 4.6, image: require('../assets/images/stock_mentor2.jpg') },
-    { id: 3, name: 'Regina Smith', subject: 'Physics', location: 'San Francisco, CA', rating: 4.6, image: require('../assets/images/stock_mentor2.jpg') },
+    { id: 2, name: 'Mark Smith', subject: 'Physics', location: 'San Jose, CA', rating: 4.6, image: require('../assets/images/stock_mentor3.jpg') },
+    { id: 3, name: 'Jennifer Miller', subject: 'History', location: 'San Francisco, CA', rating: 4.6, image: require('../assets/images/stock_mentor4.jpeg') },
   ];
 
   const filters = ['Popular', 'Nearby', 'Organization', 'Teaching', 'STEM', 'Urban', 'Local', 'College', 'K-12', 'Powerpoints', 'Top-Rated'];
@@ -36,11 +40,14 @@ export default function MenteeLandingScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Hi, Steve <Text style={styles.wave}>👋</Text></Text>
+            <Text style={styles.greeting}>Hi, Jessica <Text style={styles.wave}>👋</Text></Text>
             <Text style={styles.subtitle}>Find yourself a Mentor</Text>
           </View>
           <TouchableOpacity>
             <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
+            <View style={styles.tokenContainer}>
+              <Text style={styles.tokenText}>12 🪙</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -68,6 +75,7 @@ export default function MenteeLandingScreen() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.mentorCard}>
+              <View style={styles.onlineIndicator} />
               <Image source={item.image} style={styles.mentorImage} />
               <View style={styles.mentorOverlay}>
                 <Text style={styles.mentorName}>{item.name}, {item.subject}</Text>
@@ -98,7 +106,7 @@ export default function MenteeLandingScreen() {
         {/* CTA Button */}
         <View style={styles.ctaContainer}>
           <Text style={styles.noMatchText}>Not finding the right match?</Text>
-          <TouchableOpacity style={styles.ctaButton}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.ctaButton}>
             <Text style={styles.ctaText}>Click here</Text>
           </TouchableOpacity>
         </View>
@@ -133,11 +141,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
+    marginBottom: 8,
   },
   wave: {
-    fontSize: 24,
+    fontSize: 30,
   },
   subtitle: {
     fontSize: 16,
@@ -147,6 +156,16 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 25,
+  },
+  tokenText: {
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 4,
+  },
+  tokenContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -173,14 +192,14 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
     paddingTop: 10,
-    paddingBottom: 10,
+    paddingBottom: 15,
   },
   mentorCard: {
-    width: 200,
+    width: 230,
     backgroundColor: '#fff',
     borderRadius: 20,
     overflow: 'hidden',
@@ -193,7 +212,19 @@ const styles = StyleSheet.create({
   },
   mentorImage: {
     width: '100%',
-    height: 310,
+    height: 350,
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    top: 22,
+    left: 17,
+    width: 12,
+    height: 12,
+    backgroundColor: 'green',
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: 'green', 
+    zIndex: 2, 
   },
   mentorOverlay: {
     position: 'absolute',
@@ -214,7 +245,7 @@ const styles = StyleSheet.create({
   mentorMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', // ✅ Ensures spacing between location and rating
+    justifyContent: 'space-between', 
     marginTop: 2,
     paddingBottom: 5,
   },
@@ -227,7 +258,7 @@ const styles = StyleSheet.create({
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end', // ✅ Aligns rating to the right
+    justifyContent: 'flex-end', 
   },  
   mentorLocation: {
     fontSize: 12,
@@ -251,10 +282,10 @@ const styles = StyleSheet.create({
   ctaContainer: {
     marginTop: 15,
     alignItems: 'center',
-    padding: 50,
+    padding: 25,
   },
   noMatchText: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: 'bold',
     textAlign: 'center',
     paddingBottom: 10,
@@ -270,7 +301,7 @@ const styles = StyleSheet.create({
   ctaText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   navbar: {
     flexDirection: 'row',

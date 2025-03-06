@@ -14,7 +14,7 @@ export default function FindMentorScreen() {
         {/* Header Section */}
         <View style={styles.header}>
           <Text style={styles.greeting}>
-            Hi, Steve <Text style={styles.wave}>👋</Text>
+            Hi, Jessica <Text style={styles.wave}>👋</Text>
           </Text>
           <Image 
             source={require('../assets/images/stock_pfp.jpeg')}
