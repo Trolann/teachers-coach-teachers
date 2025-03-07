@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Alert } from 'react-native';
 
 
 export default function MenteeLandingScreen() {
@@ -74,7 +75,17 @@ export default function MenteeLandingScreen() {
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.mentorCard}>
+            <TouchableOpacity 
+              style={styles.mentorCard}
+              onPress={() => Alert.alert(
+                "Join Call",
+                `Do you want to join a call with ${item.name}?`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Join", onPress: () => console.log(`Joining call with ${item.name}`) }
+                ]
+              )}
+            >
               <View style={styles.onlineIndicator} />
               <Image source={item.image} style={styles.mentorImage} />
               <View style={styles.mentorOverlay}>
@@ -132,7 +143,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 50,
-    paddingBottom: 100, // Prevents navbar overlap
+    paddingBottom: 100, 
   },
   header: {
     flexDirection: 'row',
@@ -141,7 +152,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   greeting: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
     marginBottom: 8,
   },
@@ -230,7 +241,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)', // Dark overlay
+    backgroundColor: 'rgba(0, 0, 0, 0.2)', 
     padding: 12,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,

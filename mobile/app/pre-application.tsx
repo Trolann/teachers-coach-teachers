@@ -4,9 +4,7 @@ import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import TokenManager from './auth/TokenManager';
-import { Href } from 'expo-router';
 import { Platform } from 'react-native';
-
 
 export default function PreApplicationScreen() {
   const router = useRouter();
@@ -15,50 +13,39 @@ export default function PreApplicationScreen() {
     try {
       console.log('Selected role:', role);
       await TokenManager.getInstance().setUserRole(role);
-  
+
       const storedRole = await TokenManager.getInstance().getUserRole();
       console.log('Stored role:', storedRole); 
-  
+
       if (storedRole === role) {
         console.log('Role successfully stored!');
       } else {
         console.error('Role storage mismatch!');
       }
-  
+
       const message = `Welcome! You've been registered as a ${role}.`;
-  
+
       if (Platform.OS === 'web') {
-        alert(message);
-        if (role === 'mentee') {
-          router.replace('/pre-matching-mentee'); 
-        } else {
-          router.replace('/(tabs)');
-        }
+        alert(message); 
+        router.replace(role === 'mentee' ? '/pre-matching-mentee' : '/(tabs)');
       } else {
         Alert.alert(
-          "Success",
+          "Success 🎉",
           message,
           [
             {
               text: "Continue",
               onPress: () => {
-                if (role === 'mentee') {
-                  router.replace('/pre-matching-mentee'); 
-                } else {
-                  router.replace('/(tabs)'); 
-                }
+                router.replace(role === 'mentee' ? '/pre-matching-mentee' : '/(tabs)');
               },
             }
           ]
         );
       }
+
     } catch (error) {
       console.error('Role selection failed:', error);
-      if (Platform.OS === 'web') {
-        alert("Error: Failed to set user role. Please try again.");
-      } else {
-        Alert.alert("Error", "Failed to set user role. Please try again.");
-      }
+      Alert.alert("Error", "Failed to set user role. Please try again.");
     }
   };
   
@@ -84,10 +71,10 @@ export default function PreApplicationScreen() {
         {/* Selection Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={styles.selectionButton}
+            style={[styles.selectionButton, styles.mentorButton]}
             onPress={() => handleRoleSelection('mentor')}
           >
-            <ThemedText style={styles.buttonText}>Mentor</ThemedText>
+            <ThemedText style={styles.buttonText}>Continue as a Mentor 🍎</ThemedText>
           </TouchableOpacity>
 
           <View style={styles.dividerContainer}>
@@ -97,10 +84,10 @@ export default function PreApplicationScreen() {
           </View>
 
           <TouchableOpacity 
-            style={styles.selectionButton}
+            style={[styles.selectionButton, styles.menteeButton]}
             onPress={() => handleRoleSelection('mentee')}
           >
-            <ThemedText style={styles.buttonText}>Mentee</ThemedText>
+            <ThemedText style={styles.buttonText}>Continue as a Mentee 🎓</ThemedText>
           </TouchableOpacity>
         </View>
       </View>
@@ -111,20 +98,28 @@ export default function PreApplicationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
-  },
-  card: {
-    backgroundColor: 'white',
-    margin: 20,
-    borderRadius: 30,
-    padding: 20,
-    flex: 1,
+    backgroundColor: '#F3F4F6', 
     justifyContent: 'center',
     alignItems: 'center',
   },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 25,
+    paddingVertical: 120,
+    paddingHorizontal: 30,
+    width: '100%', 
+    flexGrow: 1, 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    elevation: 5, 
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 10,
+  },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
   },
   logo: {
     width: 80,
@@ -135,44 +130,54 @@ const styles = StyleSheet.create({
   },
   welcomeContainer: {
     alignItems: 'center',
-    marginBottom: 40,
-    paddingHorizontal: 40,
-    maxWidth: 500
+    marginBottom: 30,
+    paddingHorizontal: 20,
   },
   welcomeText: {
     fontSize: 28,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 20,
+    marginBottom: 15,
     textAlign: 'center',
   },
   descriptionText: {
     fontSize: 18,
-    color: '#666',
+    color: '#555',
     textAlign: 'center',
-    lineHeight: 24,
-    maxWidth: '80%'
+    lineHeight: 26,
+    maxWidth: '100%',
   },
   buttonContainer: {
-    width: '70%',
+    width: '100%',
+    maxWidth: 400,
     gap: 15,
   },
   selectionButton: {
-    backgroundColor: '#82CD7B',
-    padding: 14,
-    borderRadius: 25,
+    paddingVertical: 16,
+    borderRadius: 30,
     alignItems: 'center',
     width: '100%',
+    elevation: 3, 
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+  },
+  mentorButton: {
+    backgroundColor: '#4CAF50', 
+  },
+  menteeButton: {
+    backgroundColor: '#007BFF', 
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 15,
+    marginVertical: 10,
     width: '100%',
   },
   divider: {
@@ -183,5 +188,7 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: 10,
     color: '#848282',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

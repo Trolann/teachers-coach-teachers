@@ -13,16 +13,21 @@ export default function FindMentorScreen() {
       <View style={styles.content}>
         {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>
-            Hi, Jessica <Text style={styles.wave}>👋</Text>
-          </Text>
+          {/* Group title and subtitle */}
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.greeting}>
+              Hi, Jessica <Text style={styles.wave}>👋</Text>
+            </Text>
+            <Text style={styles.subtitle}>What kind of help do you need?</Text>
+          </View>
+          
+          {/* Profile Image */}
           <Image 
             source={require('../assets/images/stock_pfp.jpeg')}
             style={styles.profileImage}
           />
         </View>
-        <Text style={styles.subtitle}>What kind of help do you need?</Text>
-
+        
         <View style={styles.mentorContainer}>
           <Text style={styles.title}>Find a Mentor</Text>
           <Text style={styles.label}>Briefly describe what your goal is for this session</Text>
@@ -66,9 +71,9 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
     marginBottom: 10,
   },
   mentorContainer: {
@@ -80,9 +85,14 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 30,
     fontWeight: 'bold',
+    marginBottom: 7,
   },
   wave: {
     fontSize: 30,
+  },
+  headerTextContainer: {
+    flex: 1,  
+    justifyContent: 'center',
   },
   profileImage: {
     width: 45,
@@ -92,7 +102,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 20,
+    marginTop: 2,
   },
   title: {
     fontSize: 24,
