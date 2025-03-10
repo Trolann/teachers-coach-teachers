@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 class UserType(Enum):
     MENTOR = 'mentor'
     MENTEE = 'mentee'
-    ADMIN = 'admin'
+    ADMIN = 'admin'  # This is defined correctly, but the database schema needs to be updated
 
 class ApplicationStatus(Enum):
     PENDING = 'pending'
