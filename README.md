@@ -25,22 +25,25 @@ npm install -g expo-cli
 4. **Environment Variables**:
    - Copy the `.env.example` file to `.env` and update the values.
 ```bash
-cp .env.example .env
+cp .env.example .env && cp mobile/.env.example mobile/.env
 ```
 
 ### Notes on environment variables
-
-  - The `.env` must remain in the repository root
-  - LOG_LEVEL is the log level for our backend. 
-  - FLASK_LOG_LEVEL is the log level for the Flask/Waitress web server
-  - UID/GID are the User ID/Group ID the docker container should run at. This should be the output from `id -u` and `id -g` on your local machine.
-  - POSTGRES_USER, POSTGRES_PASSWORD can be any value for local development
-  - POSTGRES_DB should remain as tct_database
-  - SQLALCHEMY_DATABASE_URI should remain as is to reach the database over the docker network
-  - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
-  - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
-  - FLASK_ENV should remain as development for local development
-  - COGNITO_* and AWS_* you must get from Trevor
+  - Root `.env` file is for the backend:
+    - The `.env` must remain in the repository root
+    - LOG_LEVEL is the log level for our backend. 
+    - FLASK_LOG_LEVEL is the log level for the Flask/Waitress web server
+    - UID/GID are the User ID/Group ID the docker container should run at. This should be the output from `id -u` and `id -g` on your local machine.
+    - POSTGRES_USER, POSTGRES_PASSWORD can be any value for local development
+    - POSTGRES_DB should remain as tct_database
+    - SQLALCHEMY_DATABASE_URI should remain as is to reach the database over the docker network
+    - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
+    - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
+    - FLASK_ENV should remain as development for local development
+    - COGNITO_* and AWS_* you must get from Trevor
+  - Mobile `.env` file is for `mobile/` directory:
+    - EXPO_PUBLIC_COGNITO_CLIENT_ID is the same as the client id in the root `.env` file
+    - EXPO_PUBLIC_COGNITO_REGION is the same as the region in the root `.env` file
 ---
 
 ## **Project Structure**
@@ -73,6 +76,7 @@ The project structure looks like this:
 │   ├── scripts/                 # Utility scripts
 │   ├── app.json                 # Expo configuration
 │   └── package.json             # Frontend dependencies
+|   └── .env                     # Environment variables for the frontend
 ├── docker-compose.yml           # Docker services configuration
 └── README.md                    # Project documentation
 ```
