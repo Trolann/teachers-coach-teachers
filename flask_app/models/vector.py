@@ -3,6 +3,8 @@ from datetime import datetime
 from extensions.database import db
 from pgvector.sqlalchemy import Vector
 
+
+# TODO: Remove and update fake_mentors.py in admin panel
 class MentorVector(db.Model):
     """Vector representation of mentor profiles for similarity search"""
     __tablename__ = 'mentor_vectors'
