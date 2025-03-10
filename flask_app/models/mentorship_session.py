@@ -36,7 +36,7 @@ class MentorshipSession(db.Model):
     # Feedback and metadata
     mentor_feedback = db.Column(db.JSON, nullable=True)  # From the mentor
     mentee_feedback = db.Column(db.JSON, nullable=True)  # From the mentee
-    metadata = db.Column(db.JSON, nullable=True)  # For any additional data
+    meta_data = db.Column(db.JSON, nullable=True)  # For any additional data
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
