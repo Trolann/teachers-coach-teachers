@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify
 from flask_app.models.user import User, UserType, ApplicationStatus, db
-from flask_app.models.vector import MentorVector
+from flask_app.models.embedding import UserEmbedding
 from extensions.logging import get_logger
 from faker import Faker
 import random
@@ -65,17 +65,22 @@ def generate_fake_mentors():
             db.session.flush()  # Get the user ID
             logger.debug(f'Created fake mentor user with cognito_sub: {cognito_sub}')
 
-            # Create a random vector for testing (1536 dimensions, normalized)
-            random_vector = np.random.randn(1536)
-            random_vector = random_vector / np.linalg.norm(random_vector)
+            # Create random vectors for testing (1536 dimensions, normalized)
+            # Create multiple embedding types for each user
+            embedding_types = ['bio', 'expertise', 'goals']
             
-            # Create vector entry
-            vector = MentorVector(
-                user_id=cognito_sub,
-                embedding=random_vector.tolist()
-            )
-            db.session.add(vector)
-            logger.debug(f'Created fake vector for user cognito_sub: {cognito_sub}')
+            for embedding_type in embedding_types:
+                random_vector = np.random.randn(1536)
+                random_vector = random_vector / np.linalg.norm(random_vector)
+                
+                # Create embedding entry
+                embedding = UserEmbedding(
+                    user_id=cognito_sub,
+                    embedding_type=embedding_type,
+                    vector_embedding=random_vector.tolist()
+                )
+                db.session.add(embedding)
+                logger.debug(f'Created fake {embedding_type} embedding for user cognito_sub: {cognito_sub}')
         
         db.session.commit()
         logger.info(f'Successfully generated {num_profiles} fake mentor profiles')
