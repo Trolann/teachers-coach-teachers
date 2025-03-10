@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
-from models.user import User
-from models.mentor_profiles import MentorProfile, MentorStatus
+from models.user import User, UserType, ApplicationStatus
 from extensions.database import db
 from flask_app.extensions.cognito import require_auth, parse_headers, CognitoTokenVerifier
+from datetime import datetime
 
 mentor_bp = Blueprint('mentors', __name__, url_prefix='/api/mentors')
 verifier = CognitoTokenVerifier()
@@ -32,20 +32,20 @@ def submit_application():
     if not profile_data:
         return jsonify({'error': 'No profile data provided'}), 400
 
-    # Check if user already has a profile
-    existing_profile = MentorProfile.query.filter_by(user_id=user.id).first()
-    if existing_profile:
+    # Check if user is already a mentor
+    if user.user_type == UserType.MENTOR:
         return jsonify({'error': 'Application already exists'}), 409
 
-    # Create new profile
-    profile = MentorProfile(user_id=user.id, profile_data=profile_data)
-    db.session.add(profile)
+    # Update user to be a mentor
+    user.user_type = UserType.MENTOR
+    user.profile = profile_data
+    user.application_status = ApplicationStatus.PENDING
     db.session.commit()
 
     return jsonify({
         'message': 'Application submitted successfully',
-        'profile_id': profile.id,
-        'status': profile.application_status
+        'user_id': user.cognito_sub,
+        'status': user.application_status.value
     }), 201
 
 @mentor_bp.route('/update_application', methods=['POST'])
@@ -61,23 +61,22 @@ def update_application():
     if not profile_data:
         return jsonify({'error': 'No profile data provided'}), 400
 
-    # Get existing profile
-    profile = MentorProfile.query.filter_by(user_id=user.id).first()
-    if not profile:
+    # Check if user is a mentor
+    if user.user_type != UserType.MENTOR:
         return jsonify({'error': 'No application found'}), 404
 
     # Only allow updates if application is pending
-    if profile.application_status != MentorStatus.PENDING.value:
+    if user.application_status != ApplicationStatus.PENDING:
         return jsonify({'error': 'Cannot update application in current status'}), 403
 
     # Update profile data
-    profile.profile_data.update(profile_data)
+    user.profile.update(profile_data)
     db.session.commit()
 
     return jsonify({
         'message': 'Application updated successfully',
-        'profile_id': profile.id,
-        'status': profile.application_status
+        'user_id': user.cognito_sub,
+        'status': user.application_status.value
     })
 
 @mentor_bp.route('/get_application', methods=['GET'])
@@ -88,15 +87,14 @@ def get_application():
     if not user:
         return jsonify({'error': 'User not found or invalid token'}), 401
 
-    profile = MentorProfile.query.filter_by(user_id=user.id).first()
-    if not profile:
+    if user.user_type != UserType.MENTOR:
         return jsonify({'error': 'No application found'}), 404
 
     return jsonify({
-        'profile_id': profile.id,
-        'status': profile.application_status,
-        'submitted_at': profile.application_submitted_at.isoformat(),
-        'profile_data': profile.profile_data
+        'user_id': user.cognito_sub,
+        'status': user.application_status.value,
+        'submitted_at': user.created_at.isoformat(),
+        'profile_data': user.profile
     })
 
 @mentor_bp.route('/get_application_status', methods=['GET'])
@@ -107,12 +105,11 @@ def get_application_status():
     if not user:
         return jsonify({'error': 'User not found or invalid token'}), 401
 
-    profile = MentorProfile.query.filter_by(user_id=user.id).first()
-    if not profile:
+    if user.user_type != UserType.MENTOR:
         return jsonify({'error': 'No application found'}), 404
 
     return jsonify({
-        'profile_id': profile.id,
-        'status': profile.application_status,
-        'submitted_at': profile.application_submitted_at.isoformat()
+        'user_id': user.cognito_sub,
+        'status': user.application_status.value,
+        'submitted_at': user.created_at.isoformat()
     })
