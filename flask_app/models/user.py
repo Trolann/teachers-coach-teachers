@@ -9,6 +9,7 @@ logger = get_logger(__name__)
 class UserType(Enum):
     MENTOR = 'mentor'
     MENTEE = 'mentee'
+    ADMIN = 'admin'
 
 class ApplicationStatus(Enum):
     PENDING = 'pending'

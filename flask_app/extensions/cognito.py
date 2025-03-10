@@ -10,7 +10,7 @@ from config import CognitoConfig
 from boto3 import client
 from extensions.logging import get_logger
 from extensions.database import db
-from flask_app.models.user import User
+from flask_app.models.user import User, UserType
 
 config = CognitoConfig()
 logger = get_logger(__name__)
@@ -205,12 +205,13 @@ class CognitoTokenVerifier:
             user_id = user_info['user_id']
 
             logger.debug(f'Checking for existing user.')
-            existing_user = db.session.query(User).filter(User.id == user_id).first()
+            existing_user = db.session.query(User).filter(User.cognito_sub == user_id).first()
             logger.debug(f'Existing user: {existing_user}')
             if not existing_user:
                 user = User(
                     cognito_sub=user_id,
-                    email=user_info['email']  # Modified to directly access email from user_info
+                    email=user_info['email'],  # Modified to directly access email from user_info
+                    user_type=UserType.ADMIN
                 )
                 logger.debug(f"Adding new user to database: {user.email}")
                 db.session.add(user)
