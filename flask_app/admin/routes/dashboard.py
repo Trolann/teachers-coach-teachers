@@ -1,6 +1,6 @@
 from flask import render_template, current_app, Blueprint, request, redirect, url_for, flash, session
 from extensions.database import db
-from flask_app.models.mentor_profiles import MentorProfile
+from flask_app.models.user import User, UserType, ApplicationStatus
 from extensions.cognito import require_auth, CognitoTokenVerifier
 from extensions.logging import get_logger
 from sqlalchemy import text
@@ -92,7 +92,7 @@ def mentors():
     if 'access_token' not in session:
         logger.debug('Routing user to dashboard login page')
         return redirect(url_for('admin.admin_dashboard.index'))
-    mentors = db.session.query(MentorProfile).all()
+    mentors = db.session.query(User).filter(User.user_type == UserType.MENTOR).all()
     logger.info(f'Rendering mentors dashboard for {session.get("username")}')
     return render_template('dashboard/mentors.html', mentors=mentors)
 
@@ -105,11 +105,11 @@ def approve_mentor(mentor_id):
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(MentorProfile).filter(MentorProfile.id == mentor_id).first()
+        mentor = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
         if not mentor:
             return {'success': False, 'error': 'Mentor not found'}, 404
         logger.info(f'Approving mentor {mentor_id} for {session.get("username")}')
-        mentor.application_status = 'approved'
+        mentor.application_status = ApplicationStatus.APPROVED
         db.session.commit()
         logger.info(f'Mentor {mentor_id} approved successfully')
         return {'success': True}
@@ -127,12 +127,12 @@ def reject_mentor(mentor_id):
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(MentorProfile).filter(MentorProfile.id == mentor_id).first()
+        mentor = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
         if not mentor:
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
             
-        mentor.application_status = 'rejected'
+        mentor.application_status = ApplicationStatus.REJECTED
         logger.info(f'Rejecting mentor {mentor_id} for {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} rejected successfully')
@@ -151,12 +151,12 @@ def revoke_mentor(mentor_id):
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(MentorProfile).filter(MentorProfile.id == mentor_id).first()
+        mentor = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
         if not mentor:
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
             
-        mentor.application_status = 'revoked'
+        mentor.application_status = ApplicationStatus.REVOKED
         logger.info(f'Revoking mentor {mentor_id} for {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} approval revoked successfully')

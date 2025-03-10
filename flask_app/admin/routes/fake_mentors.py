@@ -1,11 +1,11 @@
 from flask import Blueprint, render_template, request, jsonify
-from flask_app.models.user import User, db
-from flask_app.models.mentor_profiles import MentorProfile, MentorStatus
+from flask_app.models.user import User, UserType, ApplicationStatus, db
 from flask_app.models.vector import MentorVector
 from extensions.logging import get_logger
 from faker import Faker
 import random
 import numpy as np
+from uuid import uuid4
 
 logger = get_logger(__name__)
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
@@ -23,7 +23,7 @@ PROFILE_FIELDS = {
 def fake_mentors_page():
     """Display the fake mentors generation interface"""
     logger.debug('Accessing fake mentors generation page')
-    mentor_count = MentorProfile.query.count()
+    mentor_count = User.query.filter_by(user_type=UserType.MENTOR).count()
     logger.info(f'Current mentor count: {mentor_count}')
     return render_template(
         'dashboard/fake_mentors.html',
@@ -44,27 +44,26 @@ def generate_fake_mentors():
             return jsonify({'success': False, 'error': 'Number of profiles must be between 1 and 100'}), 400
         
         for _ in range(num_profiles):
-            # Create a user first
-            email = fake.unique.email()
-            user = User(email=email)
-            db.session.add(user)
-            db.session.flush()  # Get the user ID
-            logger.debug(f'Created fake user with ID: {user.id}')
-            
             # Generate profile data
             profile_data = {
                 field: generator() 
                 for field, generator in PROFILE_FIELDS.items()
             }
             
-            # Create mentor profile
-            mentor = MentorProfile(
-                user_id=user.id,
-                profile_data=profile_data,
-                application_status=MentorStatus.PENDING.value
+            # Create a user with mentor profile data
+            email = fake.unique.email()
+            cognito_sub = str(uuid4())  # Generate a fake cognito sub ID
+            
+            user = User(
+                email=email,
+                user_type=UserType.MENTOR,
+                cognito_sub=cognito_sub,
+                profile=profile_data,
+                application_status=ApplicationStatus.PENDING
             )
-            db.session.add(mentor)
-            logger.debug(f'Created fake mentor profile for user ID: {user.id}')
+            db.session.add(user)
+            db.session.flush()  # Get the user ID
+            logger.debug(f'Created fake mentor user with cognito_sub: {cognito_sub}')
 
             # Create a random vector for testing (1536 dimensions, normalized)
             random_vector = np.random.randn(1536)
@@ -72,11 +71,11 @@ def generate_fake_mentors():
             
             # Create vector entry
             vector = MentorVector(
-                user_id=user.id,
+                user_id=cognito_sub,
                 embedding=random_vector.tolist()
             )
             db.session.add(vector)
-            logger.debug(f'Created fake vector for user ID: {user.id}')
+            logger.debug(f'Created fake vector for user cognito_sub: {cognito_sub}')
         
         db.session.commit()
         logger.info(f'Successfully generated {num_profiles} fake mentor profiles')
