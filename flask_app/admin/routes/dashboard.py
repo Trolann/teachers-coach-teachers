@@ -83,6 +83,7 @@ def dashboard():
         logger.exception(e)
         db_status = f"Database connection failed: {str(e)}"
 
+    session["username"] = db.session.query(User).filter(User.cognito_sub == session['user_id']).first().email
     logger.info(f'Rendering admin dashboard for {session.get("username")}')
     return render_template('dashboard/index.html', db_status=db_status)
 

@@ -211,7 +211,7 @@ class CognitoTokenVerifier:
                 user = User(
                     cognito_sub=user_id,
                     email=user_info['email'],  # Modified to directly access email from user_info
-                    user_type=UserType.MENTOR  # Use MENTOR instead of ADMIN since ADMIN isn't in the database
+                    user_type="ADMIN",
                 )
                 logger.debug(f"Adding new user to database: {user.email}")
                 db.session.add(user)
