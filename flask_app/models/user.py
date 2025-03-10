@@ -32,12 +32,13 @@ class User(db.Model):
     # For mentors only - stored here for easy querying
     application_status = db.Column(db.Enum(ApplicationStatus), nullable=True, index=True)
 
-    def __init__(self, email: str, user_type: UserType, cognito_sub: str, profile: Optional[Dict[str, Any]] = None):
+    def __init__(self, email: str, user_type: UserType, cognito_sub: str, profile: Optional[Dict[str, Any]] = None, application_status: Optional[ApplicationStatus] = None):
         logger.debug(f"Creating new User with email: {email[:3]}***{email[-4:]}")
         self.cognito_sub = cognito_sub
         self.email = email
         self.user_type = user_type
         self.profile = profile or {}
+        self.application_status = application_status
         logger.info(f"User created with ID: {self.cognito_sub}")
 
     @classmethod
