@@ -24,7 +24,7 @@ services:
     image: ankane/pgvector:latest
     container_name: tct_postgres
     volumes:
-      - tct_postgres_data:/var/lib/postgresql/data
+      - tct_postgres_data_2:/var/lib/postgresql/data
     # Leave ports here even if commented out. Allows for easy debugging/direct connecting to the database locally
     ports:
       - "5432:5432"
@@ -62,4 +62,4 @@ services:
       - NODE_ENV=development
 
 volumes:
-  tct_postgres_data:
+  tct_postgres_data_2:
