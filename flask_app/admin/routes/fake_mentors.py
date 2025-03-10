@@ -61,10 +61,10 @@ def generate_fake_mentors():
             
             user = User(
                 email=email,
-                user_type=UserType.MENTOR,
+                user_type="MENTOR",
                 cognito_sub=cognito_sub,
                 profile=profile_data,
-                application_status=ApplicationStatus.PENDING
+                application_status="PENDING"
             )
             db.session.add(user)
             db.session.flush()  # Get the user ID

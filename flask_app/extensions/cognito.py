@@ -252,7 +252,8 @@ def require_auth(f):
         else:
             # Parse tokens from request headers
             auth_header = request.headers.get('Authorization')
-            logger.warning(f'Headers: {auth_header}')
+            logger.warning(f'Args: {args=}')
+            logger.warning(f'Kwargs: {kwargs=}')
             # Parse tokens from request headers
             if isinstance(auth_header, str):
                 token = auth_header.replace('Bearer ', '')

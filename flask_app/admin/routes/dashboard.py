@@ -100,6 +100,7 @@ def mentors():
 @admin_dashboard_bp.route('/mentors/<string:mentor_id>/approve', methods=['POST'])
 @require_auth
 def approve_mentor(mentor_id):
+    # TODO: START HERE. CANT APPROVE MENTORS, HAVEN'T CHECKED ANYTHING ELSE SINCE MENTORS CAN BE CREATED AGAIN
     if 'access_token' not in session:
         # Show IP address in logs
         logger.warn(f'Unauthorized access to approve mentor {mentor_id} by {request.remote_addr}')
