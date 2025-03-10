@@ -43,10 +43,8 @@ def upgrade():
                existing_type=sa.VARCHAR(length=36),
                type_=sa.String(length=100),
                existing_nullable=False)
-        batch_op.alter_column('status',
-               existing_type=sa.VARCHAR(length=20),
-               type_=sa.Enum('SCHEDULED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED', name='sessionstatus'),
-               existing_nullable=True)
+        # Use server_default with explicit USING clause for enum conversion
+        batch_op.execute('ALTER TABLE mentorship_sessions ALTER COLUMN status TYPE sessionstatus USING status::text::sessionstatus')
         batch_op.alter_column('mentor_feedback',
                existing_type=sa.TEXT(),
                type_=sa.JSON(),
