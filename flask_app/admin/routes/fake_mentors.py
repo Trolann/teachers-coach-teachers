@@ -25,10 +25,15 @@ def fake_mentors_page():
     logger.debug('Accessing fake mentors generation page')
     mentor_count = User.query.filter_by(user_type=UserType.MENTOR).count()
     logger.info(f'Current mentor count: {mentor_count}')
+    
+    # Create a simple mapping for the template
+    faker_mappings = {field: ['Default'] for field in PROFILE_FIELDS.keys()}
+    
     return render_template(
         'dashboard/fake_mentors.html',
         mentor_count=mentor_count,
-        profile_fields=list(PROFILE_FIELDS.keys())
+        profile_fields=list(PROFILE_FIELDS.keys()),
+        faker_mappings=faker_mappings
     )
 
 @fake_mentors_bp.route('/fake-mentors/generate', methods=['POST'])
