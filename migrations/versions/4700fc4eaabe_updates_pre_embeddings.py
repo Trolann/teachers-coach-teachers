@@ -45,14 +45,9 @@ def upgrade():
                existing_nullable=False)
         # Use server_default with explicit USING clause for enum conversion
         batch_op.execute('ALTER TABLE mentorship_sessions ALTER COLUMN status TYPE sessionstatus USING status::text::sessionstatus')
-        batch_op.alter_column('mentor_feedback',
-               existing_type=sa.TEXT(),
-               type_=sa.JSON(),
-               existing_nullable=True)
-        batch_op.alter_column('mentee_feedback',
-               existing_type=sa.TEXT(),
-               type_=sa.JSON(),
-               existing_nullable=True)
+        # Use explicit USING clauses for JSON conversion
+        batch_op.execute('ALTER TABLE mentorship_sessions ALTER COLUMN mentor_feedback TYPE JSON USING mentor_feedback::json')
+        batch_op.execute('ALTER TABLE mentorship_sessions ALTER COLUMN mentee_feedback TYPE JSON USING mentee_feedback::json')
         batch_op.create_index(batch_op.f('ix_mentorship_sessions_mentee_id'), ['mentee_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_mentorship_sessions_mentor_id'), ['mentor_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_mentorship_sessions_scheduled_datetime'), ['scheduled_datetime'], unique=False)
