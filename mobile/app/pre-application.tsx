@@ -15,7 +15,7 @@ export default function PreApplicationScreen() {
       await TokenManager.getInstance().setUserRole(role);
 
       const storedRole = await TokenManager.getInstance().getUserRole();
-      console.log('Stored role:', storedRole); 
+      console.log('Stored role:', storedRole);
 
       if (storedRole === role) {
         console.log('Role successfully stored!');
@@ -26,7 +26,7 @@ export default function PreApplicationScreen() {
       const message = `Welcome! You've been registered as a ${role}.`;
 
       if (Platform.OS === 'web') {
-        alert(message); 
+        alert(message);
         router.replace(role === 'mentee' ? '/pre-matching-mentee' : '/(tabs)');
       } else {
         Alert.alert(
@@ -48,7 +48,7 @@ export default function PreApplicationScreen() {
       Alert.alert("Error", "Failed to set user role. Please try again.");
     }
   };
-  
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.card}>
@@ -70,7 +70,7 @@ export default function PreApplicationScreen() {
 
         {/* Selection Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.selectionButton, styles.mentorButton]}
             onPress={() => handleRoleSelection('mentor')}
           >
@@ -83,7 +83,7 @@ export default function PreApplicationScreen() {
             <View style={styles.divider} />
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.selectionButton, styles.menteeButton]}
             onPress={() => handleRoleSelection('mentee')}
           >
@@ -98,7 +98,7 @@ export default function PreApplicationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6', 
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -107,11 +107,11 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     paddingVertical: 120,
     paddingHorizontal: 30,
-    width: '100%', 
-    flexGrow: 1, 
-    justifyContent: 'space-between', 
+    width: '100%',
+    flexGrow: 1,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    elevation: 5, 
+    elevation: 5,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 5 },
@@ -157,17 +157,17 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: 'center',
     width: '100%',
-    elevation: 3, 
+    elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
   },
   mentorButton: {
-    backgroundColor: '#4CAF50', 
+    backgroundColor: '#4CAF50',
   },
   menteeButton: {
-    backgroundColor: '#007BFF', 
+    backgroundColor: '#007BFF',
   },
   buttonText: {
     color: 'white',
