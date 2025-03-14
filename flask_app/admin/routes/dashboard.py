@@ -94,7 +94,7 @@ def mentors():
         logger.debug('Routing user to dashboard login page')
         return redirect(url_for('admin.admin_dashboard.index'))
     mentors = db.session.query(User).filter(User.user_type == UserType.MENTOR).all()
-    logger.info(f'Rendering mentors dashboard for {session.get("username")}')
+    logger.info(f'Rendering users dashboard for {session.get("username")}')
     return render_template('dashboard/mentors.html', mentors=mentors)
 
 @admin_dashboard_bp.route('/mentors/status', methods=['POST'])
