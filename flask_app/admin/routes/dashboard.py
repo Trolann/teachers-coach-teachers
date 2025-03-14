@@ -97,13 +97,42 @@ def mentors():
     logger.info(f'Rendering users dashboard for {session.get("username")}')
     return render_template('dashboard/mentors.html', mentors=mentors)
 
+def _update_mentor_status(mentor_id, status, action_name):
+    """
+    Helper function to update mentor application status
+    
+    Args:
+        mentor_id: The cognito_sub ID of the mentor
+        status: The new status to set (APPROVED, REJECTED, etc.)
+        action_name: The action being performed (approving, rejecting, etc.)
+        
+    Returns:
+        Tuple of (response_dict, status_code)
+    """
+    if 'access_token' not in session:
+        logger.warning(f'Unauthorized access to {action_name} mentor {mentor_id} by {request.remote_addr}')
+        return {'success': False, 'error': 'Unauthorized'}, 401
+    
+    try:
+        user = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
+        if not user:
+            logger.warning(f'Mentor {mentor_id} not found')
+            return {'success': False, 'error': 'Mentor not found'}, 404
+            
+        user.application_status = status
+        logger.info(f'{action_name.capitalize()} mentor {mentor_id} by {session.get("username")}')
+        db.session.commit()
+        logger.info(f'Mentor {mentor_id} {action_name} successfully')
+        return {'success': True}, 200
+    except Exception as e:
+        logger.error(f'Error {action_name} mentor {mentor_id}: {str(e)}')
+        logger.exception(e)
+        db.session.rollback()
+        return {'success': False, 'error': str(e)}, 500
+
 @admin_dashboard_bp.route('/users/status', methods=['POST'])
 @require_auth
 def update_user_status():
-    if 'access_token' not in session:
-        logger.warning(f'Unauthorized access to update user status by {request.remote_addr}')
-        return {'success': False, 'error': 'Unauthorized'}, 401
-    
     try:
         data = request.json
         if not data or 'user_id' not in data or 'status' not in data:
@@ -117,17 +146,10 @@ def update_user_status():
         if status not in valid_statuses:
             logger.warning(f'Invalid status {status} requested')
             return {'success': False, 'error': 'Invalid status'}, 400
-            
-        user = db.session.query(User).filter(User.cognito_sub == user_id).first()
-        if not user:
-            logger.warning(f'Mentor {user_id} not found')
-            return {'success': False, 'error': 'Mentor not found'}, 404
-            
-        user.application_status = status
-        logger.info(f'Updating mentor {user_id} status to {status} by {session.get("username")}')
-        db.session.commit()
-        logger.info(f'Mentor {user_id} status updated successfully to {status}')
-        return {'success': True}
+        
+        action_name = f"updating status to {status}"
+        response, status_code = _update_mentor_status(user_id, status, action_name)
+        return response, status_code
     except Exception as e:
         logger.error(f'Error updating mentor status: {str(e)}')
         logger.exception(e)
@@ -138,71 +160,16 @@ def update_user_status():
 @require_auth
 def approve_user(mentor_id):
     """Approve a user application"""
-    if 'access_token' not in session:
-        logger.warning(f'Unauthorized access to approve mentor {mentor_id} by {request.remote_addr}')
-        return {'success': False, 'error': 'Unauthorized'}, 401
-    
-    try:
-        user = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
-        if not user:
-            logger.warning(f'Mentor {mentor_id} not found')
-            return {'success': False, 'error': 'User not found'}, 404
-            
-        user.application_status = "APPROVED"
-        logger.info(f'Approving mentor {mentor_id} by {session.get("username")}')
-        db.session.commit()
-        logger.info(f'Mentor {mentor_id} approved successfully')
-        return {'success': True}
-    except Exception as e:
-        logger.error(f'Error approving mentor {mentor_id}: {str(e)}')
-        logger.exception(e)
-        db.session.rollback()
-        return {'success': False, 'error': str(e)}, 500
+    return _update_mentor_status(mentor_id, "APPROVED", "approving")
 
 @admin_dashboard_bp.route('/users/<string:mentor_id>/reject', methods=['POST'])
 @require_auth
 def reject_user(mentor_id):
-    if 'access_token' not in session:
-        logger.warning(f'Unauthorized access to reject mentor {mentor_id} by {request.remote_addr}')
-        return {'success': False, 'error': 'Unauthorized'}, 401
-    
-    try:
-        user = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
-        if not user:
-            logger.warning(f'Mentor {mentor_id} not found')
-            return {'success': False, 'error': 'User not found'}, 404
-            
-        user.application_status = "REJECTED"
-        logger.info(f'Rejecting mentor {mentor_id} by {session.get("username")}')
-        db.session.commit()
-        logger.info(f'Mentor {mentor_id} rejected successfully')
-        return {'success': True}
-    except Exception as e:
-        logger.error(f'Error rejecting mentor {mentor_id}: {str(e)}')
-        logger.exception(e)
-        db.session.rollback()
-        return {'success': False, 'error': str(e)}, 500
+    """Reject a user application"""
+    return _update_mentor_status(mentor_id, "REJECTED", "rejecting")
 
 @admin_dashboard_bp.route('/users/<string:user_id>/revoke', methods=['POST'])
 @require_auth
 def revoke_user(user_id):
-    if 'access_token' not in session:
-        logger.warning(f'Unauthorized access to revoke user {user_id} by {request.remote_addr}')
-        return {'success': False, 'error': 'Unauthorized'}, 401
-    
-    try:
-        user = db.session.query(User).filter(User.cognito_sub == user_id).first()
-        if not user:
-            logger.warning(f'User {user_id} not found')
-            return {'success': False, 'error': 'User not found'}, 404
-            
-        user.application_status = "REVOKED"
-        logger.info(f'Revoking user {user_id} by {session.get("username")}')
-        db.session.commit()
-        logger.info(f'User {user_id} approval revoked successfully')
-        return {'success': True}
-    except Exception as e:
-        logger.error(f'Error revoking user {user_id}: {str(e)}')
-        logger.exception(e)
-        db.session.rollback()
-        return {'success': False, 'error': str(e)}, 500
+    """Revoke a user's approval"""
+    return _update_mentor_status(user_id, "REVOKED", "revoking")
