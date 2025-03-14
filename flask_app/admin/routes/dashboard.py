@@ -88,7 +88,7 @@ def dashboard():
     return render_template('dashboard/index.html', db_status=db_status)
 
 @admin_dashboard_bp.route('/mentors')
-@require_auth
+#@require_auth
 def mentors():
     if 'access_token' not in session:
         logger.debug('Routing user to dashboard login page')
@@ -113,7 +113,8 @@ def update_mentor_status():
         mentor_id = data['mentor_id']
         status = data['status']
         
-        if status not in [s.value for s in ApplicationStatus]:
+        valid_statuses = ["PENDING", "APPROVED", "REJECTED", "REVOKED"]
+        if status not in valid_statuses:
             logger.warning(f'Invalid status {status} requested')
             return {'success': False, 'error': 'Invalid status'}, 400
             
@@ -122,7 +123,7 @@ def update_mentor_status():
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
             
-        mentor.application_status = ApplicationStatus(status)
+        mentor.application_status = status
         logger.info(f'Updating mentor {mentor_id} status to {status} by {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} status updated successfully to {status}')
@@ -147,7 +148,7 @@ def approve_mentor(mentor_id):
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
             
-        mentor.application_status = ApplicationStatus.APPROVED
+        mentor.application_status = "APPROVED"
         logger.info(f'Approving mentor {mentor_id} by {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} approved successfully')
@@ -171,7 +172,7 @@ def reject_mentor(mentor_id):
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
             
-        mentor.application_status = ApplicationStatus.REJECTED
+        mentor.application_status = "REJECTED"
         logger.info(f'Rejecting mentor {mentor_id} by {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} rejected successfully')
@@ -195,7 +196,7 @@ def revoke_mentor(mentor_id):
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
             
-        mentor.application_status = ApplicationStatus.REVOKED
+        mentor.application_status = "REVOKED"
         logger.info(f'Revoking mentor {mentor_id} by {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} approval revoked successfully')

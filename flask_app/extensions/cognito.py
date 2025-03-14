@@ -229,6 +229,8 @@ class CognitoTokenVerifier:
 def parse_headers(headers):
     """Parse headers from a request object"""
     logger.warning(f'Headers: {headers}')
+    if not headers:
+        return None, None, None, None
     auth_header = headers.get('Authorization')
     refresh_token = headers.get('X-Refresh-Token')
     id_token = headers.get('X-Id-Token')
@@ -251,6 +253,7 @@ def require_auth(f):
             token = session['access_token']
         else:
             # Parse tokens from request headers
+            # TODO: Could be getting a sole KWARG with mentor_id we could use here
             auth_header = request.headers.get('Authorization')
             logger.warning(f'Args: {args=}')
             logger.warning(f'Kwargs: {kwargs=}')
