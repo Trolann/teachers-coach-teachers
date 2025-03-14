@@ -154,7 +154,7 @@ def approve_user(user_id):
         logger.info(f'User {user_id} approved successfully')
         return {'success': True}
     except Exception as e:
-        logger.error(f'Error approving mentor {mentor_id}: {str(e)}')
+        logger.error(f'Error approving user {user_id}: {str(e)}')
         logger.exception(e)
         db.session.rollback()
         return {'success': False, 'error': str(e)}, 500
@@ -178,7 +178,7 @@ def reject_user(user_id):
         logger.info(f'User {user_id} rejected successfully')
         return {'success': True}
     except Exception as e:
-        logger.error(f'Error rejecting mentor {mentor_id}: {str(e)}')
+        logger.error(f'Error rejecting user {user_id}: {str(e)}')
         logger.exception(e)
         db.session.rollback()
         return {'success': False, 'error': str(e)}, 500
@@ -202,7 +202,7 @@ def revoke_user(user_id):
         logger.info(f'User {user_id} approval revoked successfully')
         return {'success': True}
     except Exception as e:
-        logger.error(f'Error revoking mentor {mentor_id}: {str(e)}')
+        logger.error(f'Error revoking user {user_id}: {str(e)}')
         logger.exception(e)
         db.session.rollback()
         return {'success': False, 'error': str(e)}, 500
