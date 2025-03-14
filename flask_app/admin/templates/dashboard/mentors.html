@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             {% if not key.startswith('_') %}
                                 <td>
                                 {% if key == 'application_status' %}
-                                    {% set status_value = value %}
+                                    {% set status_value = value|string %}
                                     {% set display_status = status_value|lower|capitalize if status_value else 'N/A' %}
                                     <span class="badge bg-{{ 'success' if 'approved' in status_value|lower
                                                         else 'warning' if 'pending' in status_value|lower
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             {% endif %}
                         {% endfor %}
                         <td>
-                            {% if mentor.application_status and 'APPROVED' in mentor.application_status %}
+                            {% if mentor.application_status and mentor.application_status|string == 'APPROVED' %}
                                 <button type="button" class="btn btn-danger"
                                         onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'revoke')">
                                     REVOKE
