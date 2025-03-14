@@ -4,7 +4,7 @@ from extensions.database import db
 from flask_app.extensions.cognito import require_auth, parse_headers, CognitoTokenVerifier
 from datetime import datetime
 
-mentor_bp = Blueprint('mentors', __name__, url_prefix='/api/mentors')
+user_bp = Blueprint('users', __name__, url_prefix='/api/users')
 verifier = CognitoTokenVerifier()
 
 def get_user_from_token(headers):
@@ -19,10 +19,10 @@ def get_user_from_token(headers):
         
     return User.query.filter_by(cognito_sub=user_info['sub']).first()
 
-@mentor_bp.route('/submit_application', methods=['POST'])
+@user_bp.route('/submit_application', methods=['POST'])
 @require_auth
 def submit_application():
-    """Submit a mentor application"""
+    """Submit a user application"""
     user = get_user_from_token(request.headers)
     if not user:
         return jsonify({'error': 'User not found or invalid token'}), 401
@@ -48,10 +48,10 @@ def submit_application():
         'status': user.application_status.value
     }), 201
 
-@mentor_bp.route('/update_application', methods=['POST'])
+@user_bp.route('/update_application', methods=['POST'])
 @require_auth
 def update_application():
-    """Update a mentor application"""
+    """Update a user application"""
     user = get_user_from_token(request.headers)
     if not user:
         return jsonify({'error': 'User not found or invalid token'}), 401
@@ -79,10 +79,10 @@ def update_application():
         'status': user.application_status.value
     })
 
-@mentor_bp.route('/get_application', methods=['GET'])
+@user_bp.route('/get_application', methods=['GET'])
 @require_auth
 def get_application():
-    """Get a mentor application"""
+    """Get a user application"""
     user = get_user_from_token(request.headers)
     if not user:
         return jsonify({'error': 'User not found or invalid token'}), 401
@@ -97,10 +97,10 @@ def get_application():
         'profile_data': user.profile
     })
 
-@mentor_bp.route('/get_application_status', methods=['GET'])
+@user_bp.route('/get_application_status', methods=['GET'])
 @require_auth
 def get_application_status():
-    """Get the status of a mentor application"""
+    """Get the status of a user application"""
     user = get_user_from_token(request.headers)
     if not user:
         return jsonify({'error': 'User not found or invalid token'}), 401
