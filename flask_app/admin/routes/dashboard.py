@@ -147,7 +147,7 @@ def approve_mentor(mentor_id):
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
             
-        mentor.application_status = "APPROVED"
+        mentor.application_status = ApplicationStatus.APPROVED
         logger.info(f'Approving mentor {mentor_id} by {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} approved successfully')
@@ -171,7 +171,7 @@ def reject_mentor(mentor_id):
             logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
             
-        mentor.application_status = "REJECTED"
+        mentor.application_status = ApplicationStatus.REJECTED
         logger.info(f'Rejecting mentor {mentor_id} by {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} rejected successfully')

@@ -28,8 +28,8 @@ function filterTable() {
 
         const status = statusBadge.textContent.toLowerCase().trim();
         
-        // Status matching remains exact
-        const matchesStatus = statusFilter === '' || status === statusFilter;
+        // Status matching - check if the filter value is contained in the status
+        const matchesStatus = statusFilter === '' || status.includes(statusFilter);
         
         // Check all name columns for a match
         const matchesSearch = searchText === '' || 
@@ -148,10 +148,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             {% if not key.startswith('_') %}
                                 <td>
                                 {% if key == 'application_status' %}
-                                    <span class="badge bg-{{ 'success' if value == 'approved' or value == 'APPROVED'
-                                                        else 'warning' if value == 'pending'
+                                    {% set status_value = value.value if value is not string else value %}
+                                    {% set display_status = status_value|replace('_', ' ')|title if status_value else 'N/A' %}
+                                    <span class="badge bg-{{ 'success' if 'approved' in status_value|lower
+                                                        else 'warning' if 'pending' in status_value|lower
                                                         else 'danger' }}">
-                                        {{ value }}
+                                        {{ display_status }}
                                     </span>
                                 {% elif key == 'expertise_areas' %}
                                     {{ value|join(', ') if value else 'N/A' }}
