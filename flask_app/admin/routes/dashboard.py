@@ -97,20 +97,20 @@ def mentors():
     logger.info(f'Rendering users dashboard for {session.get("username")}')
     return render_template('dashboard/mentors.html', mentors=mentors)
 
-@admin_dashboard_bp.route('/mentors/status', methods=['POST'])
+@admin_dashboard_bp.route('/users/status', methods=['POST'])
 @require_auth
-def update_mentor_status():
+def update_user_status():
     if 'access_token' not in session:
-        logger.warning(f'Unauthorized access to update mentor status by {request.remote_addr}')
+        logger.warning(f'Unauthorized access to update user status by {request.remote_addr}')
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
         data = request.json
-        if not data or 'mentor_id' not in data or 'status' not in data:
-            logger.warning('Invalid request data for mentor status update')
+        if not data or 'user_id' not in data or 'status' not in data:
+            logger.warning('Invalid request data for user status update')
             return {'success': False, 'error': 'Invalid request data'}, 400
             
-        mentor_id = data['mentor_id']
+        user_id = data['user_id']
         status = data['status']
         
         valid_statuses = ["PENDING", "APPROVED", "REJECTED", "REVOKED"]
@@ -118,15 +118,15 @@ def update_mentor_status():
             logger.warning(f'Invalid status {status} requested')
             return {'success': False, 'error': 'Invalid status'}, 400
             
-        mentor = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
-        if not mentor:
-            logger.warning(f'Mentor {mentor_id} not found')
-            return {'success': False, 'error': 'Mentor not found'}, 404
+        user = db.session.query(User).filter(User.cognito_sub == user_id).first()
+        if not user:
+            logger.warning(f'User {user_id} not found')
+            return {'success': False, 'error': 'User not found'}, 404
             
-        mentor.application_status = status
-        logger.info(f'Updating mentor {mentor_id} status to {status} by {session.get("username")}')
+        user.application_status = status
+        logger.info(f'Updating user {user_id} status to {status} by {session.get("username")}')
         db.session.commit()
-        logger.info(f'Mentor {mentor_id} status updated successfully to {status}')
+        logger.info(f'User {user_id} status updated successfully to {status}')
         return {'success': True}
     except Exception as e:
         logger.error(f'Error updating mentor status: {str(e)}')
@@ -134,24 +134,24 @@ def update_mentor_status():
         db.session.rollback()
         return {'success': False, 'error': str(e)}, 500
 
-@admin_dashboard_bp.route('/mentors/<string:mentor_id>/approve', methods=['POST'])
+@admin_dashboard_bp.route('/users/<string:user_id>/approve', methods=['POST'])
 @require_auth
-def approve_mentor(mentor_id):
-    """Approve a mentor application"""
+def approve_user(user_id):
+    """Approve a user application"""
     if 'access_token' not in session:
-        logger.warning(f'Unauthorized access to approve mentor {mentor_id} by {request.remote_addr}')
+        logger.warning(f'Unauthorized access to approve user {user_id} by {request.remote_addr}')
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
-        if not mentor:
-            logger.warning(f'Mentor {mentor_id} not found')
-            return {'success': False, 'error': 'Mentor not found'}, 404
+        user = db.session.query(User).filter(User.cognito_sub == user_id).first()
+        if not user:
+            logger.warning(f'User {user_id} not found')
+            return {'success': False, 'error': 'User not found'}, 404
             
-        mentor.application_status = "APPROVED"
-        logger.info(f'Approving mentor {mentor_id} by {session.get("username")}')
+        user.application_status = "APPROVED"
+        logger.info(f'Approving user {user_id} by {session.get("username")}')
         db.session.commit()
-        logger.info(f'Mentor {mentor_id} approved successfully')
+        logger.info(f'User {user_id} approved successfully')
         return {'success': True}
     except Exception as e:
         logger.error(f'Error approving mentor {mentor_id}: {str(e)}')
@@ -159,23 +159,23 @@ def approve_mentor(mentor_id):
         db.session.rollback()
         return {'success': False, 'error': str(e)}, 500
 
-@admin_dashboard_bp.route('/mentors/<string:mentor_id>/reject', methods=['POST'])
+@admin_dashboard_bp.route('/users/<string:user_id>/reject', methods=['POST'])
 @require_auth
-def reject_mentor(mentor_id):
+def reject_user(user_id):
     if 'access_token' not in session:
-        logger.warning(f'Unauthorized access to reject mentor {mentor_id} by {request.remote_addr}')
+        logger.warning(f'Unauthorized access to reject user {user_id} by {request.remote_addr}')
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
-        if not mentor:
-            logger.warning(f'Mentor {mentor_id} not found')
-            return {'success': False, 'error': 'Mentor not found'}, 404
+        user = db.session.query(User).filter(User.cognito_sub == user_id).first()
+        if not user:
+            logger.warning(f'User {user_id} not found')
+            return {'success': False, 'error': 'User not found'}, 404
             
-        mentor.application_status = "REJECTED"
-        logger.info(f'Rejecting mentor {mentor_id} by {session.get("username")}')
+        user.application_status = "REJECTED"
+        logger.info(f'Rejecting user {user_id} by {session.get("username")}')
         db.session.commit()
-        logger.info(f'Mentor {mentor_id} rejected successfully')
+        logger.info(f'User {user_id} rejected successfully')
         return {'success': True}
     except Exception as e:
         logger.error(f'Error rejecting mentor {mentor_id}: {str(e)}')
@@ -183,23 +183,23 @@ def reject_mentor(mentor_id):
         db.session.rollback()
         return {'success': False, 'error': str(e)}, 500
 
-@admin_dashboard_bp.route('/mentors/<string:mentor_id>/revoke', methods=['POST'])
+@admin_dashboard_bp.route('/users/<string:user_id>/revoke', methods=['POST'])
 @require_auth
-def revoke_mentor(mentor_id):
+def revoke_user(user_id):
     if 'access_token' not in session:
-        logger.warning(f'Unauthorized access to revoke mentor {mentor_id} by {request.remote_addr}')
+        logger.warning(f'Unauthorized access to revoke user {user_id} by {request.remote_addr}')
         return {'success': False, 'error': 'Unauthorized'}, 401
     
     try:
-        mentor = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
-        if not mentor:
-            logger.warning(f'Mentor {mentor_id} not found')
-            return {'success': False, 'error': 'Mentor not found'}, 404
+        user = db.session.query(User).filter(User.cognito_sub == user_id).first()
+        if not user:
+            logger.warning(f'User {user_id} not found')
+            return {'success': False, 'error': 'User not found'}, 404
             
-        mentor.application_status = "REVOKED"
-        logger.info(f'Revoking mentor {mentor_id} by {session.get("username")}')
+        user.application_status = "REVOKED"
+        logger.info(f'Revoking user {user_id} by {session.get("username")}')
         db.session.commit()
-        logger.info(f'Mentor {mentor_id} approval revoked successfully')
+        logger.info(f'User {user_id} approval revoked successfully')
         return {'success': True}
     except Exception as e:
         logger.error(f'Error revoking mentor {mentor_id}: {str(e)}')

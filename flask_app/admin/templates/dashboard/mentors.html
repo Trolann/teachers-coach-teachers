@@ -78,7 +78,7 @@ function confirmStatusUpdate(mentorId, action) {
     
     if (confirm(message)) {
         // Try the new endpoint first
-        fetch(`/admin/mentors/${mentorId}/${action}`, {
+        fetch(`/admin/users/${mentorId}/${action}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
