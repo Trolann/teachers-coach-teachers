@@ -130,46 +130,46 @@ def _update_mentor_status(mentor_id, status, action_name):
         db.session.rollback()
         return {'success': False, 'error': str(e)}, 500
 
-@admin_dashboard_bp.route('/users/status', methods=['POST'])
-@require_auth
-def update_user_status():
-    try:
-        data = request.json
-        if not data or 'user_id' not in data or 'status' not in data:
-            logger.warning('Invalid request data for user status update')
-            return {'success': False, 'error': 'Invalid request data'}, 400
-            
-        user_id = data['user_id']
-        status = data['status']
-        
-        valid_statuses = ["PENDING", "APPROVED", "REJECTED", "REVOKED"]
-        if status not in valid_statuses:
-            logger.warning(f'Invalid status {status} requested')
-            return {'success': False, 'error': 'Invalid status'}, 400
-        
-        action_name = f"updating status to {status}"
-        response, status_code = _update_mentor_status(user_id, status, action_name)
-        return response, status_code
-    except Exception as e:
-        logger.error(f'Error updating mentor status: {str(e)}')
-        logger.exception(e)
-        db.session.rollback()
-        return {'success': False, 'error': str(e)}, 500
+# @admin_dashboard_bp.route('/users/status', methods=['POST'])
+# @require_auth
+# def update_user_status():
+#     try:
+#         data = request.json
+#         if not data or 'user_id' not in data or 'status' not in data:
+#             logger.warning('Invalid request data for user status update')
+#             return {'success': False, 'error': 'Invalid request data'}, 400
+#
+#         user_id = data['user_id']
+#         status = data['status']
+#
+#         valid_statuses = ["PENDING", "APPROVED", "REJECTED", "REVOKED"]
+#         if status not in valid_statuses:
+#             logger.warning(f'Invalid status {status} requested')
+#             return {'success': False, 'error': 'Invalid status'}, 400
+#
+#         action_name = f"updating status to {status}"
+#         response, status_code = _update_mentor_status(user_id, status, action_name)
+#         return response, status_code
+#     except Exception as e:
+#         logger.error(f'Error updating mentor status: {str(e)}')
+#         logger.exception(e)
+#         db.session.rollback()
+#         return {'success': False, 'error': str(e)}, 500
 
 @admin_dashboard_bp.route('/users/<string:mentor_id>/approve', methods=['POST'])
 @require_auth
 def approve_user(mentor_id):
-    """Approve a user application"""
+    """Approve a mentor's application"""
     return _update_mentor_status(mentor_id, "APPROVED", "approving")
 
 @admin_dashboard_bp.route('/users/<string:mentor_id>/reject', methods=['POST'])
 @require_auth
 def reject_user(mentor_id):
-    """Reject a user application"""
+    """Reject a mentor's application"""
     return _update_mentor_status(mentor_id, "REJECTED", "rejecting")
 
-@admin_dashboard_bp.route('/users/<string:user_id>/revoke', methods=['POST'])
+@admin_dashboard_bp.route('/users/<string:mentor_id>/revoke', methods=['POST'])
 @require_auth
-def revoke_user(user_id):
-    """Revoke a user's approval"""
-    return _update_mentor_status(user_id, "REVOKED", "revoking")
+def revoke_user(mentor_id):
+    """Revoke a mentor's approval"""
+    return _update_mentor_status(mentor_id, "REVOKED", "revoking")

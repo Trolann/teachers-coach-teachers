@@ -29,7 +29,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
 
-    # For mentors only - stored here for easy querying
+    # For users only - stored here for easy querying
     application_status = db.Column(db.Enum(ApplicationStatus), nullable=True, index=True)
 
     def __init__(self, email: str, user_type: UserType, cognito_sub: str, profile: Optional[Dict[str, Any]] = None, application_status: Optional[ApplicationStatus] = None):
