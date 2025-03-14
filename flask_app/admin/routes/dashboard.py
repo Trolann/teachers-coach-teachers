@@ -136,6 +136,7 @@ def update_mentor_status():
 @admin_dashboard_bp.route('/mentors/<string:mentor_id>/approve', methods=['POST'])
 @require_auth
 def approve_mentor(mentor_id):
+    """Approve a mentor application"""
     if 'access_token' not in session:
         logger.warning(f'Unauthorized access to approve mentor {mentor_id} by {request.remote_addr}')
         return {'success': False, 'error': 'Unauthorized'}, 401
@@ -143,9 +144,11 @@ def approve_mentor(mentor_id):
     try:
         mentor = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
         if not mentor:
+            logger.warning(f'Mentor {mentor_id} not found')
             return {'success': False, 'error': 'Mentor not found'}, 404
-        logger.info(f'Approving mentor {mentor_id} by {session.get("username")}')
+            
         mentor.application_status = ApplicationStatus.APPROVED
+        logger.info(f'Approving mentor {mentor_id} by {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} approved successfully')
         return {'success': True}
