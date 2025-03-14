@@ -57,19 +57,19 @@ function confirmStatusUpdate(mentorId, action) {
     switch(action) {
         case 'approve':
             message = 'Are you sure you want to approve this mentor?';
-            status = 'approved';
+            status = 'APPROVED';
             break;
         case 'revoke':
             message = 'Are you sure you want to revoke this mentor\'s approval?';
-            status = 'revoked';
+            status = 'REVOKED';
             break;
         case 'reject':
             message = 'Are you sure you want to reject this mentor?';
-            status = 'rejected';
+            status = 'REJECTED';
             break;
         default:
             message = 'Are you sure you want to update this mentor\'s status?';
-            status = action;
+            status = action.toUpperCase();
     }
     
     if (confirm(message)) {
@@ -170,12 +170,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             {% endif %}
                         {% endfor %}
                         <td>
-                            {% if mentor.application_status and mentor.application_status|string == 'APPROVED' %}
+                            {% if mentor.application_status|string == 'APPROVED' %}
                                 <button type="button" class="btn btn-danger"
                                         onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'revoke')">
                                     REVOKE
                                 </button>
-                            {% elif mentor.application_status and mentor.application_status|string == 'REJECTED' %}
+                            {% elif mentor.application_status|string == 'REJECTED' %}
                                 <button type="button" class="btn btn-success"
                                         onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'approve')">
                                     APPROVE
