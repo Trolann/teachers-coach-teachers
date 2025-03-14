@@ -30,10 +30,10 @@ function filterTable() {
         
         // Status matching - check if the filter value is contained in the status
         const matchesStatus = statusFilter === '' || 
-            (statusFilter === 'pending' && status.includes('pending')) ||
-            (statusFilter === 'approved' && status.includes('approved')) ||
-            (statusFilter === 'rejected' && status.includes('rejected')) ||
-            (statusFilter === 'revoked' && status.includes('revoked'));
+            (statusFilter === 'pending' && status === 'pending') ||
+            (statusFilter === 'approved' && status === 'approved') ||
+            (statusFilter === 'rejected' && status === 'rejected') ||
+            (statusFilter === 'revoked' && status === 'revoked');
         
         // Check all name columns for a match
         const matchesSearch = searchText === '' || 
@@ -152,10 +152,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             {% if not key.startswith('_') %}
                                 <td>
                                 {% if key == 'application_status' %}
-                                    {% set status_value = value|string %}
-                                    {% set display_status = status_value|lower|capitalize if status_value else 'N/A' %}
-                                    <span class="badge bg-{{ 'success' if 'approved' in status_value|lower
-                                                        else 'warning' if 'pending' in status_value|lower
+                                    {% set status_value = value.name if value else 'N/A' %}
+                                    {% set display_status = status_value|capitalize if status_value else 'N/A' %}
+                                    <span class="badge bg-{{ 'success' if status_value == 'APPROVED'
+                                                        else 'warning' if status_value == 'PENDING'
                                                         else 'danger' }}">
                                         {{ display_status }}
                                     </span>
@@ -170,12 +170,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             {% endif %}
                         {% endfor %}
                         <td>
-                            {% if mentor.application_status|string == 'APPROVED' %}
+                            {% if mentor.application_status.name == 'APPROVED' %}
                                 <button type="button" class="btn btn-danger"
                                         onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'revoke')">
                                     REVOKE
                                 </button>
-                            {% elif mentor.application_status|string == 'REJECTED' %}
+                            {% elif mentor.application_status.name == 'REJECTED' %}
                                 <button type="button" class="btn btn-success"
                                         onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'approve')">
                                     APPROVE
