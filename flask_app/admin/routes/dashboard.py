@@ -137,30 +137,6 @@ def update_mentor_status():
 @require_auth
 def approve_mentor(mentor_id):
     if 'access_token' not in session:
-        # Show IP address in logs
-        logger.warning(f'Unauthorized access to approve mentor {mentor_id} by {request.remote_addr}')
-        return {'success': False, 'error': 'Unauthorized'}, 401
-    
-    try:
-        mentor = db.session.query(User).filter(User.cognito_sub == mentor_id).first()
-        if not mentor:
-            return {'success': False, 'error': 'Mentor not found'}, 404
-        logger.info(f'Approving mentor {mentor_id} for {session.get("username")}')
-        mentor.application_status = ApplicationStatus.APPROVED
-        db.session.commit()
-        logger.info(f'Mentor {mentor_id} approved successfully')
-        return {'success': True}
-    except Exception as e:
-        logger.error(f'Error approving mentor {mentor_id}: {str(e)}')
-        logger.exception(e)
-        db.session.rollback()
-        return {'success': False, 'error': str(e)}, 500
-
-# Keep the individual endpoints for backward compatibility but delegate to the new endpoint
-@admin_dashboard_bp.route('/mentors/<string:mentor_id>/approve', methods=['POST'])
-@require_auth
-def approve_mentor(mentor_id):
-    if 'access_token' not in session:
         logger.warning(f'Unauthorized access to approve mentor {mentor_id} by {request.remote_addr}')
         return {'success': False, 'error': 'Unauthorized'}, 401
     

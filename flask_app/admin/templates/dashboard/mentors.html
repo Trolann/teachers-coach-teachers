@@ -154,16 +154,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td>
                             {% if mentor.application_status == 'approved' or mentor.application_status == 'APPROVED' %}
                                 <button type="button" class="btn btn-danger"
-                                        onclick="confirmStatusUpdate('{{ mentor.id }}', 'revoke')">
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'revoke')">
                                     REVOKE
                                 </button>
                             {% else %}
                                 <button type="button" class="btn btn-success"
-                                        onclick="confirmStatusUpdate('{{ mentor.id }}', 'approve')">
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'approve')">
                                     APPROVE
                                 </button>
                                 <button type="button" class="btn btn-danger ms-2"
-                                        onclick="confirmStatusUpdate('{{ mentor.id }}', 'reject')">
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'reject')">
                                     REJECT
                                 </button>
                             {% endif %}
