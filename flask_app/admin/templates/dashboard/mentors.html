@@ -175,6 +175,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                         onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'revoke')">
                                     REVOKE
                                 </button>
+                            {% elif mentor.application_status and mentor.application_status|string == 'REJECTED' %}
+                                <button type="button" class="btn btn-success"
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'approve')">
+                                    APPROVE
+                                </button>
                             {% else %}
                                 <button type="button" class="btn btn-success"
                                         onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'approve')">
