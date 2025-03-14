@@ -72,6 +72,10 @@ function confirmStatusUpdate(mentorId, action) {
             status = action.toUpperCase();
     }
     
+    // Save current filter state
+    const currentStatusFilter = document.getElementById('statusFilter').value;
+    const currentSearchText = document.getElementById('searchInput').value;
+    
     if (confirm(message)) {
         // Try the new endpoint first
         fetch(`/admin/mentors/${mentorId}/${action}`, {
@@ -88,6 +92,9 @@ function confirmStatusUpdate(mentorId, action) {
         })
         .then(data => {
             if (data.success) {
+                // Store filter values in sessionStorage before reload
+                sessionStorage.setItem('statusFilter', currentStatusFilter);
+                sessionStorage.setItem('searchInput', currentSearchText);
                 location.reload();
             } else {
                 alert('Error updating mentor status: ' + (data.error || 'Unknown error'));
@@ -102,6 +109,26 @@ function confirmStatusUpdate(mentorId, action) {
 
 // Add event listeners for filters
 document.addEventListener('DOMContentLoaded', function() {
+    // Restore filter values from sessionStorage if they exist
+    const savedStatusFilter = sessionStorage.getItem('statusFilter');
+    const savedSearchInput = sessionStorage.getItem('searchInput');
+    
+    if (savedStatusFilter) {
+        document.getElementById('statusFilter').value = savedStatusFilter;
+        sessionStorage.removeItem('statusFilter');
+    }
+    
+    if (savedSearchInput) {
+        document.getElementById('searchInput').value = savedSearchInput;
+        sessionStorage.removeItem('searchInput');
+    }
+    
+    // Apply filters if any were restored
+    if (savedStatusFilter || savedSearchInput) {
+        filterTable();
+    }
+    
+    // Add event listeners
     document.getElementById('statusFilter').addEventListener('change', filterTable);
     document.getElementById('searchInput').addEventListener('input', filterTable);
 });
