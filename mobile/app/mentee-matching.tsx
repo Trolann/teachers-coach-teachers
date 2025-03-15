@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, Animated } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, Animated, Platform } from 'react-native';
 import SwipeCards from 'react-native-swipe-cards';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -33,19 +33,25 @@ export default function MenteeLandingScreen() {
     Animated.timing(animatedValue, {
       toValue: 500,
       duration: 300,
-      useNativeDriver: true,  
+      useNativeDriver: true,
     }).start(() => {
       console.log(`Liked ${ card.name }`);
       setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.id !== card.id));
     });
-    Alert.alert(
-      "Join Call",
-      `Do you want to join a call with ${ card.name }?`,
-    [
-      { text: "Cancel", style: "cancel" },
-      { text: "Join", onPress: () => console.log(`Joining call with ${ card.name }`) }
-      ]
-    );
+    if(Platform.OS === 'ios' || Platform.OS === 'android') {
+      Alert.alert(
+        "Join Call",
+        `Do you want to join a call with ${ card.name }?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Join", onPress: () => console.log(`Joining call with ${ card.name }`) }
+        ]
+      );
+    } else if(Platform.OS === 'web') {
+      if(window.confirm(`Do you want to join a call with ${ card.name }?`)) {
+        console.log(`Joining call with ${ card.name }`);
+      }
+    }
 };
 
 const handleSkip = (card) => {
@@ -79,7 +85,7 @@ const renderCard = (mentor) => {
         {infoVisible === mentor.id && (
           <View style={styles.infoBubble}>
             <Text style={styles.infoText}>
-              {mentor.name} is a highly-rated {mentor.subject} mentor from {mentor.location}.
+              {mentor.bio}
             </Text>
           </View>
         )}
