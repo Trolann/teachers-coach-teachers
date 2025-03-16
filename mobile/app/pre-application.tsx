@@ -60,7 +60,7 @@ export default function PreApplicationScreen() {
         {/* Welcome Text */}
         <View style={styles.welcomeContainer}>
           <ThemedText style={styles.welcomeText}>
-            We're happy to see you here.
+            We're happy to see you 🙂
           </ThemedText>
           <ThemedText style={styles.descriptionText}>
             You are about to embark on a journey of professional development and collaboration.
@@ -130,27 +130,28 @@ const styles = StyleSheet.create({
   },
   welcomeContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 45,
     paddingHorizontal: 20,
   },
   welcomeText: {
-    fontSize: 28,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 23.95,
+    fontWeight: '700',
+    color: '#2B2D42',
     marginBottom: 15,
+    lineHeight: 40,
     textAlign: 'center',
   },
   descriptionText: {
-    fontSize: 18,
-    color: '#555',
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 30,
     maxWidth: '100%',
   },
   buttonContainer: {
     width: '100%',
     maxWidth: 400,
-    gap: 15,
+    gap: 10,
   },
   selectionButton: {
     paddingVertical: 16,
