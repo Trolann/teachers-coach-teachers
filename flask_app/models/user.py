@@ -62,7 +62,14 @@ class User(db.Model):
 
     def update_profile(self, profile_data: Dict[str, Any]):
         """Update profile with new data, merging with existing"""
-        self.profile.update(profile_data)
+        if not self.profile:
+            self.profile = {}
+            
+        # Create a new dictionary to avoid reference issues
+        updated_profile = dict(self.profile)
+        updated_profile.update(profile_data)
+        self.profile = updated_profile
+        
         logger.info(f"Profile updated for user: {self.cognito_sub}")
 
     def update_application_status(self, status: str):

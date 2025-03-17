@@ -26,10 +26,16 @@ def get_user_from_token(headers) -> Optional[User]:
         return None
     
     user_info = verifier.get_user_attributes(auth_token)
-    logger.warning(f'User info: {user_info}')
-    user_id = user_info.get('user_id')
+    logger.info(f'User info: {user_info}')
+    
+    # Try to get user_id from 'sub' field (standard JWT claim)
+    user_id = user_info.get('sub')
     if not user_id:
-        logger.warning("Invalid user info from token")
+        # Fallback to 'user_id' field if 'sub' is not present
+        user_id = user_info.get('user_id')
+        
+    if not user_id:
+        logger.warning("Invalid user info from token - no user identifier found")
         return None
     
     user = User.get_by_id(user_id)
@@ -48,7 +54,7 @@ def submit_application():
 
     # Get JSON data from request
     profile_data = request.get_json()
-    logger.warning(f'Profile data: {profile_data}')
+    logger.info(f'Profile data received: {profile_data}')
     if not profile_data:
         return jsonify({'error': 'No profile data provided'}), 400
 
@@ -57,12 +63,14 @@ def submit_application():
         return jsonify({'error': 'Application already exists'}), 409
 
     # Update user to be a mentor
-    user.update_profile(profile_data)
     user.user_type = UserType.MENTOR
     user.application_status = ApplicationStatus.PENDING
+    
+    # Explicitly set the profile data instead of updating it
+    user.profile = profile_data
     db.session.commit()
     
-    logger.info(f"Application submitted for user: {user.cognito_sub}")
+    logger.info(f"Application submitted for user: {user.cognito_sub} with profile: {user.profile}")
 
     return jsonify({
         'message': 'Application submitted successfully',
@@ -80,6 +88,7 @@ def update_application():
 
     # Get JSON data from request
     profile_data = request.get_json()
+    logger.info(f'Update profile data received: {profile_data}')
     if not profile_data:
         return jsonify({'error': 'No profile data provided'}), 400
 
@@ -91,11 +100,15 @@ def update_application():
     if user.application_status != ApplicationStatus.PENDING:
         return jsonify({'error': 'Cannot update application in current status'}), 403
 
-    # Update profile data using the model's method
-    user.update_profile(profile_data)
+    # Get the current profile and update it with new data
+    current_profile = user.profile or {}
+    current_profile.update(profile_data)
+    
+    # Set the updated profile
+    user.profile = current_profile
     db.session.commit()
     
-    logger.info(f"Application updated for user: {user.cognito_sub}")
+    logger.info(f"Application updated for user: {user.cognito_sub} with profile: {user.profile}")
 
     return jsonify({
         'message': 'Application updated successfully',
