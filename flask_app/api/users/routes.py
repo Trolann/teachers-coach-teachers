@@ -26,7 +26,7 @@ def get_user_from_token(headers) -> Optional[User]:
         return None
     
     user_info = verifier.get_user_attributes(auth_token)
-    logger.info(f'User info: {user_info}')
+    logger.debug(f'User info: {user_info}')
     
     # Try to get user_id from 'sub' field (standard JWT claim)
     user_id = user_info.get('sub')
@@ -50,6 +50,7 @@ def submit_application():
     """Submit a user application"""
     user = get_user_from_token(request.headers)
     if not user:
+        logger.debug(f'User not found or invalid token {request.headers}')
         return jsonify({'error': 'User not found or invalid token'}), 401
 
     # Get JSON data from request
@@ -71,23 +72,24 @@ def submit_application():
     if user_type == "MENTEE":
         user.user_type = UserType.MENTEE
         found = True
-        logger.warning(f"User type set to MENTEE")
+        logger.debug(f"User type set to MENTEE")
     if user_type == "MENTOR":
         user.user_type = UserType.MENTOR
         found = True
-        logger.warning(f"User type set to MENTOR")
+        logger.debug(f"User type set to MENTOR")
     if user_type == "ADMIN":
         # TODO: require_auth should add an is_admin header
         return jsonify({'error': 'Unable to set profile applications for ADMIN users'}), 400
     if not found:
-        logger.warning(f"Invalid user_type {user_type}")
-        logger.warning(f'User type: {user.user_type} {type(user.user_type)}')
-        logger.warning(f'user_type == "ADMIN" {user_type == "ADMIN"}')
+        logger.warn(f"Invalid user_type {user_type}")
+        logger.debug(f'User type: {user.user_type} {type(user.user_type)}')
+        logger.debug(f'user_type == "ADMIN" {user_type == "ADMIN"}')
         return jsonify({'error': 'Invalid user type'}), 400
 
     user.application_status = ApplicationStatus.PENDING
     # check if there's already a profile, error out if there is
     if user.profile or user.application_status != ApplicationStatus.PENDING:
+        logger.info(f'User already has a profile or application status is not PENDING')
         return jsonify({'error': 'Application already submitted.'}), 403
 
     user.profile = profile_data
@@ -118,10 +120,8 @@ def update_application():
 
     # Get the current profile and update it with new data
     current_profile = user.profile or {}
-    logger.warning(f'Current profile: {current_profile}')
     current_profile.update(profile_data)
-    logger.warning(f'Updated profile: {current_profile}')
-    
+
     # Set the updated profile
     user.profile = {}
     db.session.commit() # Clear profile first

@@ -180,13 +180,18 @@ class CognitoTokenVerifier:
     def get_user_attributes(self, access_token):
         """Get user attributes using the access token"""
         try:
-            user_info = self.client.get_user(
-                AccessToken=access_token
-            )
-            groups = self.client.admin_list_groups_for_user(
-                Username=user_info['Username'],
-                UserPoolId=self.user_pool_id
-            )
+            try:
+                user_info = self.client.get_user(
+                    AccessToken=access_token
+                )
+                groups = self.client.admin_list_groups_for_user(
+                    Username=user_info['Username'],
+                    UserPoolId=self.user_pool_id
+                )
+            except self.client.exceptions.NotAuthorizedException as e:
+                logger.error(f"User not authorized: {str(e)}")
+                logger.debug(f'Token provided: {access_token}')
+                return None
             logger.debug(f'Got user info: {user_info}')
             logger.debug(f'Got user groups: {groups}')
             return {
@@ -279,7 +284,7 @@ def require_auth(f):
         try:
             # This is left in if debugging is still needed. Uncomment and prefix your token with `test` to pass
             if token.startswith('test'):
-                logger.warning("Using development token")
+                logger.error(f"Using development token {token}")
                 return f(*args, **kwargs)
             logger.debug(f'Verifying token: {token[:15]}...')
             verifier.verify_token(token)
