@@ -54,19 +54,42 @@ def submit_application():
 
     # Get JSON data from request
     profile_data = request.get_json()
+
+    # Extract user_type from profile_data
+    user_type = profile_data.get('user_type')
+    if user_type:
+        logger.info(f'Got user_type from profile_data: {user_type} {type(user_type)}')
+        profile_data.pop('user_type')
+
     logger.info(f'Profile data received: {profile_data}')
     if not profile_data:
         return jsonify({'error': 'No profile data provided'}), 400
 
-    # Check if user is already a mentor
-    if user.user_type == UserType.MENTOR:
-        return jsonify({'error': 'Application already exists'}), 409
 
     # Update user to be a mentor
-    user.user_type = UserType.MENTOR
+    found = False
+    if user_type == "MENTEE":
+        user.user_type = UserType.MENTEE
+        found = True
+        logger.warning(f"User type set to MENTEE")
+    if user_type == "MENTOR":
+        user.user_type = UserType.MENTOR
+        found = True
+        logger.warning(f"User type set to MENTOR")
+    if user_type == "ADMIN":
+        # TODO: require_auth should add an is_admin header
+        return jsonify({'error': 'Unable to set profile applications for ADMIN users'}), 400
+    if not found:
+        logger.warning(f"Invalid user_type {user_type}")
+        logger.warning(f'User type: {user.user_type} {type(user.user_type)}')
+        logger.warning(f'user_type == "ADMIN" {user_type == "ADMIN"}')
+        return jsonify({'error': 'Invalid user type'}), 400
+
     user.application_status = ApplicationStatus.PENDING
-    
-    # Explicitly set the profile data instead of updating it
+    # check if there's already a profile, error out if there is
+    if user.profile or user.application_status != ApplicationStatus.PENDING:
+        return jsonify({'error': 'Application already submitted.'}), 403
+
     user.profile = profile_data
     db.session.commit()
     
@@ -92,20 +115,18 @@ def update_application():
     if not profile_data:
         return jsonify({'error': 'No profile data provided'}), 400
 
-    # Check if user is a mentor
-    if user.user_type != UserType.MENTOR:
-        return jsonify({'error': 'No application found'}), 404
-
-    # Only allow updates if application is pending
-    if user.application_status != ApplicationStatus.PENDING:
-        return jsonify({'error': 'Cannot update application in current status'}), 403
 
     # Get the current profile and update it with new data
     current_profile = user.profile or {}
+    logger.warning(f'Current profile: {current_profile}')
     current_profile.update(profile_data)
+    logger.warning(f'Updated profile: {current_profile}')
     
     # Set the updated profile
+    user.profile = {}
+    db.session.commit() # Clear profile first
     user.profile = current_profile
+    user.application_status = ApplicationStatus.PENDING
     db.session.commit()
     
     logger.info(f"Application updated for user: {user.cognito_sub} with profile: {user.profile}")
