@@ -26,13 +26,15 @@ def get_user_from_token(headers) -> Optional[User]:
         return None
     
     user_info = verifier.get_user_attributes(auth_token)
-    if not user_info or 'sub' not in user_info:
+    logger.warning(f'User info: {user_info}')
+    user_id = user_info.get('user_id')
+    if not user_id:
         logger.warning("Invalid user info from token")
         return None
     
-    user = User.get_by_id(user_info['sub'])
+    user = User.get_by_id(user_id)
     if not user:
-        logger.warning(f"User with cognito_sub {user_info['sub']} not found")
+        logger.warning(f"User with cognito_sub {user_id} not found")
     
     return user
 
@@ -46,6 +48,7 @@ def submit_application():
 
     # Get JSON data from request
     profile_data = request.get_json()
+    logger.warning(f'Profile data: {profile_data}')
     if not profile_data:
         return jsonify({'error': 'No profile data provided'}), 400
 
@@ -54,8 +57,8 @@ def submit_application():
         return jsonify({'error': 'Application already exists'}), 409
 
     # Update user to be a mentor
-    user.user_type = UserType.MENTOR
     user.update_profile(profile_data)
+    user.user_type = UserType.MENTOR
     user.application_status = ApplicationStatus.PENDING
     db.session.commit()
     
