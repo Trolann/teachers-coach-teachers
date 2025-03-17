@@ -17,12 +17,13 @@ logger = get_logger(__name__)
 
 
 logger.info("Initializing Cognito authentication module")
-# TODO: Remove admin group name magic value (add to config)
 
 class CognitoTokenVerifier:
     def __init__(self,user_pool_id=config.COGNITO_USER_POOL_ID,
                  client_id=config.COGNITO_CLIENT_ID,
-                 region=config.COGNITO_REGION):
+                 region=config.COGNITO_REGION,
+                 admin_group_name=config.ADMIN_GROUP_NAME,
+                 district_admin_group_name=config.DISTRICT_ADMIN_GROUP_NAME):
         self.user_pool_id = user_pool_id
         self.client_id = client_id
         self.region = region
@@ -31,6 +32,8 @@ class CognitoTokenVerifier:
         self.get_keys()
         # Configure AWS credentials
         self.client = client('cognito-idp', region_name=region)
+        self.admin_group_name = admin_group_name
+        self.district_admin_group_name = district_admin_group_name
 
     def login_as_admin(self, username, password):
         """Login user and verify admin access"""
@@ -91,12 +94,12 @@ class CognitoTokenVerifier:
     def is_user_district_admin(self, access_token):
         """Check if user is in the district_admin group"""
         logger.debug("Checking if user is in district_admin group")
-        return self._check_user_group(access_token, 'district_admin')
+        return self._check_user_group(access_token, self.district_admin_group_name)
 
     def is_user_admin(self, access_token, given_user_info=None):
         """Check if user is in admins group"""
         logger.debug("Checking if user is in admins group")
-        return self._check_user_group(access_token, 'admins')
+        return self._check_user_group(access_token, self.admin_group_name)
 
     def get_keys(self):
         """Get the JSON Web Key (JWK) for the user pool"""
@@ -228,14 +231,14 @@ class CognitoTokenVerifier:
 
 def parse_headers(headers):
     """Parse headers from a request object"""
-    logger.warning(f'Headers: {headers}')
+
     if not headers:
         return None, None, None, None
     auth_header = headers.get('Authorization')
     refresh_token = headers.get('X-Refresh-Token')
     id_token = headers.get('X-Id-Token')
     expires_in = headers.get('X-Token-Expires')
-    logger.warning(f'Auth Header: {auth_header}')
+
 
     if auth_header:
         auth_header = auth_header.replace('Bearer ', '')
@@ -255,8 +258,6 @@ def require_auth(f):
             # Parse tokens from request headers
             # TODO: Could be getting a sole KWARG with mentor_id we could use here
             auth_header = request.headers.get('Authorization')
-            logger.warning(f'Args: {args=}')
-            logger.warning(f'Kwargs: {kwargs=}')
             # Parse tokens from request headers
             if isinstance(auth_header, str):
                 token = auth_header.replace('Bearer ', '')
@@ -265,7 +266,6 @@ def require_auth(f):
                 expires_in = ''
             else:
                 token, refresh_token, id_token, expires_in = parse_headers(auth_header)
-            logger.warning(f'Token: {token}')
             if token:
                 # Debug log first part of tokens
                 logger.debug(f"Access Token: {token[:15] if token else 'None'}")
@@ -281,7 +281,7 @@ def require_auth(f):
             if token.startswith('test'):
                 logger.warning("Using development token")
                 return f(*args, **kwargs)
-            logger.warn(f'Verifying token: {token}')
+            logger.debug(f'Verifying token: {token[:15]}...')
             verifier.verify_token(token)
             return f(*args, **kwargs)
         except Exception as e:

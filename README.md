@@ -40,6 +40,7 @@ cp .env.example .env && cp mobile/.env.example mobile/.env
     - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
     - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
     - FLASK_ENV should remain as development for local development
+    - ADMIN_GROUP_NAME and DISTRICT_ADMIN_GROUP_NAME should remain defaults unless the Cognito admin has changed group names
     - COGNITO_* and AWS_* you must get from Trevor
   - Mobile `.env` file is for `mobile/` directory:
     - EXPO_PUBLIC_COGNITO_CLIENT_ID is the same as the client id in the root `.env` file
