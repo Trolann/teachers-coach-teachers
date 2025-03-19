@@ -104,7 +104,7 @@ export default function FindMentorScreen() {
               <Text style={styles.label}>2) Select up to 3 issues you need help with</Text>
               {renderIndependentScroll(issues, selectedIssues, setSelectedIssues, 3, "issues")}
 
-              <Text style={styles.label}>3) Describe Your Goal for This Session</Text>
+              <Text style={styles.label}>3) Describe your goal for this session</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Write here..."
@@ -183,30 +183,30 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   label: {
-    fontSize: 14, 
+    fontSize: 15, 
     fontWeight: '600',
     color: '#444',
-    marginTop: 18,
-    marginBottom: 18,
+    marginTop: 12,
+    marginBottom: 12,
   },
   horizontalScroll: {
     flexDirection: 'row',
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   optionButton: {
     backgroundColor: '#EEF2FF',
-    paddingVertical: 8, 
-    paddingHorizontal: 12, 
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 30,
-    marginHorizontal: 5,
-    elevation: 2,
+    marginHorizontal: 6,
+    elevation: 3,
   },
   selectedOption: {
     backgroundColor: '#2B6EF8',
   },
   optionText: {
     color: '#333',
-    fontSize: 13, 
+    fontSize: 15,
     fontWeight: '500',
   },
   selectedOptionText: {
