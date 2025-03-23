@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, Image, 
-  StyleSheet, SafeAreaView, ScrollView 
+import {
+  View, Text, TextInput, TouchableOpacity, Image,
+  StyleSheet, SafeAreaView, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Header from '@/components/Header';
 
 export default function FindMentorScreen() {
   const [goal, setGoal] = useState('');
@@ -12,24 +13,32 @@ export default function FindMentorScreen() {
   const [selectedIssues, setSelectedIssues] = useState([]);
   const router = useRouter();
 
-  const categories = [
-    "Nearby", 
-    "Top Rated", 
-    "Similar Expertise", 
-    "Highly Experienced", 
-    "Language-Specific Mentors",
-    "Women Mentors", 
-    "LGBTQ+ Friendly",
-    "Veteran Mentors", 
-    "Immigrant Mentors", 
-    "Faith-Based Mentors", 
-  ];
 
-  const issues = [
-    "Teaching concepts", "Time management", "Lack of motivation",
-    "Preparing for an exam", "Career guidance", "Improving teaching habits",
-    "Project assistance", "Technical skills", "Work-life balance"
-  ];
+  const dynamicData = {
+    categories: [
+      "Nearby",
+      "Top Rated",
+      "Similar Expertise",
+      "Highly Experienced",
+      "Language-Specific Mentors",
+      "Women Mentors",
+      "LGBTQ+ Friendly",
+      "Veteran Mentors",
+      "Immigrant Mentors",
+      "Faith-Based Mentors"
+    ],
+    issues: [
+      "Teaching concepts",
+      "Time management",
+      "Lack of motivation",
+      "Preparing for an exam",
+      "Career guidance",
+      "Improving teaching habits",
+      "Project assistance",
+      "Technical skills",
+      "Work-life balance"
+    ]
+  };
 
   const toggleSelection = (item, list, setList, maxSelections) => {
     setList(prevList => {
@@ -50,8 +59,8 @@ export default function FindMentorScreen() {
 
 
   const renderOption = (item, list, setList, maxSelections, type) => {
-    const backgroundColor = type === "categories" ? "#E6F9E6" : "#FDEDED"; 
-    const selectedColor = type === "categories" ? "#4CAF50" : "#E53935"; 
+    const backgroundColor = type === "categories" ? "#E6F9E6" : "#FDEDED";
+    const selectedColor = type === "categories" ? "#4CAF50" : "#E53935";
 
     return (
       <TouchableOpacity
@@ -85,41 +94,45 @@ export default function FindMentorScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.header}>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.greeting}>
-                Hi, Jessica <Text style={styles.wave}>👋</Text>
-              </Text>
-              <Text style={styles.subtitle}>Find Your Perfect Mentor</Text>
-            </View>
-            <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
+        <Header subtitle="Set Your Mentor Preferences"/>
+        <View style={styles.formContainer}>
+          <View style={styles.mentorContainer}>
+            <Text style={styles.title}>Find a Mentor</Text>
+
+            <Text style={styles.label}>1) Select up to 3 mentor categories</Text>
+            {renderIndependentScroll(
+              dynamicData.categories,
+              selectedCategories,
+              setSelectedCategories,
+              3,
+              "categories"
+            )}
+
+            <Text style={styles.label}>2) Select up to 3 issues you need help with</Text>
+            {renderIndependentScroll(
+              dynamicData.issues,
+              selectedIssues,
+              setSelectedIssues,
+              3,
+              "issues"
+            )}
+
+            <Text style={styles.label}>3) Describe your goal for this session</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Write here..."
+              placeholderTextColor="#999"
+              multiline
+              value={goal}
+              onChangeText={setGoal}
+            />
+
+            <TouchableOpacity style={styles.button} onPress={handleFindMentor}>
+              <Text style={styles.buttonText}>Find a Mentor</Text>
+              <Ionicons name="paper-plane-outline" size={20} color="white" style={styles.buttonIcon} />
+            </TouchableOpacity>
           </View>
-          <View style={styles.formContainer}>
-            <View style={styles.mentorContainer}>
-              <Text style={styles.title}>Find a Mentor</Text>
-
-              <Text style={styles.label}>1) Select up to 3 mentor categories</Text>
-              {renderIndependentScroll(categories, selectedCategories, setSelectedCategories, 3, "categories")}
-
-              <Text style={styles.label}>2) Select up to 3 issues you need help with</Text>
-              {renderIndependentScroll(issues, selectedIssues, setSelectedIssues, 3, "issues")}
-
-              <Text style={styles.label}>3) Describe your goal for this session</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Write here..."
-                placeholderTextColor="#999"
-                multiline
-                value={goal}
-                onChangeText={setGoal}
-              />
-
-              <TouchableOpacity style={styles.button} onPress={handleFindMentor}>
-                <Text style={styles.buttonText}>Find a Mentor</Text>
-                <Ionicons name="paper-plane-outline" size={20} color="white" style={styles.buttonIcon} />
-              </TouchableOpacity>
-            </View>
-          </View>
+        </View>
       </ScrollView>
 
       <View style={styles.navbar}>
@@ -138,18 +151,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   content: {
-    paddingHorizontal: 20, 
+    paddingHorizontal: 20,
     justifyContent: 'center',
     paddingTop: 20,
   },
   header: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 25,
   },
   headerTextContainer: {
-    flex: 1,  
+    flex: 1,
     justifyContent: 'center',
   },
   greeting: {
@@ -159,7 +172,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   wave: {
-    fontSize: 28, 
+    fontSize: 28,
   },
   subtitle: {
     fontSize: 16,
@@ -176,14 +189,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 22, 
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
     color: '#333',
   },
   label: {
-    fontSize: 15, 
+    fontSize: 15,
     fontWeight: '600',
     color: '#444',
     marginTop: 12,
@@ -213,7 +226,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   input: {
-    height: 60, 
+    height: 60,
     borderColor: '#ddd',
     borderWidth: 1,
     borderRadius: 8,
@@ -226,8 +239,8 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     backgroundColor: 'black',
-    padding: 15, 
-    borderRadius: 25, 
+    padding: 15,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
@@ -236,12 +249,12 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'white',
-    fontSize: 16, 
+    fontSize: 16,
     fontWeight: '600',
   },
   buttonIcon: {
     marginLeft: 8,
-    fontSize: 16, 
+    fontSize: 16,
   },
   navbar: {
     flexDirection: 'row',

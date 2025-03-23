@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, Animated, Platf
 import SwipeCards from 'react-native-swipe-cards';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Header from '@/components/Header';
 
 export default function MenteeLandingScreen() {
   const router = useRouter();
@@ -71,9 +72,9 @@ export default function MenteeLandingScreen() {
     });
   };
 
-  // Handle Refine Search to go back button
+  // TODO: Handle Refine Search to go back button
   const handleRefineSearch = () => {
-    router.back();
+    router.push('/pre-matching-mentee');
   };
 
   const renderCard = (mentor) => {
@@ -82,14 +83,14 @@ export default function MenteeLandingScreen() {
         <View style={styles.card}>
           {/* Green Online Indicator */}
           <View style={styles.onlineIndicator} />
-  
+
           <Image source={mentor.image} style={styles.mentorImage} />
-  
+
           {/* Info Icon */}
           <TouchableOpacity onPress={() => toggleInfo(mentor.id)} style={styles.infoButton}>
             <Ionicons name="information-circle-outline" size={30} color="#666" />
           </TouchableOpacity>
-  
+
           {/* Info Bubble (Appears Only on Toggle) */}
           {infoVisible === mentor.id && (
             <View style={styles.infoBubble}>
@@ -98,7 +99,7 @@ export default function MenteeLandingScreen() {
               </Text>
             </View>
           )}
-  
+
           <View style={styles.overlay}>
             <Text style={styles.mentorName}>{mentor.name}, {mentor.subject}</Text>
             <Text style={styles.mentorLocation}>
@@ -111,7 +112,7 @@ export default function MenteeLandingScreen() {
         </View>
       </Animated.View>
     );
-  };
+  }
   
 
 
@@ -127,18 +128,12 @@ export default function MenteeLandingScreen() {
   return (
     <View style={styles.container}>
       {/* Header Section */}
-      <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.greeting}>Hi, Jessica <Text style={styles.wave}>👋</Text></Text>
-          <Text style={styles.subtitle}>Swipe Right for a Mentor</Text>
+        <View style={{ paddingHorizontal: 20 }}>
+          <Header subtitle="Swipe Right for a Mentor" />
         </View>
-        <TouchableOpacity style={styles.profileSection}>
-          <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
-          <Text style={styles.tokenText}>12 🪙</Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* Swipe Cards */}
+        {/* Swipe Cards */}
+        
       <View style={styles.swipeContainer}>
         <SwipeCards
           cards={mentorList}
@@ -168,19 +163,19 @@ export default function MenteeLandingScreen() {
         <TouchableOpacity
           style={styles.skipButton}
           onPress={() => mentorList.length > 0 && handleSkip(mentorList[0])}>
-          <Ionicons name="close-circle" size={55} color="red" />
+          <Ionicons name="close-circle-sharp" size={55} color="red" />
         </TouchableOpacity>
 
         {/* Refine Search Button */}
         <TouchableOpacity style={styles.refineButton} onPress={handleRefineSearch}>
-          <Ionicons name="arrow-back-circle" size={45} color="black" />
+          <Ionicons name="refresh-circle" size={45} color="black" />
         </TouchableOpacity>
 
         {/* Heart Button -> Right Swipe */}
         <TouchableOpacity
           style={styles.likeButton}
           onPress={() => mentorList.length > 0 && handleLike(mentorList[0])}>
-          <Ionicons name="heart-circle" size={55} color="green" />
+          <Ionicons name="heart-circle-sharp" size={55} color="green" />
         </TouchableOpacity>
 
       </View>
@@ -194,44 +189,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7f7f7',
     paddingTop: 65,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  headerText: {
-    flexDirection: 'column',
-  },
-  greeting: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  wave: {
-    fontSize: 30,
-  },
-  subtitle: {
-    fontSize: 16,
-    paddingTop: 5,
-    color: '#666',
-  },
-  profileSection: {
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  profileImage: {
-    width: 45,
-    height: 45,
-    borderRadius: 25,
-  },
-  tokenText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 4,
-    textAlign: 'center',
-  },
   swipeContainer: {
     flex: 1,
     alignItems: 'center',
@@ -239,7 +196,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: 310,
-    height: 550,
+    height: 560,
     borderRadius: 20,
     backgroundColor: '#fff',
     shadowColor: '#000',
@@ -284,13 +241,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 5,
     backgroundColor: '#333',
-    paddingVertical: 4,
+    paddingVertical: 5,
     paddingHorizontal: 8,
     borderRadius: 6,
   },
   onlineIndicator: {
     position: 'absolute',
-    top: 27,
+    top: 26,
     left: 23,
     width: 15,
     height: 15,
@@ -368,6 +325,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     textAlign: 'center',
-  },
-
+  }
 });
