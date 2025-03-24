@@ -161,7 +161,7 @@ def add_pool_access():
         return jsonify({
             'message': 'User added to pool successfully',
             'user': {
-                'id': user.id,
+                'id': user.cognito_sub,
                 'email': user.email
             }
         })

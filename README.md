@@ -3,7 +3,6 @@
 ## **Introduction**
 
 This project demonstrates how to run an **Expo React Native frontend** and a **Flask backend** together in a Dockerized environment. It uses:
-
 - **Flask** for the backend.
 - **PostgreSQL** as the database.
 - **Expo** for the frontend, which supports React Native development for iOS, Android, and Web.
@@ -19,38 +18,33 @@ This project demonstrates how to run an **Expo React Native frontend** and a **F
 2. **Node.js and npm**:
      - Download and install from [https://nodejs.org/](https://nodejs.org/).
 3. **Expo CLI** (optional for local testing):
-
 ```bash
 npm install -g expo-cli
 ```
 
 4. **Environment Variables**:
    - Copy the `.env.example` file to `.env` and update the values.
-   - In the `mobile` directory, copy the `.env.example` file to `.env` and update the values.
-   - Both values needed can be found in the Discord pins.
-
 ```bash
 cp .env.example .env && cp mobile/.env.example mobile/.env
 ```
 
 ### Notes on environment variables
-
-- Root `.env` file is for the backend:
-  - The `.env` must remain in the repository root
-  - LOG_LEVEL is the log level for our backend.
-  - FLASK_LOG_LEVEL is the log level for the Flask/Waitress web server
-  - UID/GID are the User ID/Group ID the docker container should run at. This should be the output from `id -u` and `id -g` on your local machine.
-  - POSTGRES_USER, POSTGRES_PASSWORD can be any value for local development
-  - POSTGRES_DB should remain as tct_database
-  - SQLALCHEMY_DATABASE_URI should remain as is to reach the database over the docker network
-  - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
-  - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
-  - FLASK_ENV should remain as development for local development
-  - COGNITO_*and AWS_* you must get from Trevor
-- Mobile `.env` file is for `mobile/` directory:
-  - EXPO_PUBLIC_COGNITO_CLIENT_ID is the same as the client id in the root `.env` file
-  - EXPO_PUBLIC_COGNITO_REGION is the same as the region in the root `.env` file
-
+  - Root `.env` file is for the backend:
+    - The `.env` must remain in the repository root
+    - LOG_LEVEL is the log level for our backend. 
+    - FLASK_LOG_LEVEL is the log level for the Flask/Waitress web server
+    - UID/GID are the User ID/Group ID the docker container should run at. This should be the output from `id -u` and `id -g` on your local machine.
+    - POSTGRES_USER, POSTGRES_PASSWORD can be any value for local development
+    - POSTGRES_DB should remain as tct_database
+    - SQLALCHEMY_DATABASE_URI should remain as is to reach the database over the docker network
+    - FLASK_RUN_PORT only manages the backend port, not the frontend calls (will be solved later with a reverse proxy)
+    - FLASK_RUN_HOST should remain as 0.0.0.0 to bind to all network interfaces for development
+    - FLASK_ENV should remain as development for local development
+    - ADMIN_GROUP_NAME and DISTRICT_ADMIN_GROUP_NAME should remain defaults unless the Cognito admin has changed group names
+    - COGNITO_* and AWS_* you must get from Trevor
+  - Mobile `.env` file is for `mobile/` directory:
+    - EXPO_PUBLIC_COGNITO_CLIENT_ID is the same as the client id in the root `.env` file
+    - EXPO_PUBLIC_COGNITO_REGION is the same as the region in the root `.env` file
 ---
 
 ## **Project Structure**
@@ -93,17 +87,13 @@ The project structure looks like this:
 ## **Setup Instructions**
 
 ### **1. Build the Docker Images**
-
 Use Docker Compose to build the project images:
-
 ```bash
 docker compose build
 ```
 
 ## **1.a. Initalize the database and apply the first migration/upgrade**
-
 This is necessary to initially build the database or after removing the `tct_postgres_data` volums such as `docker volume rm flaskproject_tct_postgres_data`. You can skip this step if you have ran the database before.
-
 ```bash
 # Initalize Flask-Migrate
 docker compose run --rm -e FLASK_APP=manage.py backend flask db init
@@ -118,15 +108,12 @@ docker compose run --rm -e FLASK_APP=manage.py backend flask db upgrade
 ---
 
 ### **2. Start the Containers**
-
 Start the backend, database, and Expo frontend containers:
-
 ```bash
 docker compose up
 ```
 
 This will:
-
 - Start the **Flask backend** on port `5001`.
 - Start **PostgreSQL** without exposing a port (only accessible from the backend).
 - Start the **Expo frontend** with Metro Bundler on `8081`.
@@ -134,9 +121,7 @@ This will:
 ---
 
 ### **3. Confirm Successful Startup**
-
 After starting the containers, you should see output similar to this:
-
 ```bash
 teachers-coach-teachers git:main
 ❯ docker compose up
@@ -180,30 +165,24 @@ expo-frontend                    | Waiting on http://localhost:8081
 expo-frontend                    | Logs for your project will appear below.
 ```
 
-### Note
-
+### Note:
 To exit the compose containers and stop the services, press `Ctrl + C`.
 
 To run the containers in the background, add the `-d` flag:
-
 ```bash
 docker compose up --build -d
 ```
 
 When running in detached (`-d`) mode, you can view the logs with:
-
 ```bash
 docker compose logs -f
 ```
-
 Or for a single service in the stack with
-
 ```bash
 docker compose logs -f <service_name>
 ```
 
 If you have previously ran the containers, some of your files may be owned by root. Run the following to change the ownership of all files from the top level directory down to the current user:
-
 ```bash
 sudo chown -R $USER:$USER .
 ```
@@ -211,9 +190,7 @@ sudo chown -R $USER:$USER .
 Then rerun `docker compose up` to start the services.
 
 ### **4. Flask database migrations and management**
-
 To run database migrations, you can use the following commands:
-
 ```bash
 # Create new migration
 docker compose run --rm -e FLASK_APP=manage.py backend flask db migrate -m "Description"
@@ -221,42 +198,35 @@ docker compose run --rm -e FLASK_APP=manage.py backend flask db migrate -m "Desc
 # Apply migration
 docker compose run --rm -e FLASK_APP=manage.py backend flask db upgrade
 ```
-
 This will initialize the migrations directory, create an initial migration, and apply the migration to the database.
 A migration is necessary whenever the database models change or during the first startup.
 
 *Note*: If you are not having success ensure you have imported the new models within the flask application.
 
-#### *Alternatively*
-
+#### _Alternatively_:
 You can completely blow-out the database you have locally and start fresh with:
-
 ```bash
 docker compose down -v --remove-orphans && \
 docker volume rm flaskproject_tct_postgres_data && \
 docker compose up --build -d
 ```
-
 **THIS WILL DELETE ALL DATA IN THE DATABASE**
 
 ## **Running the Application**
 
 ### **1. Frontend (Expo)**
-
 The Expo app will start on port `8081`. Open the Metro Bundler interface in your browser:
-
 ```
 http://localhost:8081
 ```
 
-#### **Options: [HAVING TROUBLE WITH THIS RIGHT NOW DO NOT DO THIS]**
-
+#### **Options: [HAVING TROUBLE WITH THIS RIGHT NOW DO NOT DO THIS]** 
 - **Run on iOS Simulator:** Press `i` in the terminal or click the option in Metro Bundler.
 - **Run on Android Emulator:** Press `a` in the terminal or click the option in Metro Bundler.
 - **Scan QR Code:** Open the **Expo Go** app on your mobile device and scan the QR code from Metro Bundler.
 
-#### **FIRST TIME EXPO**
 
+#### **FIRST TIME EXPO**
 ### **Using the Simulator for the First Time with Expo**
 
 If this is your first time using Expo with a simulator, follow this guide to set up and run the app on an iOS simulator or Android emulator.
@@ -266,16 +236,13 @@ If this is your first time using Expo with a simulator, follow this guide to set
 ## **1. Prerequisites for Simulators**
 
 ### **iOS Simulator (Mac Only)**
-
 1. **Install Xcode**:
    - Open the Mac App Store and download **Xcode**.
    - After installation, open Xcode and agree to the license terms.
 2. **Install Xcode Command Line Tools**:
-
    ```bash
    xcode-select --install
    ```
-
 3. **Verify Simulator Availability**:
    - Open Xcode > Preferences > Components.
    - Download any additional simulators (e.g., iOS 16.4).
@@ -283,7 +250,6 @@ If this is your first time using Expo with a simulator, follow this guide to set
 ---
 
 ### **Android Emulator**
-
 1. **Install Android Studio**:
    - Download and install **Android Studio** from [https://developer.android.com/studio](https://developer.android.com/studio).
    - During installation, select the option to install the Android Virtual Device (AVD) Manager.
@@ -300,54 +266,43 @@ If this is your first time using Expo with a simulator, follow this guide to set
 ## **2. Running the Expo App on a Simulator**
 
 ### **Step 1: Start the Expo Project**
-
 Ensure the Expo project is running:
-
 ```bash
 docker compose up expo-frontend
 ```
 
 **Simple Solution is to, alternatively, if running locally:**
-
 ```bash
 cd mobile
 npx expo start
 ```
 
 Open the Metro Bundler interface in your browser or expo using following links through docker:
-
 ```
 http://localhost:8081
 exp://localhost:8081
 ```
-
 ![alt text](./expo_url.png)
 ---
 
 ### **Step 2: Open on iOS Simulator**
-
 1. Ensure the iOS simulator is running. Open it manually via Xcode:
    - Xcode > Open Developer Tools > Simulator.
 2. In the terminal running Expo, press:
-
    ```plaintext
    i
    ```
-
    - Expo CLI will automatically build and launch the app in the iOS simulator.
 
 ---
 
 ### **Step 3: Open on Android Emulator**
-
 1. Start the Android emulator from Android Studio:
    - Open Android Studio > Tools > AVD Manager > Start Emulator.
 2. In the terminal running Expo, press:
-
    ```plaintext
    a
    ```
-
    - Expo CLI will install the app and launch it in the Android emulator.
 
 ---
@@ -355,18 +310,14 @@ exp://localhost:8081
 ## **3. Troubleshooting Simulator Issues**
 
 ### **iOS Simulator Issues**
-
 - **Simulator Not Opening Automatically**:
   - Open the simulator manually via Xcode:
-
     ```plaintext
     Xcode > Open Developer Tools > Simulator
     ```
-
   - Then press `i` in the terminal.
 - **No Device Found**:
   - Ensure Xcode command-line tools are installed:
-
     ```bash
     xcode-select --install
     ```
@@ -374,31 +325,24 @@ exp://localhost:8081
 ---
 
 ### **Android Emulator Issues**
-
 - **"No Connected Devices"**:
   - Verify that the emulator is running:
-
     ```bash
     adb devices
     ```
-
   - If no devices are listed, restart the emulator via Android Studio.
 - **Expo CLI Can't Find Emulator**:
   - Ensure the `ANDROID_HOME` environment variable is set:
-
     ```bash
     export ANDROID_HOME=~/Library/Android/sdk
     export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools
     ```
-
     Add these lines to your shell config (e.g., `.bashrc`, `.zshrc`).
 
 ---
 
 ### **4. Testing the App on the Simulator**
-
 Once the app launches on the simulator:
-
 - **Verify Backend Connectivity**:
   - The app should call the `/check-database` endpoint and display the response.
 - **Reload the App**:
@@ -407,27 +351,28 @@ Once the app launches on the simulator:
 
 ---
 
+
+
+
+
 ### **2. Backend (Flask)**
-
 The Flask backend will start on port `5000`. Test the backend by accessing the `/health` endpoint:
-
 ```
 http://localhost:5000/health
 ```
 
 ---
 
+
+
 ## **Accessing the Application**
 
 ### **Expo Frontend**
-
 - **Web:** Visit `http://localhost:8081`.
 - **Mobile Devices:** Use the Expo Go app and enter URL `exp://localhost:8081`.
 
 ### **Flask Backend**
-
 Access the Flask backend via:
-
 - Example endpoint: `http://localhost:5001/check-database`
 
 ---
@@ -445,23 +390,17 @@ To verify the backend and frontend connection, follow these steps:
 ## **Common Issues and Debugging**
 
 ### **1. Backend Not Accessible**
-
 - Ensure the backend container is running:
-
   ```bash
   docker ps
   ```
-
 - Check the logs for errors:
-
   ```bash
   docker logs flask-app
   ```
 
 ### **2. Expo Frontend Not Working**
-
 - If the QR code doesn’t show, ensure Expo is started in tunnel mode:
-
   ```bash
   npx expo start --tunnel
   ```

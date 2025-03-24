@@ -28,7 +28,7 @@ class CreditPool(db.Model):
     id: Mapped[str] = mapped_column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     owner_id: Mapped[str] = mapped_column(
         db.String(36),
-        ForeignKey('users.id', ondelete="CASCADE"),
+        ForeignKey('users.cognito_sub', ondelete="CASCADE"),
         nullable=False,
         index=True
     )
@@ -100,7 +100,7 @@ class CreditRedemption(db.Model):
     code: Mapped[str] = mapped_column(db.String(6), nullable=False, index=True)
     created_by: Mapped[str] = mapped_column(
         db.String(36),
-        ForeignKey('users.id', ondelete="CASCADE"),
+        ForeignKey('users.cognito_sub', ondelete="CASCADE"),
         nullable=False,
         index=True
     )
