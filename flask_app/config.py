@@ -30,6 +30,8 @@ class FlaskConfig:
 class CognitoConfig:
     def __init__(self):
         logger.info("Initializing Cognito authentication configuration")
+        self.ADMIN_GROUP_NAME = environ.get('ADMIN_GROUP_NAME', 'admins')
+        self.DISTRICT_ADMIN_GROUP_NAME = environ.get('DISTRICT_ADMIN_GROUP_NAME', 'district_admin')
         
         try:
             # AWS Cognito configuration
@@ -47,6 +49,8 @@ class CognitoConfig:
             if not self.COGNITO_REGION:
                 logger.error("COGNITO_REGION environment variable not set")
                 raise ValueError("Missing required COGNITO_REGION configuration")
+
+
                 
             # Log configuration details (excluding sensitive data)
             logger.debug(f"Cognito config initialized with region={self.COGNITO_REGION}")
