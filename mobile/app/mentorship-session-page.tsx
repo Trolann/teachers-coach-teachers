@@ -5,55 +5,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import TokenManager from '@/app/auth/TokenManager';
-
-// Import Dyte SDK components
-import {
-    DyteProvider,
-    useDyteClient,
-  } from '@dytesdk/react-native-core';
-  import { DyteMeeting } from '@dytesdk/react-native-ui-kit';
-
-// Session component that handles the Dyte meeting
-const DyteMeetingComponent = ({ meetingId, authToken, onSessionEnd }) => {
-  const [meeting, initMeeting] = useDyteClient();
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    // Initialize Dyte meeting when component mounts
-    const init = async () => {
-      try {
-        if (authToken && meetingId) {
-          await initMeeting({
-            authToken,
-            roomName: meetingId,
-            // Add any additional config options needed
-          });
-          setIsInitialized(true);
-        }
-      } catch (error) {
-        console.error('Failed to initialize Dyte meeting:', error);
-        Alert.alert('Error', 'Failed to connect to session. Please try again.');
-      }
-    };
-
-    init();
-
-    // Cleanup function
-    return () => {
-      if (meeting) {
-        meeting.leaveRoom();
-      }
-    };
-  }, [meetingId, authToken, initMeeting]);
-
-  return isInitialized ? (
-    <DyteMeeting meeting={meeting} />
-  ) : (
-    <View style={styles.loadingContainer}>
-      <ThemedText>Connecting to session...</ThemedText>
-    </View>
-  );
-};
+import { WebView } from 'react-native-webview';
 
 export default function MentorshipSessionScreen() {
   const router = useRouter();
@@ -149,6 +101,81 @@ export default function MentorshipSessionScreen() {
     );
   };
 
+  // HTML to inject that loads Dyte web SDK
+  const getDyteWebHtml = (meetingId, authToken) => `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Dyte Meeting</title>
+      <style>
+        body, html { 
+          margin: 0; 
+          padding: 0; 
+          height: 100%; 
+          width: 100%; 
+          overflow: hidden;
+        }
+        #dyte-meeting {
+          width: 100%;
+          height: 100%;
+        }
+        .loading {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100%;
+          color: #666;
+          font-family: Arial, sans-serif;
+        }
+      </style>
+      <script src="https://cdn.dyte.io/core/dyte.js"></script>
+    </head>
+    <body>
+      <div id="dyte-meeting">
+        <div class="loading">Connecting to session...</div>
+      </div>
+      <script>
+        // Initialize Dyte meeting
+        async function initDyteMeeting() {
+          try {
+            const meeting = await DyteClient.init({
+              authToken: "${authToken}",
+              roomName: "${meetingId}",
+              defaults: {
+                audio: false,
+                video: false,
+              }
+            });
+            
+            // Join meeting
+            meeting.join();
+            
+            // Setup message handling for native app communication
+            window.addEventListener('message', (event) => {
+              if (event.data === 'END_MEETING') {
+                meeting.leaveRoom();
+              }
+            });
+            
+            // Notify native app when meeting ends
+            meeting.self.on('roomLeft', () => {
+              window.ReactNativeWebView.postMessage('MEETING_ENDED');
+            });
+          } catch (error) {
+            console.error('Failed to initialize Dyte meeting:', error);
+            window.ReactNativeWebView.postMessage('MEETING_ERROR');
+          }
+        }
+        
+        // Start the meeting when page loads
+        document.addEventListener('DOMContentLoaded', initDyteMeeting);
+      </script>
+    </body>
+    </html>
+  `;
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
@@ -177,24 +204,20 @@ export default function MentorshipSessionScreen() {
             </ThemedText>
           </View>
         ) : (
-        //   <DyteProvider value={meetingDetails}>
-        //     <View style={styles.mainVideoFeed}>
-        //       <ThemedText style={styles.placeholderText}>
-        //         Main Video Feed
-        //       </ThemedText>
-        //       <ThemedText style={styles.subtitleText}>
-        //         (Video feed would be embedded here)
-        //       </ThemedText>
-        //     </View>
-        //     <View style={styles.selfViewContainer}>
-        //       <ThemedText style={styles.selfViewText}>Self View</ThemedText>
-        //     </View>
-        //   </DyteProvider>
-            <DyteMeetingComponent 
-                meetingId={meetingDetails.meetingId}
-                authToken={meetingDetails.authToken}
-                onSessionEnd={handleEndSession}
-            />
+          <WebView
+            source={{ html: getDyteWebHtml(meetingDetails.meetingId, meetingDetails.authToken) }}
+            style={styles.webView}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            onMessage={(event) => {
+              const message = event.nativeEvent.data;
+              if (message === 'MEETING_ENDED' || message === 'MEETING_ERROR') {
+                handleEndSession();
+              }
+            }}
+          />
         )}
       </View>
 
@@ -202,7 +225,7 @@ export default function MentorshipSessionScreen() {
         <TouchableOpacity style={styles.extensionButton} onPress={handleRequestExtension}>
           <ThemedText style={styles.extensionButtonText}>Request Extension</ThemedText>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.endButton} onPress={handleEndSession}>
           <ThemedText style={styles.endButtonText}>End Session</ThemedText>
         </TouchableOpacity>
@@ -282,6 +305,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     marginBottom: 20,
+  },
+  webView: {
+    flex: 1,
+    backgroundColor: '#E5E5E5',
   },
   loadingContainer: {
     flex: 1,

@@ -1,0 +1,40 @@
+// metro.config.js
+const { getDefaultConfig } = require('expo/metro-config');
+
+const config = getDefaultConfig(__dirname);
+
+// Add resolver for problematic modules
+config.resolver = {
+  ...config.resolver,
+  extraNodeModules: {
+    ...config.resolver.extraNodeModules,
+  },
+  // Provide a mock for native modules on web platform
+  resolveRequest: (context, moduleName, platform) => {
+    // For web platform, mock the problematic native modules
+    if (platform === 'web') {
+      // Mock @dyteinternals/react-native-webrtc
+      if (moduleName.includes('react-native-webrtc') || 
+          moduleName.includes('@dyteinternals/react-native-webrtc')) {
+        return {
+          filePath: require.resolve('./mocks/empty-module.js'),
+          type: 'sourceFile',
+        };
+      }
+      
+      // Mock requireNativeComponent for web
+      if (moduleName === 'react-native' && 
+          context.originModulePath.includes('react-native-webrtc')) {
+        return {
+          filePath: require.resolve('./mocks/react-native-web-mock.js'),
+          type: 'sourceFile',
+        };
+      }
+    }
+    
+    // Use default resolver for everything else
+    return context.resolveRequest(context, moduleName, platform);
+  }
+};
+
+module.exports = config;
