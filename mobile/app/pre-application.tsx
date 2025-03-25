@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import sendAlert from './utils/alerts';
 import TokenManager from './auth/TokenManager';
 
 export default function PreApplicationScreen() {
@@ -12,29 +13,30 @@ export default function PreApplicationScreen() {
     try {
       console.log('Selected role:', role);
       await TokenManager.getInstance().setUserRole(role);
-
-      // Verify the role was stored by retrieving it
+  
       const storedRole = await TokenManager.getInstance().getUserRole();
-      console.log('Stored role:', storedRole); // Log the stored role
-      
+      console.log('Stored role:', storedRole);
+  
       if (storedRole === role) {
-        console.log('Role successfully stored!'); // Confirmation log
+        console.log('Role successfully stored!');
       } else {
-        console.error('Role storage mismatch!'); // Warning if there's an issue
+        console.error('Role storage mismatch!');
       }
-
-      if(role === 'mentor') {
-        console.log('we boutta route to mentorrr');
-        router.replace('/mentor-application');
-      } else if (role === 'mentee') {
-        router.replace('/mentee-application');
-      } else {
-        router.replace('/(tabs)');
-      }
-
+  
+      const message = `Please fill out an application to join as a ${role}.`;
+      
+      const redirectPath =
+        role === 'mentor' ? '/mentor-application' :
+        role === 'mentee' ? '/mentee-application' :
+        '/(tabs)';
+      
+      sendAlert("🎉", message, () => {
+        router.replace(redirectPath);
+      });
+  
     } catch (error) {
       console.error('Role selection failed:', error);
-      Alert.alert("Error", "Failed to set user role. Please try again.");
+      sendAlert("Error", "Failed to set user role. Please try again.");
     }
   };
 
