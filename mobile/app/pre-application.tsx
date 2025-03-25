@@ -24,7 +24,6 @@ export default function PreApplicationScreen() {
       }
 
       if(role === 'mentor') {
-        console.log('we boutta route to mentorrr');
         router.replace('/mentor-application');
       } else if (role === 'mentee') {
         router.replace('/mentee-application');
