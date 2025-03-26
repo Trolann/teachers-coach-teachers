@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 const localhost = Platform.select({
-  ios: 'localhost',
+  ios: 'yashik-macbook.local',
   android: Constants.expoConfig?.hostUri?.split(':')[0] ?? '10.0.2.2',
   default: 'localhost',
 });

@@ -62,3 +62,5 @@ def create_app(config_class=FlaskConfig()):
     logger.info('Flask application successfully created and configured')
     logger.debug('Application instance ready to handle requests')
     return app
+
+
