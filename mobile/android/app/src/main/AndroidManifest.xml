@@ -37,6 +37,7 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="myapp"/>
         <data android:scheme="com.anonymous.TeacherCoachTeachers"/>
+        <data android:scheme="exp+teachercoachteachers"/>
       </intent-filter>
     </activity>
   </application>

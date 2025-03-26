@@ -1,59 +1,11 @@
+// MentorshipSessionScreen.jsx
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import TokenManager from '@/app/auth/TokenManager';
-
-// Import Dyte SDK components
-import {
-    DyteProvider,
-    useDyteClient,
-  } from '@dytesdk/react-native-core';
-  import { DyteMeeting } from '@dytesdk/react-native-ui-kit';
-
-// Session component that handles the Dyte meeting
-const DyteMeetingComponent = ({ meetingId, authToken, onSessionEnd }) => {
-  const [meeting, initMeeting] = useDyteClient();
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    // Initialize Dyte meeting when component mounts
-    const init = async () => {
-      try {
-        if (authToken && meetingId) {
-          await initMeeting({
-            authToken,
-            roomName: meetingId,
-            // Add any additional config options needed
-          });
-          setIsInitialized(true);
-        }
-      } catch (error) {
-        console.error('Failed to initialize Dyte meeting:', error);
-        Alert.alert('Error', 'Failed to connect to session. Please try again.');
-      }
-    };
-
-    init();
-
-    // Cleanup function
-    return () => {
-      if (meeting) {
-        meeting.leaveRoom();
-      }
-    };
-  }, [meetingId, authToken, initMeeting]);
-
-  return isInitialized ? (
-    <DyteMeeting meeting={meeting} />
-  ) : (
-    <View style={styles.loadingContainer}>
-      <ThemedText>Connecting to session...</ThemedText>
-    </View>
-  );
-};
+import DyteWrapper from './dytewrapper';
 
 export default function MentorshipSessionScreen() {
   const router = useRouter();
@@ -76,24 +28,60 @@ export default function MentorshipSessionScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Get Dyte auth token
+  const getDyteAuthToken = async (meetingId) => {
+    try {
+      // Create participant and get token
+      const response = await fetch(`https://api.dyte.io/v2/meetings/${meetingId}/participants`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic NjI1YjkxM2UtYzBkYi00MDdjLWFhZTItMmQ1MTViMzE2YzZmOjIwMzM5NTI4MWRhZTkwNzEwMDZk`,
+        },
+        body: JSON.stringify({
+          name: 'Steve',
+          preset_name: 'group_call_host',
+          custom_participant_id: `user-${Date.now()}`,
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Participant API response:', data);
+
+      if (!data.success) {
+        console.error('API Error:', data.error);
+        throw new Error(data.error?.message || 'Failed to create participant');
+      }
+
+      return data.data.token;
+    } catch (error) {
+      console.error('Error getting Dyte auth token:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
-    // Mock loading meeting details
-    // TODO: in future, fetch these from backend
     const fetchMeetingDetails = async () => {
       try {
-        // TODO: Replace with actual API call to get Dyte meeting details
+        const meetingId = process.env.EXPO_PUBLIC_DYTE_TESTING_MEETING_ID || 'bbb8121f-9678-4bea-9c22-09b2b95c9972';
+        console.log('meetingId:', meetingId);
+
+        // Get auth token
+        const authToken = await getDyteAuthToken(meetingId);
+        console.log('Got auth token:', authToken);
+        
         setMeetingDetails({
-          meetingId: 'mock-meeting-id',
-          authToken: 'mock-auth-token',
-          participantName: 'Steve', // TODO: bring from users profile
+          meetingId,
+          authToken,
+          participantName: 'Steve',
         });
 
-        // Start the timer for session duration
+        // Start the timer
         const interval = setInterval(() => {
           setElapsedTime((prevTime) => prevTime + 1);
         }, 1000);
 
-        // Simulate loading delay
+        // Small delay to show loading UI
         setTimeout(() => {
           setIsLoading(false);
         }, 1500);
@@ -120,7 +108,6 @@ export default function MentorshipSessionScreen() {
         {
           text: 'End',
           onPress: () => {
-            // Handle session end logic here
             router.replace('/(tabs)');
           },
           style: 'destructive',
@@ -141,7 +128,6 @@ export default function MentorshipSessionScreen() {
         {
           text: 'Request',
           onPress: () => {
-            // Handle extension request logic here
             Alert.alert('Extension Requested', 'Your request has been sent to the mentor.');
           },
         },
@@ -177,24 +163,12 @@ export default function MentorshipSessionScreen() {
             </ThemedText>
           </View>
         ) : (
-        //   <DyteProvider value={meetingDetails}>
-        //     <View style={styles.mainVideoFeed}>
-        //       <ThemedText style={styles.placeholderText}>
-        //         Main Video Feed
-        //       </ThemedText>
-        //       <ThemedText style={styles.subtitleText}>
-        //         (Video feed would be embedded here)
-        //       </ThemedText>
-        //     </View>
-        //     <View style={styles.selfViewContainer}>
-        //       <ThemedText style={styles.selfViewText}>Self View</ThemedText>
-        //     </View>
-        //   </DyteProvider>
-            <DyteMeetingComponent 
-                meetingId={meetingDetails.meetingId}
-                authToken={meetingDetails.authToken}
-                onSessionEnd={handleEndSession}
-            />
+          <DyteWrapper
+            meetingId={meetingDetails.meetingId}
+            authToken={meetingDetails.authToken}
+            participantName={meetingDetails.participantName}
+            onSessionEnd={handleEndSession}
+          />
         )}
       </View>
 
@@ -202,7 +176,7 @@ export default function MentorshipSessionScreen() {
         <TouchableOpacity style={styles.extensionButton} onPress={handleRequestExtension}>
           <ThemedText style={styles.extensionButtonText}>Request Extension</ThemedText>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.endButton} onPress={handleEndSession}>
           <ThemedText style={styles.endButtonText}>End Session</ThemedText>
         </TouchableOpacity>
@@ -218,156 +192,156 @@ export default function MentorshipSessionScreen() {
         <TouchableOpacity style={styles.navButton}>
           <Ionicons name="heart-outline" size={24} color="#848282" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="person-outline" size={24} color="#848282" />
-        </TouchableOpacity>
-      </View>
-    </ThemedView>
-  );
+<TouchableOpacity style={styles.navButton}>
+         <Ionicons name="person-outline" size={24} color="#848282" />
+       </TouchableOpacity>
+     </View>
+   </ThemedView>
+ );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  welcomeText: {
-    fontSize: 28,
-    fontWeight: '600',
-    color: '#333333',
-  },
-  waveEmoji: {
-    fontSize: 28,
-  },
-  profileCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notificationCount: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666666',
-  },
-  sessionTitle: {
-    fontSize: 22,
-    fontWeight: '500',
-    color: '#333333',
-    marginBottom: 10,
-  },
-  timerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  timerText: {
-    marginLeft: 5,
-    fontSize: 16,
-    color: '#666666',
-  },
-  videoContainer: {
-    flex: 1,
-    backgroundColor: '#E5E5E5',
-    borderRadius: 15,
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 18,
-    color: '#888888',
-    textAlign: 'center',
-  },
-  subtitleText: {
-    fontSize: 14,
-    color: '#888888',
-    textAlign: 'center',
-  },
-  mainVideoFeed: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selfViewContainer: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#333333',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selfViewText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  bottomActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  extensionButton: {
-    backgroundColor: '#F5F5F5',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    flex: 1,
-    marginRight: 10,
-    alignItems: 'center',
-  },
-  extensionButtonText: {
-    color: '#666666',
-    fontWeight: '500',
-    fontSize: 16,
-  },
-  endButton: {
-    backgroundColor: '#FF6B6B',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    flex: 1,
-    marginLeft: 10,
-    alignItems: 'center',
-  },
-  endButtonText: {
-    color: 'white',
-    fontWeight: '500',
-    fontSize: 16,
-  },
-  navigationBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-  },
-  navButton: {
-    padding: 10,
-  },
-  activeNavButton: {
-    backgroundColor: '#F8F8F8',
-    borderRadius: 50,
-  },
+ container: {
+   flex: 1,
+   backgroundColor: '#FFFFFF',
+   padding: 20,
+ },
+ header: {
+   flexDirection: 'row',
+   justifyContent: 'space-between',
+   alignItems: 'center',
+   marginBottom: 20,
+ },
+ welcomeText: {
+   fontSize: 28,
+   fontWeight: '600',
+   color: '#333333',
+ },
+ waveEmoji: {
+   fontSize: 28,
+ },
+ profileCircle: {
+   width: 40,
+   height: 40,
+   borderRadius: 20,
+   backgroundColor: '#F0F0F0',
+   justifyContent: 'center',
+   alignItems: 'center',
+ },
+ notificationCount: {
+   fontSize: 14,
+   fontWeight: '500',
+   color: '#666666',
+ },
+ sessionTitle: {
+   fontSize: 22,
+   fontWeight: '500',
+   color: '#333333',
+   marginBottom: 10,
+ },
+ timerContainer: {
+   flexDirection: 'row',
+   alignItems: 'center',
+   marginBottom: 15,
+ },
+ timerText: {
+   marginLeft: 5,
+   fontSize: 16,
+   color: '#666666',
+ },
+ videoContainer: {
+   flex: 1,
+   backgroundColor: '#E5E5E5',
+   borderRadius: 15,
+   overflow: 'hidden',
+   position: 'relative',
+   marginBottom: 20,
+ },
+ loadingContainer: {
+   flex: 1,
+   justifyContent: 'center',
+   alignItems: 'center',
+ },
+ placeholderContainer: {
+   flex: 1,
+   justifyContent: 'center',
+   alignItems: 'center',
+ },
+ placeholderText: {
+   fontSize: 18,
+   color: '#888888',
+   textAlign: 'center',
+ },
+ subtitleText: {
+   fontSize: 14,
+   color: '#888888',
+   textAlign: 'center',
+ },
+ mainVideoFeed: {
+   flex: 1,
+   justifyContent: 'center',
+   alignItems: 'center',
+ },
+ selfViewContainer: {
+   position: 'absolute',
+   width: 200,
+   height: 200,
+   bottom: 20,
+   right: 20,
+   backgroundColor: '#333333',
+   borderRadius: 10,
+   justifyContent: 'center',
+   alignItems: 'center',
+ },
+ selfViewText: {
+   color: '#FFFFFF',
+   fontSize: 16,
+ },
+ bottomActions: {
+   flexDirection: 'row',
+   justifyContent: 'space-between',
+   marginBottom: 20,
+ },
+ extensionButton: {
+   backgroundColor: '#F5F5F5',
+   paddingVertical: 14,
+   paddingHorizontal: 20,
+   borderRadius: 25,
+   flex: 1,
+   marginRight: 10,
+   alignItems: 'center',
+ },
+ extensionButtonText: {
+   color: '#666666',
+   fontWeight: '500',
+   fontSize: 16,
+ },
+ endButton: {
+   backgroundColor: '#FF6B6B',
+   paddingVertical: 14,
+   paddingHorizontal: 20,
+   borderRadius: 25,
+   flex: 1,
+   marginLeft: 10,
+   alignItems: 'center',
+ },
+ endButtonText: {
+   color: 'white',
+   fontWeight: '500',
+   fontSize: 16,
+ },
+ navigationBar: {
+   flexDirection: 'row',
+   justifyContent: 'space-around',
+   paddingVertical: 15,
+   borderTopWidth: 1,
+   borderTopColor: '#E5E5E5',
+ },
+ navButton: {
+   padding: 10,
+ },
+ activeNavButton: {
+   backgroundColor: '#F8F8F8',
+   borderRadius: 50,
+ },
 });

@@ -1,0 +1,9 @@
+module.exports = {
+  resolver: {
+    unstable_enablePackageExports: true,
+    extraNodeModules: {
+      'react-native-webrtc': require.resolve('@dyteinternals/react-native-webrtc')
+    }
+  }
+};
+
