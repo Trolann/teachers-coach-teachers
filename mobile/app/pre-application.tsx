@@ -1,8 +1,9 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import sendAlert from './utils/alerts';
 import TokenManager from './auth/TokenManager';
 import { Platform } from 'react-native';
 
@@ -13,21 +14,24 @@ export default function PreApplicationScreen() {
     try {
       console.log('Selected role:', role);
       await TokenManager.getInstance().setUserRole(role);
-
+  
       const storedRole = await TokenManager.getInstance().getUserRole();
       console.log('Stored role:', storedRole);
-
+  
       if (storedRole === role) {
         console.log('Role successfully stored!');
       } else {
         console.error('Role storage mismatch!');
       }
-
-      const message = `Welcome! You've been registered as a ${role}.`;
-
+  
+      // Define redirectPath before using it
+      const redirectPath = role === 'mentor' ? '/mentor-application' : '/mentee-application';
+  
+      const message = `Welcome! You've been registered as a ${role}. Please fill out an application to join.`;
+  
       if (Platform.OS === 'web') {
         alert(message);
-        router.replace(role === 'mentee' ? '/pre-matching-mentee' : '/(tabs)');
+        router.replace(redirectPath as Href<String | Object>);
       } else {
         Alert.alert(
           "Success 🎉",
@@ -36,16 +40,16 @@ export default function PreApplicationScreen() {
             {
               text: "Continue",
               onPress: () => {
-                router.replace(role === 'mentee' ? '/pre-matching-mentee' : '/(tabs)');
+                router.replace(redirectPath as Href<String | Object>);
               },
             }
           ]
         );
       }
-
+  
     } catch (error) {
       console.error('Role selection failed:', error);
-      Alert.alert("Error", "Failed to set user role. Please try again.");
+      sendAlert("Error", "Failed to set user role. Please try again.");
     }
   };
 

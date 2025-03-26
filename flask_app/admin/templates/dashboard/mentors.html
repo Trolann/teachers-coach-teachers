@@ -28,8 +28,12 @@ function filterTable() {
 
         const status = statusBadge.textContent.toLowerCase().trim();
         
-        // Status matching remains exact
-        const matchesStatus = statusFilter === '' || status === statusFilter;
+        // Status matching - check if the filter value is contained in the status
+        const matchesStatus = statusFilter === '' || 
+            (statusFilter === 'pending' && status === 'pending') ||
+            (statusFilter === 'approved' && status === 'approved') ||
+            (statusFilter === 'rejected' && status === 'rejected') ||
+            (statusFilter === 'revoked' && status === 'revoked');
         
         // Check all name columns for a match
         const matchesSearch = searchText === '' || 
@@ -48,44 +52,83 @@ function refreshTable() {
 
 function confirmStatusUpdate(mentorId, action) {
     let message;
+    let status;
+    
     switch(action) {
         case 'approve':
             message = 'Are you sure you want to approve this mentor?';
+            status = 'APPROVED';
             break;
         case 'revoke':
             message = 'Are you sure you want to revoke this mentor\'s approval?';
+            status = 'REVOKED';
             break;
         case 'reject':
             message = 'Are you sure you want to reject this mentor?';
+            status = 'REJECTED';
             break;
         default:
             message = 'Are you sure you want to update this mentor\'s status?';
+            status = action.toUpperCase();
     }
     
+    // Save current filter state
+    const currentStatusFilter = document.getElementById('statusFilter').value;
+    const currentSearchText = document.getElementById('searchInput').value;
+    
     if (confirm(message)) {
-        fetch(`/admin/mentors/${mentorId}/${action}`, {
+        // Try the new endpoint first
+        fetch(`/admin/users/${mentorId}/${action}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
+                // Store filter values in sessionStorage before reload
+                sessionStorage.setItem('statusFilter', currentStatusFilter);
+                sessionStorage.setItem('searchInput', currentSearchText);
                 location.reload();
             } else {
-                alert('Error updating mentor status: ' + data.error);
+                alert('Error updating mentor status: ' + (data.error || 'Unknown error'));
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while updating the mentor status');
+            alert(`An error occurred while updating the mentor status: ${error.message}`);
         });
     }
 }
 
 // Add event listeners for filters
 document.addEventListener('DOMContentLoaded', function() {
+    // Restore filter values from sessionStorage if they exist
+    const savedStatusFilter = sessionStorage.getItem('statusFilter');
+    const savedSearchInput = sessionStorage.getItem('searchInput');
+    
+    if (savedStatusFilter) {
+        document.getElementById('statusFilter').value = savedStatusFilter;
+        sessionStorage.removeItem('statusFilter');
+    }
+    
+    if (savedSearchInput) {
+        document.getElementById('searchInput').value = savedSearchInput;
+        sessionStorage.removeItem('searchInput');
+    }
+    
+    // Apply filters if any were restored
+    if (savedStatusFilter || savedSearchInput) {
+        filterTable();
+    }
+    
+    // Add event listeners
     document.getElementById('statusFilter').addEventListener('change', filterTable);
     document.getElementById('searchInput').addEventListener('input', filterTable);
 });
@@ -136,10 +179,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             {% if not key.startswith('_') %}
                                 <td>
                                 {% if key == 'application_status' %}
-                                    <span class="badge bg-{{ 'success' if value == 'approved' or value == 'APPROVED'
-                                                        else 'warning' if value == 'pending'
+                                    {% set status_value = value.name if value else 'N/A' %}
+                                    {% set display_status = status_value|capitalize if status_value else 'N/A' %}
+                                    <span class="badge bg-{{ 'success' if status_value == 'APPROVED'
+                                                        else 'warning' if status_value == 'PENDING'
                                                         else 'danger' }}">
-                                        {{ value }}
+                                        {{ display_status }}
                                     </span>
                                 {% elif key == 'expertise_areas' %}
                                     {{ value|join(', ') if value else 'N/A' }}
@@ -152,18 +197,23 @@ document.addEventListener('DOMContentLoaded', function() {
                             {% endif %}
                         {% endfor %}
                         <td>
-                            {% if mentor.application_status == 'approved' or mentor.application_status == 'APPROVED' %}
+                            {% if mentor.application_status.name == 'APPROVED' %}
                                 <button type="button" class="btn btn-danger"
-                                        onclick="confirmStatusUpdate('{{ mentor.id }}', 'revoke')">
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'revoke')">
                                     REVOKE
+                                </button>
+                            {% elif mentor.application_status.name == 'REJECTED' %}
+                                <button type="button" class="btn btn-success"
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'approve')">
+                                    APPROVE
                                 </button>
                             {% else %}
                                 <button type="button" class="btn btn-success"
-                                        onclick="confirmStatusUpdate('{{ mentor.id }}', 'approve')">
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'approve')">
                                     APPROVE
                                 </button>
                                 <button type="button" class="btn btn-danger ms-2"
-                                        onclick="confirmStatusUpdate('{{ mentor.id }}', 'reject')">
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'reject')">
                                     REJECT
                                 </button>
                             {% endif %}

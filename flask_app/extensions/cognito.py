@@ -10,19 +10,20 @@ from config import CognitoConfig
 from boto3 import client
 from extensions.logging import get_logger
 from extensions.database import db
-from flask_app.models.user import User
+from flask_app.models.user import User, UserType
 
 config = CognitoConfig()
 logger = get_logger(__name__)
 
 
 logger.info("Initializing Cognito authentication module")
-# TODO: Remove admin group name magic value (add to config)
 
 class CognitoTokenVerifier:
     def __init__(self,user_pool_id=config.COGNITO_USER_POOL_ID,
                  client_id=config.COGNITO_CLIENT_ID,
-                 region=config.COGNITO_REGION):
+                 region=config.COGNITO_REGION,
+                 admin_group_name=config.ADMIN_GROUP_NAME,
+                 district_admin_group_name=config.DISTRICT_ADMIN_GROUP_NAME):
         self.user_pool_id = user_pool_id
         self.client_id = client_id
         self.region = region
@@ -31,6 +32,8 @@ class CognitoTokenVerifier:
         self.get_keys()
         # Configure AWS credentials
         self.client = client('cognito-idp', region_name=region)
+        self.admin_group_name = admin_group_name
+        self.district_admin_group_name = district_admin_group_name
 
     def login_as_admin(self, username, password):
         """Login user and verify admin access"""
@@ -91,12 +94,12 @@ class CognitoTokenVerifier:
     def is_user_district_admin(self, access_token):
         """Check if user is in the district_admin group"""
         logger.debug("Checking if user is in district_admin group")
-        return self._check_user_group(access_token, 'district_admin')
+        return self._check_user_group(access_token, self.district_admin_group_name)
 
     def is_user_admin(self, access_token, given_user_info=None):
         """Check if user is in admins group"""
         logger.debug("Checking if user is in admins group")
-        return self._check_user_group(access_token, 'admins')
+        return self._check_user_group(access_token, self.admin_group_name)
 
     def get_keys(self):
         """Get the JSON Web Key (JWK) for the user pool"""
@@ -177,13 +180,18 @@ class CognitoTokenVerifier:
     def get_user_attributes(self, access_token):
         """Get user attributes using the access token"""
         try:
-            user_info = self.client.get_user(
-                AccessToken=access_token
-            )
-            groups = self.client.admin_list_groups_for_user(
-                Username=user_info['Username'],
-                UserPoolId=self.user_pool_id
-            )
+            try:
+                user_info = self.client.get_user(
+                    AccessToken=access_token
+                )
+                groups = self.client.admin_list_groups_for_user(
+                    Username=user_info['Username'],
+                    UserPoolId=self.user_pool_id
+                )
+            except self.client.exceptions.NotAuthorizedException as e:
+                logger.error(f"User not authorized: {str(e)}")
+                logger.debug(f'Token provided: {access_token}')
+                return None
             logger.debug(f'Got user info: {user_info}')
             logger.debug(f'Got user groups: {groups}')
             return {
@@ -205,12 +213,13 @@ class CognitoTokenVerifier:
             user_id = user_info['user_id']
 
             logger.debug(f'Checking for existing user.')
-            existing_user = db.session.query(User).filter(User.id == user_id).first()
+            existing_user = db.session.query(User).filter(User.cognito_sub == user_id).first()
             logger.debug(f'Existing user: {existing_user}')
             if not existing_user:
                 user = User(
                     cognito_sub=user_id,
-                    email=user_info['email']  # Modified to directly access email from user_info
+                    email=user_info['email'],  # Modified to directly access email from user_info
+                    user_type="ADMIN",
                 )
                 logger.debug(f"Adding new user to database: {user.email}")
                 db.session.add(user)
@@ -225,6 +234,21 @@ class CognitoTokenVerifier:
             logger.exception(e)
             return None
 
+def parse_headers(headers):
+    """Parse headers from a request object"""
+
+    if not headers:
+        return None, None, None, None
+    auth_header = headers.get('Authorization')
+    refresh_token = headers.get('X-Refresh-Token')
+    id_token = headers.get('X-Id-Token')
+    expires_in = headers.get('X-Token-Expires')
+
+
+    if auth_header:
+        auth_header = auth_header.replace('Bearer ', '')
+
+    return auth_header, refresh_token, id_token, expires_in
 
 def require_auth(f):
     @wraps(f)
@@ -237,15 +261,17 @@ def require_auth(f):
             token = session['access_token']
         else:
             # Parse tokens from request headers
+            # TODO: Could be getting a sole KWARG with mentor_id we could use here
             auth_header = request.headers.get('Authorization')
-
             # Parse tokens from request headers
-            auth_header = request.headers.get('Authorization')
-            refresh_token = request.headers.get('X-Refresh-Token')
-            id_token = request.headers.get('X-Id-Token')
-            expires_in = request.headers.get('X-Token-Expires')
-            if auth_header:
+            if isinstance(auth_header, str):
                 token = auth_header.replace('Bearer ', '')
+                refresh_token = ''
+                id_token = ''
+                expires_in = ''
+            else:
+                token, refresh_token, id_token, expires_in = parse_headers(auth_header)
+            if token:
                 # Debug log first part of tokens
                 logger.debug(f"Access Token: {token[:15] if token else 'None'}")
                 logger.debug(f"Refresh Token: {refresh_token[:15] if refresh_token else 'None'}")
@@ -257,10 +283,10 @@ def require_auth(f):
 
         try:
             # This is left in if debugging is still needed. Uncomment and prefix your token with `test` to pass
-            # if token.startswith('test'):
-            #     logger.warning("Using development token")
-            #     return f(*args, **kwargs)
-            # logger.warn(f'Verifying token: {token}')
+            if token.startswith('test'):
+                logger.error(f"Using development token {token}")
+                return f(*args, **kwargs)
+            logger.debug(f'Verifying token: {token[:15]}...')
             verifier.verify_token(token)
             return f(*args, **kwargs)
         except Exception as e:

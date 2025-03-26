@@ -20,10 +20,10 @@ def create_admin_blueprint():
         admin_bp.register_blueprint(admin_dashboard_bp, url_prefix='')
         logger.info('Registered dashboard routes at root prefix')
 
-        # Register fake mentors routes
+        # Register fake users routes
         from .fake_mentors import fake_mentors_bp
         admin_bp.register_blueprint(fake_mentors_bp, url_prefix='')
-        logger.info('Registered fake mentors routes at root prefix')
+        logger.info('Registered fake users routes at root prefix')
 
         # Register credits routes
         from .credits import admin_credits_bp

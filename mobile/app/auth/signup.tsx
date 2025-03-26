@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
+import sendAlert from '../utils/alerts';
 import TokenManager from './TokenManager';
 
 export default function SignupScreen() {
@@ -28,18 +29,15 @@ export default function SignupScreen() {
       console.error('Signup status:', success);
 
       if (success) {
-        // TODO: Alerts are not working. Update flow after signup and login (error handling)
-        Alert.alert(
-          "Success",
-          "Please check your email for verification code",
-          [{ text: "OK", onPress: () => router.push('/auth/login') }]
+        sendAlert(
+          "Success 🎉",
+          "Please check your email for the verification code",
+          () => router.push('/auth/login')
         );
-      } else {
-        Alert.alert("Error", "Signup failed");
       }
     } catch (error) {
       console.error('Signup failed:', error);
-      Alert.alert("Error", error instanceof Error ? error.message : "Signup failed");
+      sendAlert("Error", error instanceof Error ? error.message : "The signup failed.");
     }
   };
 

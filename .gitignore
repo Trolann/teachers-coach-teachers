@@ -172,3 +172,8 @@ cognito-admin-policy.json
 node_modules
 *.expo/
 app.log
+package.json
+package-lock.json
+mobile/package.json
+mobile/package-lock.json
+mobile/node_modules/
