@@ -27,17 +27,81 @@ class EmbeddingFactory:
         self.embedding_model = "text-embedding-3-small"
         self.openai_client = openai.OpenAI()
 
-    def get_closest_embeddings(self, embedding_to_search_for: dict) -> List[Any]:
+    def get_closest_embeddings(self, embedding_to_search_for: Dict[str, str], limit: int = 10) -> List[Any]:
         """
-        Find the closest embeddings to the given embedding. Returns up to 10 closest embeddings.
+        Find the closest embeddings to the given embedding dictionary. Returns up to 10 closest embeddings.
+        
+        For each key in the input dictionary:
+        1. Generate an embedding for the value
+        2. Find the closest embeddings in the database
+        3. Assign points based on rank (1st place = 1 point, 2nd place = 2 points, etc.)
+        4. Group by user_id and sum the points
+        5. Sort by total points (lowest is best)
         
         Args:
-            embedding_to_search_for: The embedding to search for with the keys as identifiers and values as embedding vectors
+            embedding_to_search_for: Dictionary with keys as identifiers and values as text to embed
+            limit: Maximum number of results to return (default: 10)
             
         Returns:
-            A list of closest embeddings
+            A list of closest embeddings, sorted by match score (best matches first)
         """
-        pass
+        if not embedding_to_search_for:
+            logger.warning("Empty embedding dictionary provided to get_closest_embeddings")
+            return []
+        
+        # Generate embeddings for the search terms
+        user_id = "search_request"  # Using a placeholder user_id for the search request
+        search_embeddings = self._generate_embeddings(user_id, embedding_to_search_for)
+        
+        # Dictionary to store points for each user_id
+        user_points = {}
+        # Dictionary to store user embeddings
+        user_embeddings = {}
+        
+        # For each embedding type in the search dictionary
+        for embedding_type, vector in search_embeddings.items():
+            try:
+                # Query to find the closest embeddings for this type
+                closest_embeddings = (
+                    UserEmbedding.query
+                    .filter_by(embedding_type=embedding_type)
+                    .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
+                    .limit(limit)
+                    .all()
+                )
+                
+                # Assign points based on rank (1st = 1 point, 2nd = 2 points, etc.)
+                for rank, embedding in enumerate(closest_embeddings, 1):
+                    if embedding.user_id not in user_points:
+                        user_points[embedding.user_id] = 0
+                        user_embeddings[embedding.user_id] = []
+                    
+                    # Add points (lower is better)
+                    user_points[embedding.user_id] += rank
+                    
+                    # Store the embedding
+                    user_embeddings[embedding.user_id].append(embedding)
+                    
+                logger.debug(f"Found {len(closest_embeddings)} matches for embedding type '{embedding_type}'")
+            except Exception as e:
+                logger.error(f"Error finding closest embeddings for type '{embedding_type}': {str(e)}")
+        
+        # Sort users by total points (lowest is best)
+        sorted_users = sorted(user_points.items(), key=lambda x: x[1])
+        
+        # Prepare the result list
+        result = []
+        for user_id, points in sorted_users:
+            if user_id in user_embeddings:
+                # Add user embeddings with their score
+                result.append({
+                    "user_id": user_id,
+                    "score": points,
+                    "embeddings": user_embeddings[user_id]
+                })
+        
+        logger.info(f"Completed embedding search with {len(embedding_to_search_for)} criteria, found {len(result)} matches")
+        return result[:limit]
 
     def _generate_embeddings(self, user_id, embedding_dict: Dict[str, str]) -> Dict[str, List[float]]:
         """
