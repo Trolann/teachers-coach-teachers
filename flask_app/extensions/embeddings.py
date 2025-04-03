@@ -2,6 +2,8 @@ import os
 from typing import Dict, List, Any, Optional
 import openai
 from flask_app.extensions.logging import get_logger
+from flask_app.models.embedding import UserEmbedding
+from extensions.database import db
 
 logger = get_logger(__name__)
 
@@ -96,9 +98,49 @@ class EmbeddingFactory:
         
         Args:
             user_id: The ID of the user
-            embedding_dict: Dictionary with embeddings to store
+            embedding_dict: Dictionary with text to generate embeddings for and store
+            
+        Returns:
+            None
         """
-        pass
+        # Generate embeddings for the provided text
+        embeddings = self._generate_embeddings(user_id, embedding_dict)
+        
+        # Store each embedding in the database
+        for key, value in embedding_dict.items():
+            embedding_key = f"{key}_embedding"
+            if embedding_key in embeddings:
+                # Create a new UserEmbedding object
+                embedding_type = key
+                vector_embedding = embeddings[embedding_key]
+                
+                # Check if an embedding of this type already exists for this user
+                existing_embedding = UserEmbedding.query.filter_by(
+                    user_id=user_id, 
+                    embedding_type=embedding_type
+                ).first()
+                
+                if existing_embedding:
+                    # Update existing embedding
+                    logger.info(f"Updating existing {embedding_type} embedding for user {user_id}")
+                    existing_embedding.vector_embedding = vector_embedding
+                else:
+                    # Create new embedding
+                    new_embedding = UserEmbedding(
+                        user_id=user_id,
+                        embedding_type=embedding_type,
+                        vector_embedding=vector_embedding
+                    )
+                    db.session.add(new_embedding)
+                    
+        # Commit all changes to the database
+        try:
+            db.session.commit()
+            logger.info(f"Successfully stored embeddings for user {user_id}")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error storing embeddings for user {user_id}: {str(e)}")
+            raise
 
 embedding_factory = EmbeddingFactory()
 logger.info(f'Embedding Factory initialized with model: {embedding_factory.embedding_model}')
