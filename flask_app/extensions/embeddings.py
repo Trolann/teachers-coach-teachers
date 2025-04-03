@@ -27,12 +27,12 @@ class EmbeddingFactory:
         self.embedding_model = "text-embedding-3-small"
         self.openai_client = openai.OpenAI()
 
-    def get_closest_embeddings(self, embedding_to_search_for) -> List[Any]:
+    def get_closest_embeddings(self, embedding_to_search_for: dict) -> List[Any]:
         """
-        Find the closest embeddings to the given embedding.
+        Find the closest embeddings to the given embedding. Returns up to 10 closest embeddings.
         
         Args:
-            embedding_to_search_for: The embedding to search for
+            embedding_to_search_for: The embedding to search for with the keys as identifiers and values as embedding vectors
             
         Returns:
             A list of closest embeddings
@@ -104,7 +104,7 @@ class EmbeddingFactory:
         """
         # Generate embeddings for the provided text
         embeddings = self._generate_embeddings(user_id, embedding_dict)
-        
+
         # Store each embedding in the database
         for key, value in embedding_dict.items():
             if key in embeddings:
