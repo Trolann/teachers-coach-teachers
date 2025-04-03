@@ -67,9 +67,8 @@ class EmbeddingFactory:
                 embedding = response.data[0].embedding
                 
                 # Store the embedding in the result dictionary
-                embedding_key = f"{key}_embedding"
-                result_dict[embedding_key] = embedding
-                logger.debug(f"Generated embedding for key '{key}': {embedding_key} with length {len(embedding)}")
+                result_dict[key] = embedding
+                logger.debug(f"Generated embedding for key '{key}' with length {len(embedding)}")
             except Exception as e:
                 print(f"Error generating embedding for key '{key}': {str(e)}")
 
@@ -108,30 +107,24 @@ class EmbeddingFactory:
         
         # Store each embedding in the database
         for key, value in embedding_dict.items():
-            embedding_key = f"{key}_embedding"
-            if embedding_key in embeddings:
-                # Create a new UserEmbedding object
-                embedding_type = key
-                vector_embedding = embeddings[embedding_key]
-                
-                # Check if an embedding of this type already exists for this user
-                existing_embedding = UserEmbedding.query.filter_by(
-                    user_id=user_id, 
-                    embedding_type=embedding_type
-                ).first()
-                
-                if existing_embedding:
-                    # Update existing embedding
-                    logger.info(f"Updating existing {embedding_type} embedding for user {user_id}")
-                    existing_embedding.vector_embedding = vector_embedding
-                else:
-                    # Create new embedding
-                    new_embedding = UserEmbedding(
-                        user_id=user_id,
-                        embedding_type=embedding_type,
-                        vector_embedding=vector_embedding
-                    )
-                    db.session.add(new_embedding)
+            # Check if an embedding of this type already exists for this user
+            existing_embedding = UserEmbedding.query.filter_by(
+                user_id=user_id,
+                embedding_type=embedding_type
+            ).first()
+
+            if existing_embedding:
+                # Update existing embedding
+                logger.info(f"Updating existing {embedding_type} embedding for user {user_id}")
+                existing_embedding.vector_embedding = vector_embedding
+            else:
+                # Create new embedding
+                new_embedding = UserEmbedding(
+                    user_id=user_id,
+                    embedding_type=embedding_type,
+                    vector_embedding=vector_embedding
+                )
+                db.session.add(new_embedding)
                     
         # Commit all changes to the database
         try:
@@ -142,15 +135,4 @@ class EmbeddingFactory:
             logger.error(f"Error storing embeddings for user {user_id}: {str(e)}")
             raise
 
-embedding_factory = EmbeddingFactory()
-logger.info(f'Embedding Factory initialized with model: {embedding_factory.embedding_model}')
-
-# Example dictionary to generate embeddings for
-example_dict = {
-    "bio": "I am a software engineer with experience in Python and Flask.",
-    "expertise": "Machine Learning, Data Science",
-    "goals": "To become a senior developer and lead projects."
-}
-
-# Generate embeddings
-embedding_factory.store_embedding('1234', example_dict)
+logger.info(f'EmbeddingFactory initialized with model: {EmbeddingFactory().embedding_model}')
