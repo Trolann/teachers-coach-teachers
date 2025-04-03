@@ -10,3 +10,4 @@ boto3
 faker
 numpy
 pgvector
+openai
