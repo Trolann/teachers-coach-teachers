@@ -107,24 +107,28 @@ class EmbeddingFactory:
         
         # Store each embedding in the database
         for key, value in embedding_dict.items():
-            # Check if an embedding of this type already exists for this user
-            existing_embedding = UserEmbedding.query.filter_by(
-                user_id=user_id,
-                embedding_type=embedding_type
-            ).first()
-
-            if existing_embedding:
-                # Update existing embedding
-                logger.info(f"Updating existing {embedding_type} embedding for user {user_id}")
-                existing_embedding.vector_embedding = vector_embedding
-            else:
-                # Create new embedding
-                new_embedding = UserEmbedding(
+            if key in embeddings:
+                embedding_type = key
+                vector_embedding = embeddings[key]
+                
+                # Check if an embedding of this type already exists for this user
+                existing_embedding = UserEmbedding.query.filter_by(
                     user_id=user_id,
-                    embedding_type=embedding_type,
-                    vector_embedding=vector_embedding
-                )
-                db.session.add(new_embedding)
+                    embedding_type=embedding_type
+                ).first()
+
+                if existing_embedding:
+                    # Update existing embedding
+                    logger.info(f"Updating existing {embedding_type} embedding for user {user_id}")
+                    existing_embedding.vector_embedding = vector_embedding
+                else:
+                    # Create new embedding
+                    new_embedding = UserEmbedding(
+                        user_id=user_id,
+                        embedding_type=embedding_type,
+                        vector_embedding=vector_embedding
+                    )
+                    db.session.add(new_embedding)
                     
         # Commit all changes to the database
         try:
