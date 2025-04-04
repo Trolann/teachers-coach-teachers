@@ -168,6 +168,9 @@ class EmbeddingFactory:
             None
         """
         # Generate embeddings for the provided text
+        entire_profile = "\n\n".join([f"{key}: {value}" for key, value in embedding_dict.items()])
+        embedding_dict["entire_profile"] = entire_profile
+
         embeddings = self._generate_embeddings(user_id, embedding_dict)
 
         # Store each embedding in the database
@@ -175,7 +178,7 @@ class EmbeddingFactory:
             if key in embeddings:
                 embedding_type = key
                 vector_embedding = embeddings[key]
-                
+
                 # Check if an embedding of this type already exists for this user
                 existing_embedding = UserEmbedding.query.filter_by(
                     user_id=user_id,
@@ -194,7 +197,9 @@ class EmbeddingFactory:
                         vector_embedding=vector_embedding
                     )
                     db.session.add(new_embedding)
-                    
+
+
+
         # Commit all changes to the database
         try:
             db.session.commit()
