@@ -1,5 +1,4 @@
-import os
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 import openai
 from flask_app.extensions.logging import get_logger
 from flask_app.models.embedding import UserEmbedding
