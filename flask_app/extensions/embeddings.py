@@ -4,6 +4,7 @@ import openai
 from flask_app.extensions.logging import get_logger
 from flask_app.models.embedding import UserEmbedding
 from extensions.database import db
+from config import OpenAIConfig
 
 logger = get_logger(__name__)
 
@@ -16,7 +17,8 @@ class EmbeddingFactory:
     def __init__(self):
         """Initialize the EmbeddingFactory with OpenAI API key."""
         # Get API key from environment variable or use a default for development
-        self.api_key = os.environ.get("OPENAI_API_KEY") # TODO: Move to config
+        config = OpenAIConfig()
+        self.api_key = config.OPENAI_API_KEY
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
         
@@ -25,9 +27,10 @@ class EmbeddingFactory:
         
         # Default embedding model
         self.embedding_model = "text-embedding-3-small"
+        self.embedding_model = config.EMBEDDING_MODEL
         self.openai_client = openai.OpenAI()
 
-    def get_closest_embeddings(self, embedding_to_search_for: Dict[str, str], limit: int = 10) -> List[Any]:
+    def get_closest_embeddings(self, user_id, embedding_to_search_for: Dict[str, str], limit: int = 10) -> List[Any]:
         """
         Find the closest embeddings to the given embedding dictionary. Returns up to 10 closest embeddings.
         
@@ -50,7 +53,6 @@ class EmbeddingFactory:
             return []
         
         # Generate embeddings for the search terms
-        user_id = "search_request"  # Using a placeholder user_id for the search request
         search_embeddings = self._generate_embeddings(user_id, embedding_to_search_for)
         
         # Dictionary to store points for each user_id
