@@ -11,10 +11,25 @@ class EmbeddingFactory:
     """
     Contains all the logic for taking in a key value pair, generating an embedding on the value
     and either storing the key-value in the database or searching the database.
+    
+    This class is implemented as a singleton to ensure only one instance exists.
     """
     
+    _instance = None
+    
+    def __new__(cls):
+        """Ensure only one instance of EmbeddingFactory exists."""
+        if cls._instance is None:
+            cls._instance = super(EmbeddingFactory, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+    
     def __init__(self):
-        """Initialize the EmbeddingFactory with OpenAI API key."""
+        """Initialize the EmbeddingFactory with OpenAI API key (only once)."""
+        # Skip initialization if already initialized
+        if self._initialized:
+            return
+            
         # Get API key from environment variable or use a default for development
         config = OpenAIConfig()
         self.api_key = config.OPENAI_API_KEY
@@ -28,6 +43,9 @@ class EmbeddingFactory:
         self.embedding_model = "text-embedding-3-small"
         self.embedding_model = config.EMBEDDING_MODEL
         self.openai_client = openai.OpenAI()
+        
+        # Mark as initialized
+        self._initialized = True
 
     def get_closest_embeddings(self, user_id, embedding_to_search_for: Dict[str, str], limit: int = 10) -> List[Any]:
         """
@@ -209,4 +227,6 @@ class EmbeddingFactory:
             logger.error(f"Error storing embeddings for user {user_id}: {str(e)}")
             raise
 
-logger.info(f'EmbeddingFactory initialized with model: {EmbeddingFactory().embedding_model}')
+# Create the singleton instance
+embedding_factory = EmbeddingFactory()
+logger.info(f'EmbeddingFactory initialized with model: {embedding_factory.embedding_model}')
