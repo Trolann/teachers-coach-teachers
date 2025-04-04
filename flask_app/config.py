@@ -3,6 +3,23 @@ from extensions.logging import get_logger
 
 logger = get_logger(__name__)
 
+class OpenAIConfig:
+    def __init__(self):
+        logger.info("Initializing OpenAI configuration")
+
+        # OpenAI API key
+        self.OPENAI_API_KEY = environ.get('OPENAI_API_KEY')
+        if not self.OPENAI_API_KEY:
+            logger.error("OPENAI_API_KEY environment variable not set")
+            raise ValueError("Missing required OPENAI_API_KEY configuration")
+
+        # OpenAI model
+        self.EMBEDDING_MODEL = "text-embedding-3-small"
+
+        # Log configuration details (excluding sensitive data)
+        logger.debug(f"OpenAI config initialized with model={self.OPENAI_MODEL}")
+        logger.info("OpenAI configuration completed successfully")
+
 class FlaskConfig:
     def __init__(self):
         logger.info("Initializing Flask configuration")
