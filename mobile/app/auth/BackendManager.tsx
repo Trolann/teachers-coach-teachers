@@ -368,27 +368,6 @@ class BackendManager {
     }
 
     /**
-     * Debug endpoint to check session contents
-     * 
-     * @returns The session contents
-     */
-    public async debugSession(): Promise<any> {
-        try {
-            const response = await this.sendRequest('/api/credits/debug/session', 'GET');
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to get session debug info');
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.error('Error getting session debug info:', error);
-            throw error;
-        }
-    }
-
-    /**
      * Add additional API methods here. Every backend API call should go through here.
      */
 }
