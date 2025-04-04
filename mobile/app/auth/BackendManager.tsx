@@ -184,6 +184,211 @@ class BackendManager {
     }
 
     /**
+     * List credit pools owned by a specific user
+     * 
+     * @param userEmail - Optional email to filter pools by owner
+     * @returns List of credit pools
+     */
+    public async listCreditPools(userEmail?: string): Promise<any> {
+        try {
+            const url = userEmail 
+                ? `/api/credits/pools?user_email=${encodeURIComponent(userEmail)}`
+                : '/api/credits/pools';
+                
+            const response = await this.sendRequest(url, 'GET');
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to list credit pools');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error listing credit pools:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Create a new credit pool
+     * 
+     * @param name - Name of the credit pool
+     * @param initialCredits - Optional initial credits amount
+     * @returns The created pool data
+     */
+    public async createCreditPool(name: string, initialCredits?: number): Promise<any> {
+        try {
+            const poolData = {
+                name: name,
+                initial_credits: initialCredits || 0
+            };
+            
+            const response = await this.sendRequest('/api/credits/pools', 'POST', poolData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create credit pool');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error creating credit pool:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update a credit pool
+     * 
+     * @param poolId - ID of the pool to update
+     * @param updateData - Data to update (name, is_active)
+     * @returns The updated pool data
+     */
+    public async updateCreditPool(poolId: string, updateData: {name?: string, is_active?: boolean}): Promise<any> {
+        try {
+            const response = await this.sendRequest(`/api/credits/pools/${poolId}`, 'PUT', updateData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to update credit pool');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating credit pool:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Add a user access to a credit pool by pool code
+     * 
+     * @param userEmail - Email of the user to add
+     * @param poolCode - Code of the pool to add the user to
+     * @returns The response from the API
+     */
+    public async addPoolAccess(userEmail: string, poolCode: string): Promise<any> {
+        try {
+            const accessData = {
+                user_email: userEmail,
+                pool_code: poolCode
+            };
+            
+            const response = await this.sendRequest('/api/credits/pools/access', 'POST', accessData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to add user to pool');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error adding user to pool:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Generate credit codes
+     * 
+     * @param numCodes - Number of codes to generate
+     * @param creditsPerCode - Credits per code
+     * @returns The generated codes
+     */
+    public async generateCredits(numCodes: number, creditsPerCode: number): Promise<any> {
+        try {
+            const generateData = {
+                num_codes: numCodes,
+                credits_per_code: creditsPerCode
+            };
+            
+            const response = await this.sendRequest('/api/credits/generate', 'POST', generateData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate credits');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error generating credits:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Redeem a credit code to a credit pool
+     * 
+     * @param code - The credit code to redeem
+     * @param poolId - ID of the pool to redeem to
+     * @returns The response from the API
+     */
+    public async redeemCredit(code: string, poolId: string): Promise<any> {
+        try {
+            const redeemData = {
+                code: code,
+                pool_id: poolId
+            };
+            
+            const response = await this.sendRequest('/api/credits/redeem', 'POST', redeemData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to redeem credit');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error redeeming credit:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Remove a user from a credit pool
+     * 
+     * @param poolId - ID of the pool
+     * @param userId - ID of the user to remove
+     * @returns The response from the API
+     */
+    public async removeUserFromPool(poolId: number, userId: number): Promise<any> {
+        try {
+            const response = await this.sendRequest(`/api/credits/pools/${poolId}/users/${userId}`, 'DELETE');
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to remove user from pool');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error removing user from pool:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Debug endpoint to check session contents
+     * 
+     * @returns The session contents
+     */
+    public async debugSession(): Promise<any> {
+        try {
+            const response = await this.sendRequest('/api/credits/debug/session', 'GET');
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get session debug info');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error getting session debug info:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Add additional API methods here. Every backend API call should go through here.
      */
 }
