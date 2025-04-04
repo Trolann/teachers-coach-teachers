@@ -157,11 +157,29 @@ class TheAlgorithm:
     
     This class handles the search logic for finding matches based on embeddings
     and ranks the results to return a final list of the best matches.
+    
+    This class is implemented as a singleton to ensure only one instance exists.
     """
     
+    _instance = None
+    
+    def __new__(cls):
+        """Ensure only one instance of TheAlgorithm exists."""
+        if cls._instance is None:
+            cls._instance = super(TheAlgorithm, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+    
     def __init__(self):
-        """Initialize TheAlgorithm with a reference to the EmbeddingFactory."""
+        """Initialize TheAlgorithm with a reference to the EmbeddingFactory (only once)."""
+        # Skip initialization if already initialized
+        if hasattr(self, '_initialized') and self._initialized:
+            return
+            
         self.embedding_factory = EmbeddingFactory()
+        
+        # Mark as initialized
+        self._initialized = True
     
     def get_closest_embeddings(self, user_id: str, embedding_to_search_for: Dict[str, str], limit: int = 10) -> List[Dict[str, Any]]:
         """
