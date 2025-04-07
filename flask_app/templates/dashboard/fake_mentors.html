@@ -202,12 +202,12 @@
                     }
                     document.getElementById('importResult').innerHTML = resultHtml;
                     
-                    // Hide progress bar and enable button
-                    progressBar.classList.add('d-none');
+                    // Don't hide progress bar here - we'll let the polling handle it
                     importButton.disabled = false;
                 })
                 .catch(error => {
                     document.getElementById('importResult').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                    // Still hide progress bar on error
                     progressBar.classList.add('d-none');
                     importButton.disabled = false;
                 });
@@ -228,15 +228,21 @@
                             progressBarInner.setAttribute('aria-valuenow', percentComplete);
                             progressText.textContent = `${currentCount}/${targetCount}`;
                             
-                            // If we've reached or exceeded the target, stop polling
+                            // If we've reached or exceeded the target, stop polling and hide progress bar
                             if (currentCount >= targetCount || importedSoFar >= numProfiles) {
                                 clearInterval(pollProgress);
+                                
+                                // Wait a moment before hiding the progress bar so user can see 100%
+                                setTimeout(() => {
+                                    progressBar.classList.add('d-none');
+                                }, 1500);
                             }
                         }
                     })
                     .catch(error => {
                         console.error('Error polling progress:', error);
                         clearInterval(pollProgress);
+                        progressBar.classList.add('d-none');
                     });
             }, 500);
         });
