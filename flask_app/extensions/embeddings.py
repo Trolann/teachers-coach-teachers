@@ -177,16 +177,129 @@ class TheAlgorithm:
         # Mark as initialized
         self._initialized = True
     
+    def _find_closest_embeddings_for_vector(
+        self, 
+        embedding_type: str, 
+        vector: List[float], 
+        limit: int = 10
+    ) -> List[UserEmbedding]:
+        """
+        Helper method to find closest embeddings for a specific vector.
+        
+        Args:
+            embedding_type: The type of embedding to search for
+            vector: The vector to compare against
+            limit: Maximum number of results to return
+            
+        Returns:
+            List of UserEmbedding objects sorted by cosine distance
+        """
+        try:
+            closest_embeddings = (
+                UserEmbedding.query
+                .filter_by(embedding_type=embedding_type)
+                .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
+                .limit(limit)
+                .all()
+            )
+            logger.debug(f"Found {len(closest_embeddings)} matches for embedding type '{embedding_type}'")
+            return closest_embeddings
+        except Exception as e:
+            logger.error(f"Error finding closest embeddings for type '{embedding_type}': {str(e)}")
+            return []
+    
+    def _assign_points_for_embeddings(
+        self, 
+        embeddings: List[UserEmbedding], 
+        user_points: Dict[str, int], 
+        user_embeddings: Dict[str, List[UserEmbedding]]
+    ) -> None:
+        """
+        Helper method to assign points based on embedding ranks.
+        
+        Args:
+            embeddings: List of UserEmbedding objects
+            user_points: Dictionary to store points for each user_id
+            user_embeddings: Dictionary to store user embeddings
+            
+        Returns:
+            None (updates the dictionaries in place)
+        """
+        for rank, embedding in enumerate(embeddings, 1):
+            if embedding.user_id not in user_points:
+                user_points[embedding.user_id] = 0
+                user_embeddings[embedding.user_id] = []
+            
+            # Add points (lower is better)
+            user_points[embedding.user_id] += rank
+            
+            # Store the embedding
+            user_embeddings[embedding.user_id].append(embedding)
+    
+    def _get_user_embedding_types(self, user_id: str) -> List[str]:
+        """
+        Get all embedding types available for a specific user.
+        
+        Args:
+            user_id: The ID of the user
+            
+        Returns:
+            List of embedding type strings
+        """
+        try:
+            embedding_types = (
+                db.session.query(UserEmbedding.embedding_type)
+                .filter_by(user_id=user_id)
+                .distinct()
+                .all()
+            )
+            return [et[0] for et in embedding_types]
+        except Exception as e:
+            logger.error(f"Error getting embedding types for user {user_id}: {str(e)}")
+            return []
+    
+    def _prepare_result_list(
+        self, 
+        user_points: Dict[str, int], 
+        user_embeddings: Dict[str, List[UserEmbedding]], 
+        limit: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Prepare the final result list sorted by points.
+        
+        Args:
+            user_points: Dictionary with points for each user_id
+            user_embeddings: Dictionary with embeddings for each user_id
+            limit: Maximum number of results to return
+            
+        Returns:
+            List of dictionaries with user_id, score, and embeddings
+        """
+        # Sort users by total points (lowest is best)
+        sorted_users = sorted(user_points.items(), key=lambda x: x[1])
+        
+        # Prepare the result list
+        result = []
+        for user_id, points in sorted_users:
+            if user_id in user_embeddings:
+                # Add user embeddings with their score
+                result.append({
+                    "user_id": user_id,
+                    "score": points,
+                    "embeddings": user_embeddings[user_id]
+                })
+        
+        return result[:limit]
+    
     def get_closest_embeddings(self, user_id: str, embedding_to_search_for: Dict[str, str], limit: int = 10) -> List[Dict[str, Any]]:
         """
-        Find the closest embeddings to the given embedding dictionary. Returns up to 10 closest embeddings.
+        Find the closest embeddings to the given embedding dictionary.
         
-        For each key in the input dictionary:
-        1. Generate an embedding for the value
-        2. Find the closest embeddings in the database
-        3. Assign points based on rank (1st place = 1 point, 2nd place = 2 points, etc.)
-        4. Group by user_id and sum the points
-        5. Sort by total points (lowest is best)
+        This method implements a two-step approach:
+        1. First, query the DB to get all vector keys the current user has
+        2. For each key, perform searching and ranking
+        3. For each key in embedding_to_search_for, encode and search across the entire vector database
+        4. Aggregate all rankings to produce a final sorted list
         
         Args:
             user_id: The ID of the user making the search
@@ -208,50 +321,45 @@ class TheAlgorithm:
         # Dictionary to store user embeddings
         user_embeddings = {}
         
-        # For each embedding type in the search dictionary
-        for embedding_type, vector in search_embeddings.items():
-            try:
-                # Query to find the closest embeddings for this type
-                closest_embeddings = (
-                    UserEmbedding.query
-                    .filter_by(embedding_type=embedding_type)
-                    .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
-                    .limit(limit)
-                    .all()
+        # Step 1: Get all embedding types for the current user
+        user_embedding_types = self._get_user_embedding_types(user_id)
+        logger.debug(f"Found {len(user_embedding_types)} embedding types for user {user_id}")
+        
+        # Step 2: For each embedding type the user has, find closest matches
+        for embedding_type in user_embedding_types:
+            # Get the user's embedding for this type
+            user_embedding = UserEmbedding.query.filter_by(
+                user_id=user_id,
+                embedding_type=embedding_type
+            ).first()
+            
+            if user_embedding:
+                # Find closest embeddings for this vector
+                closest_embeddings = self._find_closest_embeddings_for_vector(
+                    embedding_type, 
+                    user_embedding.vector_embedding,
+                    limit
                 )
                 
-                # Assign points based on rank (1st = 1 point, 2nd = 2 points, etc.)
-                for rank, embedding in enumerate(closest_embeddings, 1):
-                    if embedding.user_id not in user_points:
-                        user_points[embedding.user_id] = 0
-                        user_embeddings[embedding.user_id] = []
-                    
-                    # Add points (lower is better)
-                    user_points[embedding.user_id] += rank
-                    
-                    # Store the embedding
-                    user_embeddings[embedding.user_id].append(embedding)
-                    
-                logger.debug(f"Found {len(closest_embeddings)} matches for embedding type '{embedding_type}'")
-            except Exception as e:
-                logger.error(f"Error finding closest embeddings for type '{embedding_type}': {str(e)}")
+                # Assign points based on rank
+                self._assign_points_for_embeddings(closest_embeddings, user_points, user_embeddings)
         
-        # Sort users by total points (lowest is best)
-        sorted_users = sorted(user_points.items(), key=lambda x: x[1])
+        # Step 3: For each key in embedding_to_search_for, search across all vectors
+        for embedding_type, vector in search_embeddings.items():
+            closest_embeddings = self._find_closest_embeddings_for_vector(
+                embedding_type, 
+                vector,
+                limit
+            )
+            
+            # Assign points based on rank
+            self._assign_points_for_embeddings(closest_embeddings, user_points, user_embeddings)
         
-        # Prepare the result list
-        result = []
-        for user_id, points in sorted_users:
-            if user_id in user_embeddings:
-                # Add user embeddings with their score
-                result.append({
-                    "user_id": user_id,
-                    "score": points,
-                    "embeddings": user_embeddings[user_id]
-                })
+        # Step 4: Prepare and return the final result list
+        result = self._prepare_result_list(user_points, user_embeddings, limit)
         
         logger.info(f"Completed embedding search with {len(embedding_to_search_for)} criteria, found {len(result)} matches")
-        return result[:limit]
+        return result
 
 # Create the singleton instances
 embedding_factory = EmbeddingFactory()
