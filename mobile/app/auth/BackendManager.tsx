@@ -368,6 +368,34 @@ class BackendManager {
     }
 
     /**
+     * Find matches for the current user based on provided criteria
+     * 
+     * @param searchCriteria - Object with keys as criteria and values as text to match
+     * @param limit - Maximum number of results to return (optional)
+     * @returns The matched users sorted by relevance
+     */
+    public async findMatches(searchCriteria: Record<string, string>, limit?: number): Promise<any> {
+        try {
+            let url = '/matching/find_matches';
+            if (limit) {
+                url += `?limit=${limit}`;
+            }
+            
+            const response = await this.sendRequest(url, 'POST', searchCriteria);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to find matches');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error finding matches:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Add additional API methods here. Every backend API call should go through here.
      */
 }
