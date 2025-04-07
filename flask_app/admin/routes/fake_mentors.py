@@ -4,102 +4,28 @@ from flask_app.models.embedding import UserEmbedding
 from extensions.embeddings import EmbeddingFactory, TheAlgorithm
 from extensions.logging import get_logger
 from extensions.database import db
-from faker import Faker
-import random
 import json
 from uuid import uuid4
 
 logger = get_logger(__name__)
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
-fake = Faker('en_US')
 
 # Get instances of embedding classes
 embedding_factory = EmbeddingFactory()
 the_algorithm = TheAlgorithm()
 
-PROFILE_FIELDS = {
-    'first_name': lambda: fake.first_name(),
-    'last_name': lambda: fake.last_name(),
-    'bio': lambda: fake.text(max_nb_chars=200),
-    'expertise_areas': lambda: [fake.job() for _ in range(random.randint(1, 3))],
-    'years_of_experience': lambda: random.randint(1, 20)
-}
-
 
 @fake_mentors_bp.route('/fake-mentors')
 def fake_mentors_page():
-    """Display the fake users generation interface"""
-    logger.debug('Accessing fake users generation page')
+    """Display the mentor import and matching test interface"""
+    logger.debug('Accessing mentor import and matching test page')
     mentor_count = User.query.filter_by(user_type=UserType.MENTOR).count()
     logger.info(f'Current mentor count: {mentor_count}')
 
-    # Create a simple mapping for the template
-    faker_mappings = {field: ['Default'] for field in PROFILE_FIELDS.keys()}
-
     return render_template(
         'dashboard/fake_mentors.html',
-        mentor_count=mentor_count,
-        profile_fields=list(PROFILE_FIELDS.keys()),
-        faker_mappings=faker_mappings
+        mentor_count=mentor_count
     )
-
-
-@fake_mentors_bp.route('/fake-mentors/generate', methods=['POST'])
-def generate_fake_mentors():
-    """Generate fake mentor profiles based on form data"""
-    logger.debug(f'Received request to generate fake users. Form data: {request.form}')
-    try:
-        num_profiles = int(request.form.get('numProfiles'))
-        logger.info(f'Attempting to generate {num_profiles} fake mentor profiles')
-
-        if not 1 <= num_profiles <= 100:
-            logger.warning(f'Invalid number of profiles requested: {num_profiles}')
-            return jsonify({'success': False, 'error': 'Number of profiles must be between 1 and 100'}), 400
-
-        for _ in range(num_profiles):
-            # Generate profile data
-            profile_data = {
-                field: generator()
-                for field, generator in PROFILE_FIELDS.items()
-            }
-
-            # Create a user with mentor profile data
-            email = fake.unique.email()
-            cognito_sub = str(uuid4())  # Generate a fake cognito sub ID
-
-            user = User(
-                email=email,
-                user_type="MENTOR",
-                cognito_sub=cognito_sub,
-                profile=profile_data,
-                application_status="APPROVED"  # Set as approved to ensure they appear in matching
-            )
-            db.session.add(user)
-            db.session.flush()  # Get the user ID
-            logger.debug(f'Created fake mentor user with cognito_sub: {cognito_sub}')
-
-            # Create embeddings using the EmbeddingFactory
-            embedding_data = {
-                'bio': profile_data.get('bio', ''),
-                'expertise': ', '.join(profile_data.get('expertise_areas', [])),
-                'experience': f"{profile_data.get('years_of_experience', 0)} years of experience"
-            }
-
-            # Generate real embeddings
-            try:
-                embedding_factory.store_embedding(cognito_sub, embedding_data)
-                logger.debug(f'Created embeddings for user {cognito_sub}')
-            except Exception as e:
-                logger.error(f'Error creating embeddings for user {cognito_sub}: {str(e)}')
-
-        db.session.commit()
-        logger.info(f'Successfully generated {num_profiles} fake mentor profiles')
-        return jsonify({'success': True, 'count': num_profiles})
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f'Error generating fake users: {str(e)}')
-        logger.exception(e)
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @fake_mentors_bp.route('/fake-mentors/import', methods=['POST'])
@@ -239,23 +165,30 @@ def test_matching():
     """Test the matching algorithm with a query"""
     logger.debug('Received request to test matching')
     try:
-        # Get the query criteria from the request
-        criteria = request.json
-        if not criteria or not isinstance(criteria, dict):
-            return jsonify(
-                {'success': False, 'error': 'Invalid criteria. Expected JSON object with search terms.'}), 400
-
-        # Get the user_id to test as (can be provided or generate a temporary one)
-        user_id = request.args.get('user_id')
+        # Get the user_id to test as
+        user_id = request.form.get('user_id')
         if not user_id:
             user_id = str(uuid4())  # Generate a temporary user ID for testing
+            logger.info(f'No user_id provided, using generated ID: {user_id}')
+        
+        # Get the search criteria from the form
+        search_json = request.form.get('search_criteria', '{}')
+        try:
+            criteria = json.loads(search_json)
+            if not isinstance(criteria, dict):
+                return jsonify({'success': False, 'error': 'Search criteria must be a valid JSON object'}), 400
+        except json.JSONDecodeError as e:
+            logger.error(f'Invalid JSON in search criteria: {str(e)}')
+            return jsonify({'success': False, 'error': f'Invalid JSON format: {str(e)}'}), 400
 
         # Get the limit parameter
         try:
-            limit = int(request.args.get('limit', 10))
+            limit = int(request.form.get('limit', 10))
         except ValueError:
             limit = 10
 
+        logger.info(f'Testing matching with user_id: {user_id}, criteria: {criteria}, limit: {limit}')
+        
         # Use the algorithm to find matches
         matches = the_algorithm.get_closest_embeddings(user_id, criteria, limit)
 
@@ -276,7 +209,8 @@ def test_matching():
             "success": True,
             "matches": formatted_matches,
             "total": len(formatted_matches),
-            "criteria": criteria
+            "criteria": criteria,
+            "requester_id": user_id
         }), 200
     except Exception as e:
         logger.error(f'Error testing matching: {str(e)}')
