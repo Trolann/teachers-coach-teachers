@@ -15,18 +15,16 @@ class EmbeddingFactory:
     """
     
     _instance = None
-    
+
     def __new__(cls):
-        """Ensure only one instance of EmbeddingFactory exists."""
-        if cls._instance is None:
+        if not hasattr(cls, 'instance'):
             cls._instance = super(EmbeddingFactory, cls).__new__(cls)
-            cls._instance._initialized = False
         return cls._instance
     
     def __init__(self):
         """Initialize the EmbeddingFactory with OpenAI API key (only once)."""
         # Skip initialization if already initialized
-        if self._initialized:
+        if hasattr(self, '_initialized') and self._initialized:
             return
             
         # Get API key from environment variable or use a default for development
@@ -162,16 +160,14 @@ class TheAlgorithm:
     """
     
     _instance = None
-    
+
     def __new__(cls):
-        """Ensure only one instance of TheAlgorithm exists."""
-        if cls._instance is None:
+        if not hasattr(cls, 'instance'):
             cls._instance = super(TheAlgorithm, cls).__new__(cls)
-            cls._instance._initialized = False
         return cls._instance
-    
+
     def __init__(self):
-        """Initialize TheAlgorithm with a reference to the EmbeddingFactory (only once)."""
+        """Initialize the EmbeddingFactory with OpenAI API key (only once)."""
         # Skip initialization if already initialized
         if hasattr(self, '_initialized') and self._initialized:
             return
