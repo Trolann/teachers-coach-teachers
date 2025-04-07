@@ -181,6 +181,8 @@ class TheAlgorithm:
         """
         Helper method to find the closest embeddings for a specific vector.
         
+        Only returns embeddings for active mentors (user_type = 'MENTOR' and is_active = True).
+        
         Args:
             embedding_type: The type of embedding to search for
             vector: The vector to compare against
@@ -190,14 +192,21 @@ class TheAlgorithm:
             List of UserEmbedding objects sorted by cosine distance
         """
         try:
+            # Import User model here to avoid circular imports
+            from flask_app.models.user import User, UserType
+            
+            # Join with User model to filter by user_type and is_active
             closest_embeddings = (
                 UserEmbedding.query
-                .filter_by(embedding_type=embedding_type)
+                .join(User, UserEmbedding.user_id == User.cognito_sub)
+                .filter(UserEmbedding.embedding_type == embedding_type)
+                .filter(User.user_type == UserType.MENTOR)
+                .filter(User.is_active == True)
                 .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
                 .limit(limit)
                 .all()
             )
-            logger.debug(f"Found {len(closest_embeddings)} matches for embedding type '{embedding_type}'")
+            logger.debug(f"Found {len(closest_embeddings)} active mentor matches for embedding type '{embedding_type}'")
             return closest_embeddings
         except Exception as e:
             logger.error(f"Error finding closest embeddings for type '{embedding_type}': {str(e)}")
