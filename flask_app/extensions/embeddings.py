@@ -177,14 +177,9 @@ class TheAlgorithm:
         # Mark as initialized
         self._initialized = True
     
-    def _find_closest_embeddings_for_vector(
-        self, 
-        embedding_type: str, 
-        vector: List[float], 
-        limit: int = 10
-    ) -> List[UserEmbedding]:
+    def _find_closest_embeddings_for_vector(self, embedding_type: str, vector: List[float],  limit: int = 10) -> List[UserEmbedding]:
         """
-        Helper method to find closest embeddings for a specific vector.
+        Helper method to find the closest embeddings for a specific vector.
         
         Args:
             embedding_type: The type of embedding to search for
@@ -253,6 +248,7 @@ class TheAlgorithm:
                 .distinct()
                 .all()
             )
+            # Extract column names from result
             return [et[0] for et in embedding_types]
         except Exception as e:
             logger.error(f"Error getting embedding types for user {user_id}: {str(e)}")
@@ -309,9 +305,6 @@ class TheAlgorithm:
         Returns:
             A list of closest embeddings, sorted by match score (best matches first)
         """
-        if not embedding_to_search_for:
-            logger.warning("Empty embedding dictionary provided to get_closest_embeddings")
-            return []
         
         # Generate embeddings for the search terms
         search_embeddings = self.embedding_factory.generate_embeddings(user_id, embedding_to_search_for)
@@ -334,7 +327,7 @@ class TheAlgorithm:
             ).first()
             
             if user_embedding:
-                # Find closest embeddings for this vector
+                # Find the closest embeddings for this vector
                 closest_embeddings = self._find_closest_embeddings_for_vector(
                     embedding_type, 
                     user_embedding.vector_embedding,
@@ -345,15 +338,16 @@ class TheAlgorithm:
                 self._assign_points_for_embeddings(closest_embeddings, user_points, user_embeddings)
         
         # Step 3: For each key in embedding_to_search_for, search across all vectors
-        for embedding_type, vector in search_embeddings.items():
-            closest_embeddings = self._find_closest_embeddings_for_vector(
-                embedding_type, 
-                vector,
-                limit
-            )
-            
-            # Assign points based on rank
-            self._assign_points_for_embeddings(closest_embeddings, user_points, user_embeddings)
+        if search_embeddings:
+            for embedding_type, vector in search_embeddings.items():
+                closest_embeddings = self._find_closest_embeddings_for_vector(
+                    embedding_type,
+                    vector,
+                    limit
+                )
+
+                # Assign points based on rank
+                self._assign_points_for_embeddings(closest_embeddings, user_points, user_embeddings)
         
         # Step 4: Prepare and return the final result list
         result = self._prepare_result_list(user_points, user_embeddings, limit)
