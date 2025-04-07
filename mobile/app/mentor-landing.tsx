@@ -3,6 +3,7 @@ import { View, Text, Switch, StyleSheet, Image } from 'react-native';
 
 const MentorLandingScreen = () => {
   const [isOnline, setIsOnline] = useState(false);
+  const userName = 'Susie'; // Replace with dynamic username
 
   const toggleSwitch = () => setIsOnline(previousState => !previousState);
 
@@ -11,21 +12,25 @@ const MentorLandingScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hi, Susie 👋</Text>
+          <Text style={styles.greeting}>Hi, {userName} 👋</Text>
           <Text style={styles.subtext}>Are you ready to mentor?</Text>
         </View>
         <Image
-          source={require('../assets/images/mentor-profile-picture.png')} // Replace profile picture of the user stored within our database
+          source={require('../assets/images/mentor-profile-picture.png')} // Replace with profile picture of the user stored within our database
           style={styles.profileImage}
         />
       </View>
 
       {/* Toggle */}
       <View style={styles.toggleContainer}>
-        <Text style={styles.togglePrompt}>Ready to Mentor?</Text>
-        <Text style={styles.toggleSubtext}>
-          Click the toggle button to indicate you are online
+        <Text style={styles.togglePrompt}>
+          {isOnline ? 'Status: Online' : 'Status: Offline'}
         </Text>
+        {!isOnline && (
+          <Text style={styles.toggleSubtext}>
+            Click the toggle button to indicate you are online
+          </Text>
+        )}
         <Switch
           trackColor={{ false: '#767577', true: '#C7F9CC' }}
           thumbColor={isOnline ? '#34C759' : '#f4f3f4'}
@@ -34,6 +39,16 @@ const MentorLandingScreen = () => {
           value={isOnline}
         />
       </View>
+
+      {/* No Matches */}
+      {isOnline && (
+        <View style={styles.noMatchesContainer}>
+          <Text style={styles.noMatchesTitle}>No Mentee Matches 💔</Text>
+          <Text style={styles.noMatchesText}>
+            Please wait patiently until our AI matches you
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -69,9 +84,10 @@ const styles = StyleSheet.create({
   toggleContainer: {
     alignItems: 'center',
     marginTop: 60,
+    marginBottom: 32,
   },
   togglePrompt: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -80,5 +96,21 @@ const styles = StyleSheet.create({
     color: '#777',
     textAlign: 'center',
     marginBottom: 16,
+  },
+  noMatchesContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  noMatchesTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  noMatchesText: {
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
