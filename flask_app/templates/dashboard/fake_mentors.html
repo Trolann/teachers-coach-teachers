@@ -59,16 +59,6 @@
                             <button type="submit" class="btn btn-primary" id="importButton">Import Mentors</button>
                         </form>
                         <div id="importResult" class="mt-3"></div>
-                        <div id="importProgress" class="progress mt-3 d-none">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                 role="progressbar" 
-                                 aria-valuenow="0" 
-                                 aria-valuemin="0" 
-                                 aria-valuemax="100" 
-                                 style="width: 0%">
-                                <span id="progressText">0/0</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -169,20 +159,18 @@
             const formData = new FormData(this);
             const numProfiles = parseInt(document.getElementById('numProfiles').value);
             const importButton = document.getElementById('importButton');
-            const progressBar = document.getElementById('importProgress');
-            const progressBarInner = progressBar.querySelector('.progress-bar');
-            const progressText = document.getElementById('progressText');
+            const mentorCountBadge = document.getElementById('mentorCount');
             
-            // Show progress bar and disable button
-            progressBar.classList.remove('d-none');
+            // Disable button and change mentor count badge to yellow (in progress)
             importButton.disabled = true;
+            mentorCountBadge.classList.remove('bg-primary');
+            mentorCountBadge.classList.add('bg-warning');
             
             // Get current mentor count
             fetch('/admin/fake-mentors/count')
                 .then(response => response.json())
                 .then(data => {
                     const startCount = data.success ? data.count : 0;
-                    progressText.textContent = `${startCount}/${startCount + numProfiles}`;
                     
                     // Start the import
                     return fetch('/admin/fake-mentors/import', {
@@ -195,56 +183,39 @@
                     let resultHtml = '';
                     if (data.success) {
                         resultHtml = `<div class="alert alert-success">Successfully imported ${data.count} mentor profiles</div>`;
-                        // Update the mentor count
-                        updateMentorCount();
+                        
+                        // Update the mentor count and change badge to green (success)
+                        fetch('/admin/fake-mentors/count')
+                            .then(response => response.json())
+                            .then(countData => {
+                                if (countData.success) {
+                                    mentorCountBadge.textContent = countData.count;
+                                    mentorCountBadge.classList.remove('bg-warning');
+                                    mentorCountBadge.classList.add('bg-success');
+                                    
+                                    // Change back to blue after 3 seconds
+                                    setTimeout(() => {
+                                        mentorCountBadge.classList.remove('bg-success');
+                                        mentorCountBadge.classList.add('bg-primary');
+                                    }, 3000);
+                                }
+                            });
                     } else {
                         resultHtml = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                        // Change badge back to blue
+                        mentorCountBadge.classList.remove('bg-warning');
+                        mentorCountBadge.classList.add('bg-primary');
                     }
                     document.getElementById('importResult').innerHTML = resultHtml;
-                    
-                    // Don't hide progress bar here - we'll let the polling handle it
                     importButton.disabled = false;
                 })
                 .catch(error => {
                     document.getElementById('importResult').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-                    // Still hide progress bar on error
-                    progressBar.classList.add('d-none');
+                    // Change badge back to blue
+                    mentorCountBadge.classList.remove('bg-warning');
+                    mentorCountBadge.classList.add('bg-primary');
                     importButton.disabled = false;
                 });
-                
-            // Set up progress polling
-            const pollProgress = setInterval(() => {
-                fetch('/admin/fake-mentors/count')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const currentCount = data.count;
-                            const startCount = parseInt(progressText.textContent.split('/')[0]);
-                            const targetCount = parseInt(progressText.textContent.split('/')[1]);
-                            const importedSoFar = currentCount - startCount;
-                            const percentComplete = Math.min(100, Math.round((importedSoFar / numProfiles) * 100));
-                            
-                            progressBarInner.style.width = `${percentComplete}%`;
-                            progressBarInner.setAttribute('aria-valuenow', percentComplete);
-                            progressText.textContent = `${currentCount}/${targetCount}`;
-                            
-                            // If we've reached or exceeded the target, stop polling and hide progress bar
-                            if (currentCount >= targetCount || importedSoFar >= numProfiles) {
-                                clearInterval(pollProgress);
-                                
-                                // Wait a moment before hiding the progress bar so user can see 100%
-                                setTimeout(() => {
-                                    progressBar.classList.add('d-none');
-                                }, 1500);
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error polling progress:', error);
-                        clearInterval(pollProgress);
-                        progressBar.classList.add('d-none');
-                    });
-            }, 500);
         });
 
         // Update mentor count when page loads
