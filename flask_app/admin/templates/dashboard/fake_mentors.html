@@ -62,9 +62,47 @@ function showProgress(current, total) {
         progressCounter.classList.add('alert-success');
         setTimeout(() => {
             // After a delay, update the main count and hide the progress
-            mentorCount.textContent = total;
+            mentorCount.textContent = current + parseInt(mentorCount.textContent);
             progressCounter.style.display = 'none';
         }, 2000);
+    }
+}
+
+let pollingInterval = null;
+
+async function pollProgress(total) {
+    try {
+        const response = await fetch('/admin/fake-mentors/progress');
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update progress display
+            showProgress(data.current, total);
+            
+            // If generation is complete or there was an error, stop polling
+            if (!data.in_progress || data.error) {
+                if (data.error) {
+                    alert('Error during profile generation: ' + data.error);
+                }
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+                
+                // Update the final count
+                const countResponse = await fetch('/admin/fake-mentors/count');
+                const countData = await countResponse.json();
+                if (countData.success) {
+                    document.getElementById('mentorCount').textContent = countData.count;
+                }
+                
+                // Re-enable the submit button
+                document.querySelector('#generateForm button[type="submit"]').disabled = false;
+            }
+        }
+    } catch (error) {
+        console.error('Error polling progress:', error);
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+        document.querySelector('#generateForm button[type="submit"]').disabled = false;
     }
 }
 
@@ -79,10 +117,6 @@ async function handleSubmit(event) {
         const numProfiles = parseInt(document.getElementById('numProfiles').value);
         formData.set('numProfiles', numProfiles);
         
-        // Get initial count
-        const initialCount = await updateMentorCount();
-        let currentCount = initialCount;
-        
         // Show initial progress
         showProgress(0, numProfiles);
         
@@ -93,18 +127,19 @@ async function handleSubmit(event) {
         
         const data = await response.json();
         if (data.success) {
-            // Update to show completion
-            showProgress(numProfiles, numProfiles);
+            // Start polling for progress updates
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+            pollingInterval = setInterval(() => pollProgress(numProfiles), 500);
         } else {
-            alert('Error generating profiles: ' + data.error);
-            // Hide progress counter on error
+            alert('Error starting profile generation: ' + data.error);
             document.getElementById('progressCounter').style.display = 'none';
+            submitButton.disabled = false;
         }
     } catch (error) {
         alert('Error: ' + error);
-        // Hide progress counter on error
         document.getElementById('progressCounter').style.display = 'none';
-    } finally {
         submitButton.disabled = false;
     }
 }
