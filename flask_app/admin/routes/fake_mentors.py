@@ -218,6 +218,20 @@ def test_matching():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@fake_mentors_bp.route('/fake-mentors/count', methods=['GET'])
+def get_mentor_count():
+    """Get the current count of mentors"""
+    try:
+        mentor_count = User.query.filter_by(user_type=UserType.MENTOR).count()
+        return jsonify({
+            "success": True,
+            "count": mentor_count
+        }), 200
+    except Exception as e:
+        logger.error(f'Error getting mentor count: {str(e)}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @fake_mentors_bp.route('/fake-mentors/export-json', methods=['GET'])
 def export_mentors_as_json():
     """Export all mentors as JSON for testing"""

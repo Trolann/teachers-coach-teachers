@@ -36,7 +36,7 @@
 <body>
     <div class="container mt-4">
         <h1>Mentor Management</h1>
-        <p>Current mentor count: <span class="badge bg-primary">{{ mentor_count }}</span></p>
+        <p>Current mentor count: <span id="mentorCount" class="badge bg-primary">{{ mentor_count }}</span></p>
         
         <div class="row">
             <!-- Import Mentors from JSON -->
@@ -56,9 +56,19 @@
                                 <label for="numProfiles" class="form-label">Number of Profiles to Import</label>
                                 <input type="number" class="form-control" id="numProfiles" name="numProfiles" min="1" max="100" value="10">
                             </div>
-                            <button type="submit" class="btn btn-primary">Import Mentors</button>
+                            <button type="submit" class="btn btn-primary" id="importButton">Import Mentors</button>
                         </form>
                         <div id="importResult" class="mt-3"></div>
+                        <div id="importProgress" class="progress mt-3 d-none">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 aria-valuenow="0" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100" 
+                                 style="width: 0%">
+                                <span id="progressText">0/0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -141,30 +151,101 @@
             });
         }
 
+        // Function to update mentor count
+        function updateMentorCount() {
+            fetch('/admin/fake-mentors/count')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('mentorCount').textContent = data.count;
+                    }
+                })
+                .catch(error => console.error('Error updating mentor count:', error));
+        }
+
         // Import Mentors Form
         document.getElementById('importForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
+            const numProfiles = parseInt(document.getElementById('numProfiles').value);
+            const importButton = document.getElementById('importButton');
+            const progressBar = document.getElementById('importProgress');
+            const progressBarInner = progressBar.querySelector('.progress-bar');
+            const progressText = document.getElementById('progressText');
             
-            fetch('/admin/fake-mentors/import', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                let resultHtml = '';
-                if (data.success) {
-                    resultHtml = `<div class="alert alert-success">Successfully imported ${data.count} mentor profiles</div>`;
-                } else {
-                    resultHtml = `<div class="alert alert-danger">Error: ${data.error}</div>`;
-                }
-                document.getElementById('importResult').innerHTML = resultHtml;
-            })
-            .catch(error => {
-                document.getElementById('importResult').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-            });
+            // Show progress bar and disable button
+            progressBar.classList.remove('d-none');
+            importButton.disabled = true;
+            
+            // Get current mentor count
+            fetch('/admin/fake-mentors/count')
+                .then(response => response.json())
+                .then(data => {
+                    const startCount = data.success ? data.count : 0;
+                    progressText.textContent = `${startCount}/${startCount + numProfiles}`;
+                    
+                    // Start the import
+                    return fetch('/admin/fake-mentors/import', {
+                        method: 'POST',
+                        body: formData
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    let resultHtml = '';
+                    if (data.success) {
+                        resultHtml = `<div class="alert alert-success">Successfully imported ${data.count} mentor profiles</div>`;
+                        // Update the mentor count
+                        updateMentorCount();
+                    } else {
+                        resultHtml = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                    }
+                    document.getElementById('importResult').innerHTML = resultHtml;
+                    
+                    // Hide progress bar and enable button
+                    progressBar.classList.add('d-none');
+                    importButton.disabled = false;
+                })
+                .catch(error => {
+                    document.getElementById('importResult').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                    progressBar.classList.add('d-none');
+                    importButton.disabled = false;
+                });
+                
+            // Set up progress polling
+            const pollProgress = setInterval(() => {
+                fetch('/admin/fake-mentors/count')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const currentCount = data.count;
+                            const startCount = parseInt(progressText.textContent.split('/')[0]);
+                            const targetCount = parseInt(progressText.textContent.split('/')[1]);
+                            const importedSoFar = currentCount - startCount;
+                            const percentComplete = Math.min(100, Math.round((importedSoFar / numProfiles) * 100));
+                            
+                            progressBarInner.style.width = `${percentComplete}%`;
+                            progressBarInner.setAttribute('aria-valuenow', percentComplete);
+                            progressText.textContent = `${currentCount}/${targetCount}`;
+                            
+                            // If we've reached or exceeded the target, stop polling
+                            if (currentCount >= targetCount || importedSoFar >= numProfiles) {
+                                clearInterval(pollProgress);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling progress:', error);
+                        clearInterval(pollProgress);
+                    });
+            }, 500);
         });
 
+        // Update mentor count when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMentorCount();
+        });
+        
         // Test Matching Form
         document.getElementById('matchingForm').addEventListener('submit', function(e) {
             e.preventDefault();
