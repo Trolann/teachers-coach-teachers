@@ -34,85 +34,23 @@ def fake_mentors_page():
     )
 
 
-def import_profile(profile: Dict[str, Any]) -> bool:
+def generate_embeddings(cognito_sub: str, embedding_data: Dict[str, str]) -> bool:
     """
-    Import a single mentor profile
+    Generate embeddings for a user - this is the function that will be threaded
     
     Args:
-        profile: The profile data to import
+        cognito_sub: The user's cognito sub ID
+        embedding_data: The data to generate embeddings from
         
     Returns:
-        bool: True if import was successful, False otherwise
+        bool: True if successful, False otherwise
     """
     try:
-        # Validate the profile has required fields
-        if not all(key in profile for key in ['firstName', 'lastName']):
-            logger.warning(f'Skipping profile missing required fields: {profile}')
-            return False
-
-        # Create a user with mentor profile data
-        # Generate a fake email if not present
-        email = profile.get('email', f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
-        cognito_sub = str(uuid4())  # Generate a fake cognito sub ID
-
-        # Check if a user with this email already exists
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            logger.warning(f'User with email {email} already exists, skipping')
-            return False
-
-        user = User(
-            email=email,
-            user_type="MENTOR",
-            cognito_sub=cognito_sub,
-            profile=profile,
-            application_status="APPROVED"  # Set as approved to ensure they appear in matching
-        )
-        db.session.add(user)
-        db.session.flush()  # Get the user ID
-        logger.debug(f'Created imported mentor user with cognito_sub: {cognito_sub}')
-
-        # Prepare embedding data from profile
-        embedding_data = {}
-
-        # Add mentorSkills as bio if available
-        if 'mentorSkills' in profile:
-            embedding_data['bio'] = profile['mentorSkills']
-
-        # Add primarySubject as expertise if available
-        if 'primarySubject' in profile:
-            embedding_data['expertise'] = profile['primarySubject']
-
-        # Add location information
-        location_parts = []
-        if 'country' in profile and profile['country']:
-            location_parts.append(profile['country'])
-        if 'stateProvince' in profile and profile['stateProvince']:
-            location_parts.append(profile['stateProvince'])
-        if 'schoolDistrict' in profile and profile['schoolDistrict']:
-            location_parts.append(profile['schoolDistrict'])
-        
-        if location_parts:
-            embedding_data['location'] = ', '.join(location_parts)
-
-        # Add any other relevant fields
-        for key, value in profile.items():
-            if key not in embedding_data and isinstance(value, (str, int, float)):
-                # Convert camelCase to snake_case for consistency
-                snake_key = ''.join(['_' + c.lower() if c.isupper() else c for c in key]).lstrip('_')
-                embedding_data[snake_key] = str(value)
-
-        # Generate real embeddings - this is the IO call to OpenAI that we want to thread
-        if embedding_data:
-            try:
-                embedding_factory.store_embedding(cognito_sub, embedding_data)
-                logger.debug(f'Created embeddings for user {cognito_sub}')
-            except Exception as e:
-                logger.error(f'Error creating embeddings for user {cognito_sub}: {str(e)}')
-
+        embedding_factory.store_embedding(cognito_sub, embedding_data)
+        logger.debug(f'Created embeddings for user {cognito_sub}')
         return True
     except Exception as e:
-        logger.error(f'Error importing profile: {str(e)}')
+        logger.error(f'Error creating embeddings for user {cognito_sub}: {str(e)}')
         logger.exception(e)
         return False
 
@@ -159,22 +97,99 @@ def import_mentors_from_json():
         # Limit the number of profiles to import
         profiles = profiles[:num_profiles]
 
-        # Use thread pool to import profiles in parallel
-        futures = []
+        # Process all profiles and prepare data for threading
+        users_to_add = []
+        embedding_tasks = []
+        
         for profile in profiles:
-            futures.append(openai_thread_pool.submit(import_profile, profile))
+            try:
+                # Validate the profile has required fields
+                if not all(key in profile for key in ['firstName', 'lastName']):
+                    logger.warning(f'Skipping profile missing required fields: {profile}')
+                    continue
+
+                # Create a user with mentor profile data
+                # Generate a fake email if not present
+                email = profile.get('email', f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
+                cognito_sub = str(uuid4())  # Generate a fake cognito sub ID
+
+                # Check if a user with this email already exists
+                existing_user = User.query.filter_by(email=email).first()
+                if existing_user:
+                    logger.warning(f'User with email {email} already exists, skipping')
+                    continue
+
+                user = User(
+                    email=email,
+                    user_type="MENTOR",
+                    cognito_sub=cognito_sub,
+                    profile=profile,
+                    application_status="APPROVED"  # Set as approved to ensure they appear in matching
+                )
+                users_to_add.append(user)
+                
+                # Prepare embedding data from profile
+                embedding_data = {}
+
+                # Add mentorSkills as bio if available
+                if 'mentorSkills' in profile:
+                    embedding_data['bio'] = profile['mentorSkills']
+
+                # Add primarySubject as expertise if available
+                if 'primarySubject' in profile:
+                    embedding_data['expertise'] = profile['primarySubject']
+
+                # Add location information
+                location_parts = []
+                if 'country' in profile and profile['country']:
+                    location_parts.append(profile['country'])
+                if 'stateProvince' in profile and profile['stateProvince']:
+                    location_parts.append(profile['stateProvince'])
+                if 'schoolDistrict' in profile and profile['schoolDistrict']:
+                    location_parts.append(profile['schoolDistrict'])
+                
+                if location_parts:
+                    embedding_data['location'] = ', '.join(location_parts)
+
+                # Add any other relevant fields
+                for key, value in profile.items():
+                    if key not in embedding_data and isinstance(value, (str, int, float)):
+                        # Convert camelCase to snake_case for consistency
+                        snake_key = ''.join(['_' + c.lower() if c.isupper() else c for c in key]).lstrip('_')
+                        embedding_data[snake_key] = str(value)
+
+                # Store the embedding data for later processing
+                if embedding_data:
+                    embedding_tasks.append((cognito_sub, embedding_data))
+                
+                logger.debug(f'Prepared imported mentor user with cognito_sub: {cognito_sub}')
+            except Exception as e:
+                logger.error(f'Error preparing profile: {str(e)}')
+                logger.exception(e)
+        
+        # Add all users to the database
+        for user in users_to_add:
+            db.session.add(user)
+        
+        # Flush to get IDs
+        db.session.flush()
+        
+        # Now use thread pool to generate embeddings in parallel (only the OpenAI calls)
+        futures = []
+        for cognito_sub, embedding_data in embedding_tasks:
+            futures.append(openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data))
         
         # Process results as they complete
-        imported_count = 0
+        successful_embeddings = 0
         for future in concurrent.futures.as_completed(futures):
             if future.result():
-                imported_count += 1
+                successful_embeddings += 1
         
         # Commit all changes
         db.session.commit()
         
-        logger.info(f'Successfully imported {imported_count} mentor profiles')
-        return jsonify({'success': True, 'count': imported_count})
+        logger.info(f'Successfully imported {len(users_to_add)} mentor profiles with {successful_embeddings} embeddings')
+        return jsonify({'success': True, 'count': len(users_to_add)})
     except Exception as e:
         db.session.rollback()
         logger.error(f'Error importing mentors: {str(e)}')
@@ -182,71 +197,7 @@ def import_mentors_from_json():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-def generate_profile(index: int) -> bool:
-    """
-    Generate a single fake mentor profile
-    
-    Args:
-        index: The index of the profile to generate
-        
-    Returns:
-        bool: True if generation was successful, False otherwise
-    """
-    try:
-        # Generate a unique email
-        email = f"mentor{uuid4().hex[:8]}@example.com"
-        
-        # Generate a fake cognito sub ID
-        cognito_sub = str(uuid4())
-        
-        # Create a basic profile
-        profile = {
-            "first_name": f"Mentor{index+1}",
-            "last_name": f"Test{index+1}",
-            "email": email,
-            "bio": f"I am a test mentor {index+1} with expertise in various areas.",
-            "expertise_areas": ["Software Development", "Data Science", "Product Management"],
-            "years_of_experience": 5 + (index % 15),  # 5-20 years of experience
-            "skills": ["Python", "JavaScript", "Leadership", "Communication"]
-        }
-        
-        # Create the user
-        user = User(
-            email=email,
-            user_type="MENTOR",
-            cognito_sub=cognito_sub,
-            profile=profile,
-            application_status="APPROVED"  # Set as approved to ensure they appear in matching
-        )
-        db.session.add(user)
-        db.session.flush()  # Get the user ID
-        
-        # Prepare embedding data
-        embedding_data = {
-            "bio": profile["bio"],
-            "expertise": ", ".join(profile["expertise_areas"]),
-            "experience": f"{profile['years_of_experience']} years of experience",
-            "skills": ", ".join(profile["skills"])
-        }
-        
-        # Generate embeddings - this is the IO call to OpenAI that we want to thread
-        embedding_factory.store_embedding(cognito_sub, embedding_data)
-        
-        # Commit the transaction for this profile
-        db.session.commit()
-        
-        # Update progress
-        with progress_lock:
-            global generation_progress
-            generation_progress['current'] += 1
-            logger.debug(f'Generated fake mentor {generation_progress["current"]}/{generation_progress["total"]}')
-        
-        return True
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f'Error generating mentor {index+1}: {str(e)}')
-        logger.exception(e)
-        return False
+# This function is removed and replaced with the implementation below
 
 
 @fake_mentors_bp.route('/fake-mentors/generate', methods=['POST'])
@@ -280,7 +231,7 @@ def generate_fake_mentors():
             generation_progress['in_progress'] = True
             generation_progress['error'] = None
         
-        # Start a thread to monitor generation progress
+        # Start a thread to process generation
         threading.Thread(target=_process_profile_generation, args=(num_profiles,), daemon=True).start()
         
         return jsonify({
@@ -307,26 +258,89 @@ def _process_profile_generation(num_profiles: int) -> None:
     global generation_progress
     
     try:
-        # Submit all profile generation tasks to the thread pool
-        futures = []
+        # Create users and prepare embedding data
+        users = []
+        embedding_tasks = []
+        
         for i in range(num_profiles):
-            futures.append(openai_thread_pool.submit(generate_profile, i))
-        
-        # Wait for all tasks to complete
-        concurrent.futures.wait(futures)
-        
-        # Check for any errors
-        for future in futures:
-            if future.exception():
-                logger.error(f"Error in profile generation: {future.exception()}")
+            try:
+                # Generate a unique email
+                email = f"mentor{uuid4().hex[:8]}@example.com"
+                
+                # Generate a fake cognito sub ID
+                cognito_sub = str(uuid4())
+                
+                # Create a basic profile
+                profile = {
+                    "first_name": f"Mentor{i+1}",
+                    "last_name": f"Test{i+1}",
+                    "email": email,
+                    "bio": f"I am a test mentor {i+1} with expertise in various areas.",
+                    "expertise_areas": ["Software Development", "Data Science", "Product Management"],
+                    "years_of_experience": 5 + (i % 15),  # 5-20 years of experience
+                    "skills": ["Python", "JavaScript", "Leadership", "Communication"]
+                }
+                
+                # Create the user
+                user = User(
+                    email=email,
+                    user_type="MENTOR",
+                    cognito_sub=cognito_sub,
+                    profile=profile,
+                    application_status="APPROVED"  # Set as approved to ensure they appear in matching
+                )
+                users.append(user)
+                
+                # Prepare embedding data
+                embedding_data = {
+                    "bio": profile["bio"],
+                    "expertise": ", ".join(profile["expertise_areas"]),
+                    "experience": f"{profile['years_of_experience']} years of experience",
+                    "skills": ", ".join(profile["skills"])
+                }
+                
+                # Store for later processing
+                embedding_tasks.append((cognito_sub, embedding_data))
+                
+                # Update progress for user creation
                 with progress_lock:
-                    generation_progress['error'] = str(future.exception())
+                    generation_progress['current'] += 0.5  # Count as half the work
+                    current = generation_progress['current']
+                    logger.debug(f'Prepared fake mentor {i+1}/{num_profiles}')
+            except Exception as e:
+                logger.error(f'Error preparing mentor {i+1}: {str(e)}')
+                logger.exception(e)
+        
+        # Add all users to the database
+        for user in users:
+            db.session.add(user)
+        
+        # Flush to get IDs
+        db.session.flush()
+        
+        # Now use thread pool to generate embeddings in parallel (only the OpenAI calls)
+        futures = []
+        for cognito_sub, embedding_data in embedding_tasks:
+            futures.append(openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data))
+        
+        # Process results as they complete
+        successful_embeddings = 0
+        for future in concurrent.futures.as_completed(futures):
+            if future.result():
+                successful_embeddings += 1
+                # Update progress for embedding generation
+                with progress_lock:
+                    generation_progress['current'] += 0.5  # Count as the other half of the work
+        
+        # Commit all changes
+        db.session.commit()
         
         # All profiles generated
         with progress_lock:
             generation_progress['in_progress'] = False
-            logger.info(f'Successfully generated {generation_progress["current"]} fake mentor profiles')
+            logger.info(f'Successfully generated {len(users)} fake mentor profiles with {successful_embeddings} embeddings')
     except Exception as e:
+        db.session.rollback()
         with progress_lock:
             generation_progress['error'] = str(e)
             generation_progress['in_progress'] = False
