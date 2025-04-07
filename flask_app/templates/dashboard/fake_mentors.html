@@ -78,7 +78,7 @@
                             </div>
                             <div class="mb-3">
                                 <label for="searchCriteria" class="form-label">Search Criteria (JSON)</label>
-                                <textarea class="form-control" id="searchCriteria" name="search_criteria" rows="5" placeholder='{"bio": "I need help with programming", "expertise": "software development"}'></textarea>
+                                <textarea class="form-control" id="searchCriteria" name="search_criteria" rows="5" placeholder='{"bio": "I need help with educational leadership", "expertise": "curriculum development"}'></textarea>
                                 <div class="form-text">Enter a JSON object with search criteria</div>
                             </div>
                             <div class="mb-3">
@@ -251,11 +251,29 @@
                                         <strong>Match #${index + 1}</strong> - Score: ${match.score.toFixed(2)}
                                     </div>
                                     <div class="card-body">
-                                        <p><strong>User ID:</strong> ${match.user_id}</p>
-                                        <p><strong>Email:</strong> ${match.email}</p>
-                                        <p><strong>Matched on:</strong> ${match.matched_on.join(', ')}</p>
-                                        <h6>Profile:</h6>
-                                        <pre>${syntaxHighlight(match.profile)}</pre>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Name:</strong> ${match.profile.formattedName || `${match.profile.firstName} ${match.profile.lastName}`}</p>
+                                                <p><strong>Email:</strong> ${match.email}</p>
+                                                <p><strong>Location:</strong> ${match.profile.stateProvince || ''}, ${match.profile.country || ''}</p>
+                                                <p><strong>School District:</strong> ${match.profile.schoolDistrict || 'N/A'}</p>
+                                                <p><strong>Primary Subject:</strong> ${match.profile.primarySubject || 'N/A'}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>User ID:</strong> ${match.user_id}</p>
+                                                <p><strong>Matched on:</strong> ${match.matched_on.join(', ')}</p>
+                                                <p><strong>Phone:</strong> ${match.profile.phoneNumber || 'N/A'}</p>
+                                                <p><strong>Time Zone:</strong> ${match.profile.timeZone || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h6>Mentor Skills:</h6>
+                                            <p>${match.profile.mentorSkills || 'No skills information available'}</p>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h6>Full Profile:</h6>
+                                            <pre>${syntaxHighlight(match.profile)}</pre>
+                                        </div>
                                     </div>
                                 </div>
                             `;

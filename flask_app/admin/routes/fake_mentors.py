@@ -49,21 +49,14 @@ def import_mentors_from_json():
         # Read and parse the file
         file_content = file.read().decode('utf-8')
 
-        # Try to parse as JSONL (line-delimited JSON)
+        # Parse as JSON
         try:
-            profiles = []
-            for line in file_content.strip().split('\n'):
-                if line.strip():  # Skip empty lines
-                    profiles.append(json.loads(line))
-        except json.JSONDecodeError:
-            # If JSONL parsing fails, try as regular JSON
-            try:
-                profiles = json.loads(file_content)
-                # Handle the case where the JSON is a dict instead of a list
-                if isinstance(profiles, dict):
-                    profiles = [profiles]
-            except json.JSONDecodeError:
-                return jsonify({'success': False, 'error': 'Invalid JSON/JSONL format'}), 400
+            profiles = json.loads(file_content)
+            # Handle the case where the JSON is a dict instead of a list
+            if isinstance(profiles, dict):
+                profiles = [profiles]
+        except json.JSONDecodeError as e:
+            return jsonify({'success': False, 'error': f'Invalid JSON format: {str(e)}'}), 400
 
         logger.info(f'Found {len(profiles)} profiles in the file')
 
@@ -82,12 +75,13 @@ def import_mentors_from_json():
         for profile in profiles:
             try:
                 # Validate the profile has required fields
-                if not all(key in profile for key in ['first_name', 'last_name', 'email']):
+                if not all(key in profile for key in ['firstName', 'lastName']):
                     logger.warning(f'Skipping profile missing required fields: {profile}')
                     continue
 
                 # Create a user with mentor profile data
-                email = profile.get('email')
+                # Generate a fake email if not present
+                email = profile.get('email', f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
                 cognito_sub = str(uuid4())  # Generate a fake cognito sub ID
 
                 # Check if a user with this email already exists
@@ -110,32 +104,32 @@ def import_mentors_from_json():
                 # Prepare embedding data from profile
                 embedding_data = {}
 
-                # Add bio if available
-                if 'bio' in profile:
-                    embedding_data['bio'] = profile['bio']
+                # Add mentorSkills as bio if available
+                if 'mentorSkills' in profile:
+                    embedding_data['bio'] = profile['mentorSkills']
 
-                # Add expertise if available
-                if 'expertise_areas' in profile:
-                    if isinstance(profile['expertise_areas'], list):
-                        embedding_data['expertise'] = ', '.join(profile['expertise_areas'])
-                    else:
-                        embedding_data['expertise'] = str(profile['expertise_areas'])
+                # Add primarySubject as expertise if available
+                if 'primarySubject' in profile:
+                    embedding_data['expertise'] = profile['primarySubject']
 
-                # Add experience if available
-                if 'years_of_experience' in profile:
-                    embedding_data['experience'] = f"{profile['years_of_experience']} years of experience"
-
-                # Add skills if available
-                if 'skills' in profile:
-                    if isinstance(profile['skills'], list):
-                        embedding_data['skills'] = ', '.join(profile['skills'])
-                    else:
-                        embedding_data['skills'] = str(profile['skills'])
+                # Add location information
+                location_parts = []
+                if 'country' in profile and profile['country']:
+                    location_parts.append(profile['country'])
+                if 'stateProvince' in profile and profile['stateProvince']:
+                    location_parts.append(profile['stateProvince'])
+                if 'schoolDistrict' in profile and profile['schoolDistrict']:
+                    location_parts.append(profile['schoolDistrict'])
+                
+                if location_parts:
+                    embedding_data['location'] = ', '.join(location_parts)
 
                 # Add any other relevant fields
                 for key, value in profile.items():
                     if key not in embedding_data and isinstance(value, (str, int, float)):
-                        embedding_data[key] = str(value)
+                        # Convert camelCase to snake_case for consistency
+                        snake_key = ''.join(['_' + c.lower() if c.isupper() else c for c in key]).lstrip('_')
+                        embedding_data[snake_key] = str(value)
 
                 # Generate real embeddings
                 if embedding_data:
@@ -315,11 +309,17 @@ def test_matching():
         for match in matches:
             user = User.query.filter_by(cognito_sub=match["user_id"]).first()
             if user:
+                # Format the profile for display
+                profile = user.profile
+                # Add formatted name for display
+                if 'firstName' in profile and 'lastName' in profile:
+                    profile['formattedName'] = f"{profile['firstName']} {profile['lastName']}"
+                
                 formatted_matches.append({
                     "user_id": match["user_id"],
                     "score": match["score"],
                     "email": user.email,
-                    "profile": user.profile,
+                    "profile": profile,
                     "matched_on": [e.embedding_type for e in match["embeddings"]]
                 })
 
