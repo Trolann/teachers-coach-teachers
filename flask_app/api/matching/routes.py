@@ -1,12 +1,14 @@
 from flask import Blueprint
 from extensions.logging import get_logger
 from extensions.embeddings import EmbeddingFactory
+from extensions.cognito import require_auth, CognitoTokenVerifier
 from flask import jsonify
 
 
 matching_bp = Blueprint('matching', __name__, url_prefix='/matching')
 logger = get_logger(__name__)
 embedding_factory = EmbeddingFactory()
+verifier = CognitoTokenVerifier()
 
 @matching_bp.route('/debug_embeddings', methods=['GET'])
 def debug_test_embeddings():
