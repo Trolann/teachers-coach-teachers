@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from extensions.logging import get_logger
 from extensions.embeddings import EmbeddingFactory, TheAlgorithm
 from extensions.cognito import require_auth, CognitoTokenVerifier, parse_headers
-from typing import Dict, Any, Optional
 
 
 matching_bp = Blueprint('matching', __name__, url_prefix='/matching')

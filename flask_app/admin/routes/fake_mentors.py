@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify
-from flask_app.models.user import User, UserType, ApplicationStatus
-from flask_app.models.embedding import UserEmbedding
+from flask_app.models.user import User, UserType
 from extensions.embeddings import EmbeddingFactory, TheAlgorithm
 from extensions.logging import get_logger
 from extensions.database import db
@@ -8,7 +7,7 @@ import json
 from uuid import uuid4
 import threading
 import concurrent.futures
-from typing import Dict, Any, List, Optional
+from typing import Dict, List, Optional
 
 logger = get_logger(__name__)
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
@@ -134,11 +133,11 @@ def import_mentors_from_json():
 
                 # Add mentorSkills as bio if available
                 if 'mentorSkills' in profile:
-                    embedding_data['bio'] = profile['mentorSkills']
+                    embedding_data['mentorSkills'] = profile['mentorSkills']
 
                 # Add primarySubject as expertise if available
                 if 'primarySubject' in profile:
-                    embedding_data['expertise'] = profile['primarySubject']
+                    embedding_data['primarySubject'] = profile['primarySubject']
 
                 # Add location information
                 location_parts = []
@@ -185,6 +184,7 @@ def import_mentors_from_json():
         for future in concurrent.futures.as_completed(futures):
             embeddings_dict = future.result()
             if embeddings_dict:
+                cognito_sub = ''
                 # Get the cognito_sub from the completed task
                 # We need to find which task this future corresponds to
                 for i, (sub, _) in enumerate(embedding_tasks):
@@ -319,7 +319,6 @@ def _process_profile_generation(num_profiles: int) -> None:
                 # Update progress for user creation
                 with progress_lock:
                     generation_progress['current'] += 0.5  # Count as half the work
-                    current = generation_progress['current']
                     logger.debug(f'Prepared fake mentor {i+1}/{num_profiles}')
             except Exception as e:
                 logger.error(f'Error preparing mentor {i+1}: {str(e)}')
@@ -342,6 +341,7 @@ def _process_profile_generation(num_profiles: int) -> None:
         for future in concurrent.futures.as_completed(futures):
             embeddings_dict = future.result()
             if embeddings_dict:
+                cognito_sub = ''
                 # Get the cognito_sub from the completed task
                 # We need to find which task this future corresponds to
                 for i, (sub, _) in enumerate(embedding_tasks):
