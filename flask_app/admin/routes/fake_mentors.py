@@ -160,6 +160,124 @@ def import_mentors_from_json():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@fake_mentors_bp.route('/fake-mentors/generate', methods=['POST'])
+def generate_fake_mentors():
+    """Generate fake mentor profiles one at a time"""
+    global generation_progress
+    logger.debug('Received request to generate fake mentors')
+    
+    # Check if generation is already in progress
+    if generation_progress['in_progress']:
+        return jsonify({
+            'success': False, 
+            'error': 'Generation already in progress'
+        }), 409
+    
+    try:
+        # Get the number of profiles to generate
+        num_profiles = int(request.form.get('numProfiles', 0))
+        if num_profiles <= 0:
+            return jsonify({'success': False, 'error': 'Number of profiles must be greater than 0'}), 400
+        
+        if num_profiles > 100:
+            return jsonify({'success': False, 'error': 'Maximum 100 profiles can be generated at once'}), 400
+
+        logger.info(f'Generating {num_profiles} fake mentor profiles')
+        
+        # Reset progress tracking
+        generation_progress['total'] = num_profiles
+        generation_progress['current'] = 0
+        generation_progress['in_progress'] = True
+        generation_progress['error'] = None
+        
+        # Generate the first profile and return success
+        # The client will poll for progress and the remaining profiles will be generated
+        _generate_next_profile()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Profile generation started',
+            'total': num_profiles
+        })
+    except Exception as e:
+        generation_progress['in_progress'] = False
+        generation_progress['error'] = str(e)
+        logger.error(f'Error starting fake mentor generation: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def _generate_next_profile():
+    """Generate the next profile in the queue"""
+    global generation_progress
+    
+    try:
+        if not generation_progress['in_progress']:
+            return
+            
+        if generation_progress['current'] >= generation_progress['total']:
+            # All profiles generated
+            generation_progress['in_progress'] = False
+            logger.info(f'Successfully generated {generation_progress["current"]} fake mentor profiles')
+            return
+            
+        # Generate a unique email
+        i = generation_progress['current']
+        email = f"mentor{uuid4().hex[:8]}@example.com"
+        
+        # Generate a fake cognito sub ID
+        cognito_sub = str(uuid4())
+        
+        # Create a basic profile
+        profile = {
+            "first_name": f"Mentor{i+1}",
+            "last_name": f"Test{i+1}",
+            "email": email,
+            "bio": f"I am a test mentor {i+1} with expertise in various areas.",
+            "expertise_areas": ["Software Development", "Data Science", "Product Management"],
+            "years_of_experience": 5 + (i % 15),  # 5-20 years of experience
+            "skills": ["Python", "JavaScript", "Leadership", "Communication"]
+        }
+        
+        # Create the user
+        user = User(
+            email=email,
+            user_type="MENTOR",
+            cognito_sub=cognito_sub,
+            profile=profile,
+            application_status="APPROVED"  # Set as approved to ensure they appear in matching
+        )
+        db.session.add(user)
+        db.session.flush()  # Get the user ID
+        
+        # Prepare embedding data
+        embedding_data = {
+            "bio": profile["bio"],
+            "expertise": ", ".join(profile["expertise_areas"]),
+            "experience": f"{profile['years_of_experience']} years of experience",
+            "skills": ", ".join(profile["skills"])
+        }
+        
+        # Generate embeddings
+        embedding_factory.store_embedding(cognito_sub, embedding_data)
+        
+        # Commit the transaction for this profile
+        db.session.commit()
+        
+        # Update progress
+        generation_progress['current'] += 1
+        logger.debug(f'Generated fake mentor {generation_progress["current"]}/{generation_progress["total"]}')
+        
+        # Generate the next profile
+        _generate_next_profile()
+    except Exception as e:
+        db.session.rollback()
+        generation_progress['error'] = str(e)
+        generation_progress['in_progress'] = False
+        logger.error(f'Error generating mentor: {str(e)}')
+        logger.exception(e)
+
+
 @fake_mentors_bp.route('/fake-mentors/test-matching', methods=['POST'])
 def test_matching():
     """Test the matching algorithm with a query"""
@@ -216,6 +334,27 @@ def test_matching():
         logger.error(f'Error testing matching: {str(e)}')
         logger.exception(e)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Global variable to track generation progress
+generation_progress = {
+    'total': 0,
+    'current': 0,
+    'in_progress': False,
+    'error': None
+}
+
+@fake_mentors_bp.route('/fake-mentors/progress', methods=['GET'])
+def get_generation_progress():
+    """Get the current progress of mentor generation"""
+    global generation_progress
+    return jsonify({
+        'success': True,
+        'total': generation_progress['total'],
+        'current': generation_progress['current'],
+        'in_progress': generation_progress['in_progress'],
+        'error': generation_progress['error']
+    })
 
 
 @fake_mentors_bp.route('/fake-mentors/count', methods=['GET'])
