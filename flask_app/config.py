@@ -17,7 +17,7 @@ class OpenAIConfig:
         self.EMBEDDING_MODEL = "text-embedding-3-small"
 
         # Log configuration details (excluding sensitive data)
-        logger.debug(f"OpenAI config initialized with model={self.OPENAI_MODEL}")
+        logger.debug(f"OpenAI config initialized with model={self.EMBEDDING_MODEL}")
         logger.info("OpenAI configuration completed successfully")
 
 class FlaskConfig:
