@@ -96,6 +96,7 @@ class EmbeddingFactory:
         for key, value in generated.items():
             logger.debug(f"{key}: {len(value)}")
 
+    # TODO: NEED A DEBUG MEANS TO STORE VECTORS USING THREADING SEE FAKE_MENTORS.PY
     def store_embedding(self, user_id: str, embedding_dict: Dict[str, Any]) -> None:
         """
         Store embeddings in the database.
