@@ -5,7 +5,8 @@
     <h2>Fake Mentor Data Generator</h2>
     
     <div class="alert alert-info">
-        Current number of mentor profiles: {{ mentor_count }}
+        Current number of mentor profiles: <span id="mentorCount">{{ mentor_count }}</span>
+        <span id="progressCounter" style="display: none;" class="alert-warning px-2 rounded"></span>
     </div>
 
     <div class="card">
@@ -34,6 +35,39 @@
 </div>
 
 <script>
+async function updateMentorCount() {
+    try {
+        const response = await fetch('/admin/fake-mentors/count');
+        const data = await response.json();
+        if (data.success) {
+            return data.count;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching mentor count:', error);
+        return null;
+    }
+}
+
+function showProgress(current, total) {
+    const progressCounter = document.getElementById('progressCounter');
+    const mentorCount = document.getElementById('mentorCount');
+    
+    progressCounter.textContent = `${current}/${total}`;
+    progressCounter.style.display = 'inline';
+    
+    if (current === total) {
+        // When complete, turn green
+        progressCounter.classList.remove('alert-warning');
+        progressCounter.classList.add('alert-success');
+        setTimeout(() => {
+            // After a delay, update the main count and hide the progress
+            mentorCount.textContent = total;
+            progressCounter.style.display = 'none';
+        }, 2000);
+    }
+}
+
 async function handleSubmit(event) {
     event.preventDefault();
     const form = event.target;
@@ -42,8 +76,15 @@ async function handleSubmit(event) {
     
     try {
         const formData = new FormData(form);
-        const numProfiles = document.getElementById('numProfiles').value;
+        const numProfiles = parseInt(document.getElementById('numProfiles').value);
         formData.set('numProfiles', numProfiles);
+        
+        // Get initial count
+        const initialCount = await updateMentorCount();
+        let currentCount = initialCount;
+        
+        // Show initial progress
+        showProgress(0, numProfiles);
         
         const response = await fetch('/admin/fake-mentors/generate', {
             method: 'POST',
@@ -52,13 +93,17 @@ async function handleSubmit(event) {
         
         const data = await response.json();
         if (data.success) {
-            alert(`Successfully generated ${data.count} mentor profiles`);
-            location.reload();  // Refresh to update the count
+            // Update to show completion
+            showProgress(numProfiles, numProfiles);
         } else {
             alert('Error generating profiles: ' + data.error);
+            // Hide progress counter on error
+            document.getElementById('progressCounter').style.display = 'none';
         }
     } catch (error) {
         alert('Error: ' + error);
+        // Hide progress counter on error
+        document.getElementById('progressCounter').style.display = 'none';
     } finally {
         submitButton.disabled = false;
     }
