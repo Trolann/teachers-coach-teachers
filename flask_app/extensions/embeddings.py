@@ -96,7 +96,66 @@ class EmbeddingFactory:
         for key, value in generated.items():
             logger.debug(f"{key}: {len(value)}")
 
-    # TODO: NEED A DEBUG MEANS TO STORE VECTORS USING THREADING SEE FAKE_MENTORS.PY
+    def generate_embedding_dict(self, user_id: str, embedding_dict: Dict[str, Any]) -> Dict[str, List[float]]:
+        """
+        Generate embeddings for a user without storing them in the database.
+        
+        Args:
+            user_id: The ID of the user
+            embedding_dict: Dictionary with text to generate embeddings for
+            
+        Returns:
+            Dict[str, List[float]]: Dictionary with embedding types as keys and vector embeddings as values
+        """
+        # Add entire profile embedding
+        processed_dict = embedding_dict.copy()
+        entire_profile = "\n\n".join([f"{key}: {value}" for key, value in embedding_dict.items()])
+        processed_dict["entire_profile"] = entire_profile
+
+        # Generate embeddings for the provided text
+        return self.generate_embeddings(user_id, processed_dict)
+    
+    def store_embeddings_dict(self, user_id: str, embeddings_dict: Dict[str, List[float]]) -> None:
+        """
+        Store pre-generated embeddings in the database.
+        
+        Args:
+            user_id: The ID of the user
+            embeddings_dict: Dictionary with embedding types as keys and vector embeddings as values
+            
+        Returns:
+            None
+        """
+        # Store each embedding in the database
+        for embedding_type, vector_embedding in embeddings_dict.items():
+            # Check if an embedding of this type already exists for this user
+            existing_embedding = UserEmbedding.query.filter_by(
+                user_id=user_id,
+                embedding_type=embedding_type
+            ).first()
+
+            if existing_embedding:
+                # Update existing embedding
+                logger.info(f"Updating existing {embedding_type} embedding for user {user_id}")
+                existing_embedding.vector_embedding = vector_embedding
+            else:
+                # Create new embedding
+                new_embedding = UserEmbedding(
+                    user_id=user_id,
+                    embedding_type=embedding_type,
+                    vector_embedding=vector_embedding
+                )
+                db.session.add(new_embedding)
+
+        # Commit all changes to the database
+        try:
+            db.session.commit()
+            logger.info(f"Successfully stored embeddings for user {user_id}")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error storing embeddings for user {user_id}: {str(e)}")
+            raise
+    
     def store_embedding(self, user_id: str, embedding_dict: Dict[str, Any]) -> None:
         """
         Store embeddings in the database.
@@ -108,47 +167,11 @@ class EmbeddingFactory:
         Returns:
             None
         """
-        # Generate embeddings for the provided text
-        entire_profile = "\n\n".join([f"{key}: {value}" for key, value in embedding_dict.items()])
-        embedding_dict["entire_profile"] = entire_profile
-
-        embeddings = self.generate_embeddings(user_id, embedding_dict)
-
-        # Store each embedding in the database
-        for key, value in embedding_dict.items():
-            if key in embeddings:
-                embedding_type = key
-                vector_embedding = embeddings[key]
-
-                # Check if an embedding of this type already exists for this user
-                existing_embedding = UserEmbedding.query.filter_by(
-                    user_id=user_id,
-                    embedding_type=embedding_type
-                ).first()
-
-                if existing_embedding:
-                    # Update existing embedding
-                    logger.info(f"Updating existing {embedding_type} embedding for user {user_id}")
-                    existing_embedding.vector_embedding = vector_embedding
-                else:
-                    # Create new embedding
-                    new_embedding = UserEmbedding(
-                        user_id=user_id,
-                        embedding_type=embedding_type,
-                        vector_embedding=vector_embedding
-                    )
-                    db.session.add(new_embedding)
-
-
-
-        # Commit all changes to the database
-        try:
-            db.session.commit()
-            logger.info(f"Successfully stored embeddings for user {user_id}")
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error storing embeddings for user {user_id}: {str(e)}")
-            raise
+        # Generate embeddings
+        embeddings_dict = self.generate_embedding_dict(user_id, embedding_dict)
+        
+        # Store embeddings in the database
+        self.store_embeddings_dict(user_id, embeddings_dict)
 
 class TheAlgorithm:
     """

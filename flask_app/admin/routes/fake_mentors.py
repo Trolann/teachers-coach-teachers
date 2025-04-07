@@ -34,7 +34,7 @@ def fake_mentors_page():
     )
 
 
-def generate_embeddings(cognito_sub: str, embedding_data: Dict[str, str]) -> bool:
+def generate_embeddings(cognito_sub: str, embedding_data: Dict[str, str]) -> Optional[Dict[str, List[float]]]:
     """
     Generate embeddings for a user - this is the function that will be threaded
     
@@ -43,16 +43,17 @@ def generate_embeddings(cognito_sub: str, embedding_data: Dict[str, str]) -> boo
         embedding_data: The data to generate embeddings from
         
     Returns:
-        bool: True if successful, False otherwise
+        Optional[Dict[str, List[float]]]: Dictionary with embedding types as keys and vector embeddings as values,
+                                         or None if there was an error
     """
     try:
-        embedding_factory.store_embedding(cognito_sub, embedding_data)
-        logger.debug(f'Created embeddings for user {cognito_sub}')
-        return True
+        embeddings_dict = embedding_factory.generate_embedding_dict(cognito_sub, embedding_data)
+        logger.debug(f'Generated embeddings for user {cognito_sub}')
+        return embeddings_dict
     except Exception as e:
-        logger.error(f'Error creating embeddings for user {cognito_sub}: {str(e)}')
+        logger.error(f'Error generating embeddings for user {cognito_sub}: {str(e)}')
         logger.exception(e)
-        return False
+        return None
 
 
 @fake_mentors_bp.route('/fake-mentors/import', methods=['POST'])
@@ -182,8 +183,21 @@ def import_mentors_from_json():
         # Process results as they complete
         successful_embeddings = 0
         for future in concurrent.futures.as_completed(futures):
-            if future.result():
-                successful_embeddings += 1
+            embeddings_dict = future.result()
+            if embeddings_dict:
+                # Get the cognito_sub from the completed task
+                # We need to find which task this future corresponds to
+                for i, (sub, _) in enumerate(embedding_tasks):
+                    if futures[i].done() and futures[i] == future:
+                        cognito_sub = sub
+                        break
+                
+                # Store the embeddings in the database (in the main thread)
+                try:
+                    embedding_factory.store_embeddings_dict(cognito_sub, embeddings_dict)
+                    successful_embeddings += 1
+                except Exception as e:
+                    logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
         
         # Commit all changes
         db.session.commit()
@@ -326,11 +340,24 @@ def _process_profile_generation(num_profiles: int) -> None:
         # Process results as they complete
         successful_embeddings = 0
         for future in concurrent.futures.as_completed(futures):
-            if future.result():
-                successful_embeddings += 1
-                # Update progress for embedding generation
-                with progress_lock:
-                    generation_progress['current'] += 0.5  # Count as the other half of the work
+            embeddings_dict = future.result()
+            if embeddings_dict:
+                # Get the cognito_sub from the completed task
+                # We need to find which task this future corresponds to
+                for i, (sub, _) in enumerate(embedding_tasks):
+                    if futures[i].done() and futures[i] == future:
+                        cognito_sub = sub
+                        break
+                
+                # Store the embeddings in the database (in the main thread)
+                try:
+                    embedding_factory.store_embeddings_dict(cognito_sub, embeddings_dict)
+                    successful_embeddings += 1
+                    # Update progress for embedding generation
+                    with progress_lock:
+                        generation_progress['current'] += 0.5  # Count as the other half of the work
+                except Exception as e:
+                    logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
         
         # Commit all changes
         db.session.commit()
