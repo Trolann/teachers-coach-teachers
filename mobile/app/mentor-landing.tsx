@@ -1,11 +1,43 @@
 import React, { useState } from 'react';
-import { View, Text, Switch, StyleSheet, Image } from 'react-native';
+import { View, Text, Switch, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import SwipeCards from 'react-native-swipe-cards';
+
+const mentees = [
+  { id: 1, name: 'Alex Johnson', district: 'Sacramento City Unified School District', goal: 'Improve teaching skills in math' },
+  { id: 2, name: 'Maria Gomez', district: 'East Side Union High School District', goal: 'Explore science curriculum options' } // Dummy mentees
+];
 
 const MentorLandingScreen = () => {
   const [isOnline, setIsOnline] = useState(false);
+  const [acceptedMentee, setAcceptedMentee] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const userName = 'Susie'; // Replace with dynamic username
 
   const toggleSwitch = () => setIsOnline(previousState => !previousState);
+
+  const Card = ({ name, district, goal }) => (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{name}</Text>
+      <Text style={styles.cardText}>District: {district}</Text>
+      <Text style={styles.cardText}>Goal: {goal}</Text>
+    </View>
+  );
+
+  const handleAccept = () => {
+    const mentee = mentees[currentIndex];
+    setAcceptedMentee(mentee);
+    console.log('Accepted Mentee:', mentee);
+  };
+
+  const handleYes = () => {
+    setCurrentIndex(i => i + 1);
+  };
+
+  const handleNo = () => {
+    setCurrentIndex(i => i + 1);
+  };
+
+  const renderCard = (cardData) => <Card {...cardData} />;
 
   return (
     <View style={styles.container}>
@@ -40,15 +72,31 @@ const MentorLandingScreen = () => {
         />
       </View>
 
-      {/* No Matches */}
-      {isOnline && (
+      {/* Mentee Cards */}
+      {isOnline && mentees.length > 0 ? (
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text style={styles.noMatchesTitle}>Mentee Request ❤️</Text>
+          <SwipeCards
+            cards={mentees}
+            renderCard={renderCard}
+            renderNoMoreCards={() => <Text>No more mentees</Text>}
+            handleYes={handleYes}
+            handleNo={handleNo}
+            showYes={false}
+            showNo={false}
+          />
+          <TouchableOpacity style={styles.acceptButton} onPress={handleAccept}>
+            <Text style={styles.acceptButtonText}>Accept</Text>
+          </TouchableOpacity>
+        </View>
+      ) : isOnline ? (
         <View style={styles.noMatchesContainer}>
           <Text style={styles.noMatchesTitle}>No Mentee Matches 💔</Text>
           <Text style={styles.noMatchesText}>
             Please wait patiently until our AI matches you
           </Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 };
@@ -83,7 +131,7 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     alignItems: 'center',
-    marginTop: 60,
+    marginTop: 20,
     marginBottom: 32,
   },
   togglePrompt: {
@@ -112,5 +160,38 @@ const styles = StyleSheet.create({
     color: '#555',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  card: {
+    width: 300,
+    padding: 20,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  cardText: {
+    fontSize: 16,
+    marginBottom: 6,
+    color: '#333',
+  },
+  acceptButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    backgroundColor: '#34C759',
+    borderRadius: 12,
+  },
+  acceptButtonText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: '600',
   },
 });
