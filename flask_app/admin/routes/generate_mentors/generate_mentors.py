@@ -5,7 +5,8 @@ import os
 import time
 import threading
 import queue
-from typing import Dict, Any, List
+import uuid
+from typing import Dict, Any, List, Tuple
 from openai import OpenAI
 from faker import Faker
 
@@ -90,8 +91,12 @@ Make it diverse and realistic for an accomplished education professional who wou
     # Parse the OpenAI response
     profile_data = json.loads(profile_text)
     
+    # Generate a unique ID for the mentor
+    mentor_id = str(uuid.uuid4())
+    
     # Combine Faker data with OpenAI data to match the application form structure
     complete_profile = {
+        "id": mentor_id,
         "firstName": first_name,
         "lastName": last_name,
         "phoneNumber": phone_number,
@@ -184,7 +189,8 @@ def generate_matching_query(client: OpenAI, profile: Dict[str, Any], faker: Fake
         "stateProvince": mentee_state,
         "primarySubject": query_data.get("primarySubject", ""),
         "lookingFor": query_data.get("lookingFor", ""),
-        "yearsTeaching": query_data.get("yearsTeaching", 1)
+        "yearsTeaching": query_data.get("yearsTeaching", 1),
+        "targetMentorId": profile["id"]  # Store the ID of the mentor this query is designed to match
     }
     
     return complete_query
@@ -244,6 +250,7 @@ def main() -> None:
     # Files to save the generated data
     mentors_file = "fake-mentors.json"
     queries_file = "queries.json"
+    test_data_file = "matching-test-data.json"
     
     # Use a queue to collect results from threads
     result_queue: queue.Queue = queue.Queue()
@@ -285,15 +292,23 @@ def main() -> None:
     results.sort(key=lambda x: x[0])
     
     # Write results to files as JSON arrays
-    with open(mentors_file, "w") as profile_file, open(queries_file, "w") as query_file:
+    with open(mentors_file, "w") as profile_file, open(queries_file, "w") as query_file, open(test_data_file, "w") as test_file:
         profiles = [profile for _, profile, _ in results]
         queries = [query for _, _, query in results]
         
+        # Create test data structure that includes both mentors and queries
+        test_data = {
+            "mentors": profiles,
+            "queries": queries
+        }
+        
         json.dump(profiles, profile_file, indent=2)
         json.dump(queries, query_file, indent=2)
+        json.dump(test_data, test_file, indent=2)
 
     print(f"Successfully generated profiles saved to {mentors_file}")
     print(f"Successfully generated matching queries saved to {queries_file}")
+    print(f"Successfully generated test data saved to {test_data_file}")
 
 
 if __name__ == "__main__":
