@@ -2,8 +2,8 @@ from typing import Dict, List, Any, Optional
 import openai
 from flask_app.extensions.logging import get_logger
 from flask_app.models.embedding import UserEmbedding
-from extensions.database import db
-from config import OpenAIConfig
+from flask_app.extensions.database import db
+from flask_app.config import OpenAIConfig
 
 logger = get_logger(__name__)
 
@@ -217,7 +217,7 @@ class TheAlgorithm:
         """
         try:
             # Import User model here to avoid circular imports
-            from flask_app.models.user import User, UserType
+            from flask_app.models.user import User, UserType, ApplicationStatus
             
             # Join with User model to filter by user_type and is_active
             closest_embeddings = (

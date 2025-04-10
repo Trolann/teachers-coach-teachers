@@ -5,6 +5,9 @@ import os
 import sys
 from typing import Dict, List, Any, Optional, Tuple
 import openai
+
+# Add the parent directory to sys.path to allow importing flask_app modules
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from flask_app.extensions.embeddings import EmbeddingFactory, TheAlgorithm
 
 def load_test_data(file_path: str) -> Dict[str, List[Dict[str, Any]]]:
