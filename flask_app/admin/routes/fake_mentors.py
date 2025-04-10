@@ -7,7 +7,9 @@ import json
 from uuid import uuid4
 import threading
 import concurrent.futures
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any, Tuple
+import sys
+import os
 
 logger = get_logger(__name__)
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
@@ -503,5 +505,128 @@ def export_mentors_as_json():
         }), 200
     except Exception as e:
         logger.error(f'Error exporting mentors: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@fake_mentors_bp.route('/fake-mentors/run-matching-tests', methods=['POST'])
+def run_matching_tests():
+    """Run AI matching tests with uploaded test data"""
+    logger.debug('Received request to run matching tests')
+    try:
+        # Check if file was uploaded
+        if 'testDataFile' not in request.files:
+            return jsonify({'success': False, 'error': 'No test data file provided'}), 400
+
+        file = request.files['testDataFile']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+        # Read and parse the file
+        file_content = file.read().decode('utf-8')
+
+        # Parse as JSON
+        try:
+            test_data = json.loads(file_content)
+        except json.JSONDecodeError as e:
+            return jsonify({'success': False, 'error': f'Invalid JSON format: {str(e)}'}), 400
+
+        # Validate test data structure
+        if not isinstance(test_data, dict) or 'mentors' not in test_data or 'queries' not in test_data:
+            return jsonify({
+                'success': False, 
+                'error': 'Invalid test data format. Must contain "mentors" and "queries" arrays.'
+            }), 400
+
+        # Import the test module functions
+        from flask_app.tests.ai_matching import prepare_mentor_data, prepare_query_data
+
+        # Prepare mentor data
+        mentors = test_data.get('mentors', [])
+        prepared_mentors = prepare_mentor_data(mentors)
+        
+        # Store mentor embeddings
+        for mentor in prepared_mentors:
+            # Generate embedding data from mentor profile
+            embedding_data = {
+                "firstName": mentor["profile"]["firstName"],
+                "lastName": mentor["profile"]["lastName"],
+                "primarySubject": mentor["profile"]["primarySubject"],
+                "mentorSkills": mentor["profile"]["mentorSkills"]
+            }
+            
+            # Store the embeddings
+            embedding_factory.store_embedding(mentor["cognito_sub"], embedding_data)
+        
+        # Run tests for each query
+        queries = test_data.get('queries', [])
+        passed = 0
+        total = len(queries)
+        detailed_results = []
+        
+        for i, query in enumerate(queries):
+            logger.debug(f"Testing query {i+1}/{total}...")
+            
+            # Prepare query data
+            prepared_query = prepare_query_data(query)
+            
+            # Get matches using the algorithm
+            matches = the_algorithm.get_closest_embeddings(
+                "test-user-id",  # Use a dummy user ID for testing
+                prepared_query,
+                limit=10  # Get more than 3 to see where the target mentor ranks
+            )
+            
+            # Check if the target mentor is in the top 3 matches
+            target_mentor_id = query["targetMentorId"]
+            target_in_top3 = False
+            target_rank = None
+            
+            for rank, match in enumerate(matches[:3], 1):
+                if match["user_id"] == target_mentor_id:
+                    target_in_top3 = True
+                    target_rank = rank
+                    break
+            
+            # If not in top 3, find the actual rank if present
+            if not target_in_top3:
+                for rank, match in enumerate(matches, 1):
+                    if match["user_id"] == target_mentor_id:
+                        target_rank = rank
+                        break
+            
+            # Record the result
+            result = {
+                "query_index": i,
+                "query_name": f"{query['firstName']} {query['lastName']}",
+                "target_mentor_id": target_mentor_id,
+                "target_mentor_name": next((f"{m['firstName']} {m['lastName']}" for m in mentors if m["id"] == target_mentor_id), "Unknown"),
+                "target_in_top3": target_in_top3,
+                "target_rank": target_rank,
+                "passed": target_in_top3
+            }
+            detailed_results.append(result)
+            
+            if target_in_top3:
+                passed += 1
+        
+        # Calculate pass rate
+        pass_rate = (passed / total) * 100 if total > 0 else 0
+        
+        # Format results
+        results = {
+            "summary": {
+                "passed": passed,
+                "total": total,
+                "pass_rate": pass_rate
+            },
+            "detailed_results": detailed_results
+        }
+        
+        logger.info(f"Matching tests completed: {passed}/{total} passed ({pass_rate:.2f}%)")
+        return jsonify({"success": True, "results": results}), 200
+        
+    except Exception as e:
+        logger.error(f'Error running matching tests: {str(e)}')
         logger.exception(e)
         return jsonify({'success': False, 'error': str(e)}), 500

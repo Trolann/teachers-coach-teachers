@@ -9,32 +9,165 @@
         <span id="progressCounter" style="display: none;" class="alert-warning px-2 rounded"></span>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Generate Fake Mentors</h5>
-            
-            <form id="generateForm" onsubmit="handleSubmit(event)">
-                <div class="mb-3">
-                    <label for="numProfiles" class="form-label">Number of Profiles to Generate</label>
-                    <input type="number" class="form-control" id="numProfiles" name="numProfiles" min="1" max="100" value="5">
-                </div>
+    <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab" aria-controls="generate" aria-selected="true">Generate Mentors</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="matching-tab" data-bs-toggle="tab" data-bs-target="#matching" type="button" role="tab" aria-controls="matching" aria-selected="false">AI Matching Tests</button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="generate" role="tabpanel" aria-labelledby="generate-tab">
 
-                <h6>Fields to Generate</h6>
-                <div class="mb-3">
-                    <ul class="list-group">
-                        {% for field in profile_fields %}
-                        <li class="list-group-item">{{ field }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Generate Fake Mentors</h5>
+                    
+                    <form id="generateForm" onsubmit="handleSubmit(event)">
+                        <div class="mb-3">
+                            <label for="numProfiles" class="form-label">Number of Profiles to Generate</label>
+                            <input type="number" class="form-control" id="numProfiles" name="numProfiles" min="1" max="100" value="5">
+                        </div>
 
-                <button type="submit" class="btn btn-primary">Generate Profiles</button>
-            </form>
+                        <h6>Fields to Generate</h6>
+                        <div class="mb-3">
+                            <ul class="list-group">
+                                {% for field in profile_fields %}
+                                <li class="list-group-item">{{ field }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Generate Profiles</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="matching" role="tabpanel" aria-labelledby="matching-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">AI Matching Tests</h5>
+                    
+                    <form id="matchingTestForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="testDataFile" class="form-label">Upload Test Data JSON</label>
+                            <input type="file" class="form-control" id="testDataFile" name="testDataFile" accept=".json">
+                            <div class="form-text">Upload a JSON file containing mentor profiles and test queries.</div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Run Matching Tests</button>
+                    </form>
+                    
+                    <div id="testResults" class="mt-4" style="display: none;">
+                        <h6>Test Results</h6>
+                        <div class="alert alert-info">
+                            <div id="testSummary"></div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Query</th>
+                                        <th>Target Mentor</th>
+                                        <th>Rank</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="testResultsTable">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+// Matching test form submission
+document.getElementById('matchingTestForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const submitButton = this.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Running tests...';
+    
+    try {
+        const formData = new FormData(this);
+        const fileInput = document.getElementById('testDataFile');
+        
+        if (!fileInput.files.length) {
+            alert('Please select a test data file');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Run Matching Tests';
+            return;
+        }
+        
+        const response = await fetch('/admin/fake-mentors/run-matching-tests', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayTestResults(data.results);
+        } else {
+            alert('Error running tests: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error running tests: ' + error.message);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Run Matching Tests';
+    }
+});
+
+function displayTestResults(results) {
+    const testResults = document.getElementById('testResults');
+    const testSummary = document.getElementById('testSummary');
+    const testResultsTable = document.getElementById('testResultsTable');
+    
+    // Display the results section
+    testResults.style.display = 'block';
+    
+    // Update summary
+    const summary = results.summary;
+    testSummary.innerHTML = `
+        <strong>Results:</strong> ${summary.passed}/${summary.total} tests passed (${summary.pass_rate.toFixed(2)}%)
+    `;
+    
+    // Clear previous results
+    testResultsTable.innerHTML = '';
+    
+    // Add rows for each test
+    results.detailed_results.forEach(result => {
+        const row = document.createElement('tr');
+        
+        // Set row color based on pass/fail
+        if (result.passed) {
+            row.classList.add('table-success');
+        } else {
+            row.classList.add('table-danger');
+        }
+        
+        row.innerHTML = `
+            <td>${result.query_name}</td>
+            <td>${result.target_mentor_name}</td>
+            <td>${result.target_rank !== null ? result.target_rank : 'Not found'}</td>
+            <td>${result.passed ? '<span class="badge bg-success">PASS</span>' : '<span class="badge bg-danger">FAIL</span>'}</td>
+        `;
+        
+        testResultsTable.appendChild(row);
+    });
+}
+
 async function updateMentorCount() {
     try {
         const response = await fetch('/admin/fake-mentors/count');
