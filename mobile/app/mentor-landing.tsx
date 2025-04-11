@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
-import { View, Text, Switch, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, Switch, StyleSheet, Image, TouchableOpacity, ImageBackground } from 'react-native';
 import SwipeCards from 'react-native-swipe-cards';
 
-const mentees = [
-  { id: 1, name: 'Alex Johnson', district: 'Sacramento City Unified School District', goal: 'Improve teaching skills in math' },
-  { id: 2, name: 'Maria Gomez', district: 'East Side Union High School District', goal: 'Explore science curriculum options' } // Dummy mentees
+const mentees = [ // Dummy mentees
+  {
+    id: 1,
+    name: 'Alex Johnson',
+    primarySubject: 'Math',
+    district: 'Sacramento City Unified School District',
+    //goal: 'Improve teaching skills in math',
+    image: require('../assets/images/mentor-profile-picture.png'),
+  },
+  {
+    id: 2,
+    name: 'Maria Gomez',
+    primarySubject: 'Science',
+    district: 'East Side Union High School District',
+    //goal: 'Explore science curriculum options',
+    image: require('../assets/images/mentor-profile-picture.png'),
+  },
 ];
 
 const MentorLandingScreen = () => {
@@ -15,11 +29,15 @@ const MentorLandingScreen = () => {
 
   const toggleSwitch = () => setIsOnline(previousState => !previousState);
 
-  const Card = ({ name, district, goal }) => (
+  const Card = ({ name, primarySubject, district, image }) => (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>{name}</Text>
-      <Text style={styles.cardText}>District: {district}</Text>
-      <Text style={styles.cardText}>Goal: {goal}</Text>
+      <ImageBackground source={image} style={styles.cardImage} imageStyle={{ borderRadius: 16 }}>
+        <View style={styles.cardOverlay}>
+          <Text style={styles.cardTitle}>{name}</Text>
+          <Text style={styles.cardText}>Primary Subject: {primarySubject}</Text>
+          <Text style={styles.cardText}>School District: {district}</Text>
+        </View>
+      </ImageBackground>
     </View>
   );
 
@@ -82,8 +100,10 @@ const MentorLandingScreen = () => {
             renderNoMoreCards={() => <Text>No more mentees</Text>}
             handleYes={handleYes}
             handleNo={handleNo}
-            showYes={false}
-            showNo={false}
+            showYup={false}
+            showNope={false}
+            yupView={<View />}
+            nopeView={<View />}
           />
           <TouchableOpacity style={styles.acceptButton} onPress={handleAccept}>
             <Text style={styles.acceptButtonText}>Accept</Text>
@@ -162,8 +182,9 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   card: {
-    width: 300,
-    padding: 20,
+    width: 240,
+    height: 320,
+    padding: 0,
     backgroundColor: '#f0f0f0',
     borderRadius: 16,
     alignItems: 'center',
@@ -171,17 +192,30 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
+    overflow: 'hidden',
+  },
+  
+  cardImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end',
+  },
+  cardOverlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    padding: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   cardTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
-    marginBottom: 10,
+    color: '#fff',
+    marginBottom: 4,
   },
   cardText: {
-    fontSize: 16,
-    marginBottom: 6,
-    color: '#333',
-  },
+    fontSize: 14,
+    color: '#ddd',
+  },  
   acceptButton: {
     marginTop: 20,
     paddingVertical: 12,
