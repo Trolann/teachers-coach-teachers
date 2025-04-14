@@ -17,6 +17,9 @@ def create_api_blueprint():
         from .users.routes import user_bp
         api_bp.register_blueprint(user_bp, url_prefix='/users')
 
+        from .matching.routes import matching_bp
+        api_bp.register_blueprint(matching_bp, url_prefix='/matching')
+
         return api_bp
 
     except Exception as e:
