@@ -216,7 +216,6 @@ class BackendManager {
             }
             
             const response = await this.sendRequest('/api/users/get_application', 'GET');
-            console.error('Response in getApplication:', response);
 
             if (!response.ok) {
                 const errorData = await response.json();

@@ -3,7 +3,7 @@ from extensions.logging import get_logger
 from models.credits import CreditRedemption, CreditPool, CreditPoolAccess
 from models.user import User
 from extensions.database import db
-from extensions.cognito import require_auth, CognitoTokenVerifier
+from extensions.cognito import require_auth, CognitoTokenVerifier, parse_headers
 from datetime import datetime
 
 logger = get_logger(__name__)
@@ -35,7 +35,7 @@ def list_pools():
             user = User.query.filter_by(email=user_email).first()
             if not user:
                 return jsonify({'error': 'User not found'}), 404
-            pools = CreditPool.query.filter_by(owner_id=user.id).all()
+            pools = CreditPool.query.filter_by(owner_id=user.cognito_sub).all()
         else:
             # If no email, get pools for current user
             pools = CreditPool.query.filter_by(owner_id=session.get('user_id')).all()
@@ -249,7 +249,20 @@ def get_available_credits():
     """Get the total number of credits available to the current user"""
     try:
         verifier = CognitoTokenVerifier()
-        user_info = verifier.get_user_attributes(session.get('access_token'))
+        if not session.get('access_token'):
+            auth_header = request.headers.get('Authorization')
+            # Parse tokens from request headers
+            if isinstance(auth_header, str):
+                token = auth_header.replace('Bearer ', '')
+                refresh_token = ''
+                id_token = ''
+                expires_in = ''
+            else:
+                token, refresh_token, id_token, expires_in = parse_headers(auth_header)
+        else:
+            token = session.get('access_token')
+        user_info = verifier.get_user_attributes(token)
+
         user_email = user_info.get('email')
         
         if not user_email:
