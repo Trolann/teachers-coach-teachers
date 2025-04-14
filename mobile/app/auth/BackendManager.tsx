@@ -1,5 +1,8 @@
 import { API_URL } from '../../config/api';
 import TokenManager from './TokenManager';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 /**
  * BackendManager handles all API calls to the backend,
@@ -12,9 +15,59 @@ class BackendManager {
     private tokenManager: TokenManager;
     private cachedUserName: string = "User";
     private cachedUserData: any = null;
+    private readonly USER_NAME_KEY = 'cached_user_name';
 
     private constructor() {
         this.tokenManager = TokenManager.getInstance();
+        // Load cached name from storage when instance is created
+        this.loadCachedName();
+    }
+
+    /**
+     * Load cached user name from secure storage
+     */
+    private async loadCachedName(): Promise<void> {
+        try {
+            const storedName = await this.getStorageItem(this.USER_NAME_KEY);
+            if (storedName) {
+                this.cachedUserName = storedName;
+            }
+        } catch (error) {
+            console.error('Error loading cached name:', error);
+        }
+    }
+
+    /**
+     * Store item in secure storage based on platform
+     */
+    private async setStorageItem(key: string, value: string): Promise<void> {
+        if (Platform.OS === 'web') {
+            await AsyncStorage.setItem(key, value);
+        } else {
+            await SecureStore.setItemAsync(key, value);
+        }
+    }
+
+    /**
+     * Get item from secure storage based on platform
+     */
+    private async getStorageItem(key: string): Promise<string | null> {
+        if (Platform.OS === 'web') {
+            return await AsyncStorage.getItem(key);
+        } else {
+            return await SecureStore.getItemAsync(key);
+        }
+    }
+
+    /**
+     * Remove item from secure storage based on platform
+     */
+    private async removeStorageItem(key: string): Promise<void> {
+        if (Platform.OS === 'web') {
+            await AsyncStorage.removeItem(key);
+        } else {
+            await SecureStore.deleteItemAsync(key);
+        }
     }
 
     /**
@@ -170,6 +223,8 @@ class BackendManager {
             // Cache the user name if available
             if (data && data.profile_data && data.profile_data.firstName) {
                 this.cachedUserName = data.profile_data.firstName;
+                // Store in persistent storage
+                await this.setStorageItem(this.USER_NAME_KEY, data.profile_data.firstName);
             }
             
             return data;
@@ -448,6 +503,9 @@ class BackendManager {
             this.getApplication().then(applicationData => {
                 if (applicationData && applicationData.profile_data && applicationData.profile_data.firstName) {
                     this.cachedUserName = applicationData.profile_data.firstName;
+                    // Store in persistent storage
+                    this.setStorageItem(this.USER_NAME_KEY, applicationData.profile_data.firstName)
+                        .catch(err => console.error('Error storing name:', err));
                 }
             }).catch(error => {
                 console.error('Error updating user name in background:', error);
@@ -464,9 +522,16 @@ class BackendManager {
     /**
      * Clear cached user data (useful after logout)
      */
-    public clearUserCache(): void {
+    public async clearUserCache(): Promise<void> {
         this.cachedUserName = "User";
         this.cachedUserData = null;
+        
+        // Clear from persistent storage
+        try {
+            await this.removeStorageItem(this.USER_NAME_KEY);
+        } catch (error) {
+            console.error('Error clearing cached name:', error);
+        }
     }
 
     /**
