@@ -42,7 +42,6 @@ export default function MentorApplicationScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.card}>
           
           {/* Logo/Icon */}
           <View style={styles.logoContainer}>
@@ -165,8 +164,6 @@ export default function MentorApplicationScreen() {
           >
             <ThemedText style={styles.buttonText}>Submit</ThemedText>
           </TouchableOpacity>
-
-        </View>
       </ScrollView>
     </ThemedView>
   );

@@ -94,7 +94,7 @@ export default function FindMentorScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Header subtitle="Set Your Mentor Preferences"/>
+        <Header subtitle="Set Your Mentor Preferences" />
         <View style={styles.formContainer}>
           <View style={styles.mentorContainer}>
             <Text style={styles.title}>Find a Mentor</Text>

@@ -33,7 +33,7 @@ export default function MenteeApplicationScreen() {
         [
           {
             text: "Continue",
-            onPress: () => router.replace('/(tabs)')
+            onPress: () => router.replace('/pre-matching-mentee')
           }
         ]
       );

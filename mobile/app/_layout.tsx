@@ -1,42 +1,28 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
+import React from 'react';
 import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { ThemeProvider } from '@react-navigation/native';
+import { useColorScheme } from 'react-native';
+import { DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-      setIsReady(true);
-    }
-  }, [loaded]);
-
-  if (!isReady) {
-    return null;
-  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}> 
+      <Stack
+        screenOptions={{
+          headerShown: false, // 🔥 globally remove all headers
+          animation: 'slide_from_right', // 👈 accordion-style right-slide
+          presentation: 'card', // 👌 native feel
+        }}
+      >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="pre-application" />
         <Stack.Screen name="pre-matching-mentee" />
-        <Stack.Screen name="+not-found" />
+        <Stack.Screen name="+not-found" options={{ animation: 'fade' }} />
       </Stack>
+
       <StatusBar style="auto" />
     </ThemeProvider>
   );

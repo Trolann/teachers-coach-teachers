@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, Animated, Platform } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, Animated, Platform, Pressable, Button, Linking } from 'react-native';
 import SwipeCards from 'react-native-swipe-cards';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Href, Link, useRouter } from 'expo-router';
 import Header from '@/components/Header';
+import MenteeCard from '@/components/MenteeCard';
 
 export default function MenteeLandingScreen() {
   const router = useRouter();
@@ -45,18 +46,29 @@ export default function MenteeLandingScreen() {
       console.log(`Liked ${card.name}`);
       setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.id !== card.id));
     });
+
+    const handleJoin = () => {
+      // Navigate to the stream-video screen with card props
+      router.push({
+        pathname: '/stream-video',
+        params: {
+          mentor: JSON.stringify(mentorList[0]),
+        },
+      });
+    };
+
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Alert.alert(
         "Join Call",
         `Do you want to join a call with ${card.name}?`,
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Join", onPress: () => console.log(`Joining call with ${card.name}`) }
+          { text: "Join", onPress: handleJoin },
         ]
       );
     } else if (Platform.OS === 'web') {
       if (window.confirm(`Do you want to join a call with ${card.name}?`)) {
-        console.log(`Joining call with ${card.name}`);
+        handleJoin();
       }
     }
   };
@@ -74,46 +86,21 @@ export default function MenteeLandingScreen() {
 
   // TODO: Handle Refine Search to go back button
   const handleRefineSearch = () => {
-    router.push('/pre-matching-mentee');
+    router.navigate('./pre-matching-mentee');
   };
 
   const renderCard = (mentor) => {
     return (
       <Animated.View style={{ transform: [{ translateX: new Animated.Value(0) }] }}>
-        <View style={styles.card}>
-          {/* Green Online Indicator */}
-          <View style={styles.onlineIndicator} />
-
-          <Image source={mentor.image} style={styles.mentorImage} />
-
-          {/* Info Icon */}
-          <TouchableOpacity onPress={() => toggleInfo(mentor.id)} style={styles.infoButton}>
-            <Ionicons name="information-circle-outline" size={30} color="#666" />
-          </TouchableOpacity>
-
-          {/* Info Bubble (Appears Only on Toggle) */}
-          {infoVisible === mentor.id && (
-            <View style={styles.infoBubble}>
-              <Text style={styles.infoText}>
-                {mentor.bio}
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.overlay}>
-            <Text style={styles.mentorName}>{mentor.name}, {mentor.subject}</Text>
-            <Text style={styles.mentorLocation}>
-              <Ionicons name="location-outline" size={16} /> {mentor.location}
-            </Text>
-            <View style={styles.ratingContainer}>
-              <Text style={styles.mentorRating}>⭐️ {mentor.rating.toFixed(1)}</Text>
-            </View>
-          </View>
-        </View>
+        <MenteeCard
+          mentor={mentor}
+          infoVisible={infoVisible}
+          toggleInfo={toggleInfo}
+        />
       </Animated.View>
     );
   }
-  
+
 
 
   // Message when no cards are left
@@ -128,12 +115,11 @@ export default function MenteeLandingScreen() {
   return (
     <View style={styles.container}>
       {/* Header Section */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <Header subtitle="Swipe Right for a Mentor" />
-        </View>
+      <View style={{ paddingHorizontal: 20 }}>
+        <Header subtitle="Swipe Right for a Mentor" />
+      </View>
 
-        {/* Swipe Cards */}
-        
+      {/* Swipe Cards */}
       <View style={styles.swipeContainer}>
         <SwipeCards
           cards={mentorList}
@@ -174,11 +160,14 @@ export default function MenteeLandingScreen() {
         {/* Heart Button -> Right Swipe */}
         <TouchableOpacity
           style={styles.likeButton}
-          onPress={() => mentorList.length > 0 && handleLike(mentorList[0])}>
+          onPress={() => mentorList.length > 0 && handleLike(JSON.stringify(mentorList[0]))}>
           <Ionicons name="heart-circle-sharp" size={55} color="green" />
         </TouchableOpacity>
 
       </View>
+      {/* <TouchableOpacity onPress={() => router.navigate('/video-meeting-page')}>
+        <Ionicons name="call-outline" size={40} color="black" style={{ position: 'absolute', bottom: 20, right: 20 }} />
+      </TouchableOpacity> */}
     </View>
   );
 }
@@ -256,7 +245,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'green',
     zIndex: 10,
-  },  
+  },
   noMoreContainer: {
     alignItems: 'center',
     marginTop: 30,

@@ -2,7 +2,6 @@ import { Tabs, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import React from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
-
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
@@ -26,7 +25,7 @@ export default function TabLayout() {
 
         if (hasToken && isMounted) {
           console.log("User is authenticated. Redirecting to pre-application.");
-          router.replace('/pre-application');
+          router.navigate('/mentee-matching');
         } else if (isMounted) {
           console.log("No valid token found. Showing signup.");
           setIsAuthenticated(false);

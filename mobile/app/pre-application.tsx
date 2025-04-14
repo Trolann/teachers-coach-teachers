@@ -31,7 +31,7 @@ export default function PreApplicationScreen() {
   
       if (Platform.OS === 'web') {
         alert(message);
-        router.replace(redirectPath as Href<String | Object>);
+        router.replace(redirectPath);
       } else {
         Alert.alert(
           "Success 🎉",
@@ -40,7 +40,7 @@ export default function PreApplicationScreen() {
             {
               text: "Continue",
               onPress: () => {
-                router.replace(redirectPath as Href<String | Object>);
+                router.replace(redirectPath);
               },
             }
           ]

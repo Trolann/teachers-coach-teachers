@@ -1,6 +1,6 @@
 // app/auth/login.tsx
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -15,17 +15,17 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-        const success = await TokenManager.getInstance().loginWithCredentials(email, password);
-        console.error('Login status:', success);
-        if (success) {
-          router.replace('/pre-application');
-        } else {
-          console.error('Invalid credentials');
-        }
-  } catch (error) {
-    console.error('Login failed:', error);
-  }
-};
+      const success = await TokenManager.getInstance().loginWithCredentials(email, password);
+      console.error('Login status:', success);
+      if (success) {
+        router.replace('/pre-application');
+      } else {
+        Alert.alert('invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -71,11 +71,11 @@ export default function LoginScreen() {
                 placeholderTextColor="#848282"
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Ionicons 
-                name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                size={20}
-                color="#848282" 
-              />
+                <Ionicons
+                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#848282"
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -93,7 +93,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Sign Up Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.signUpButton}
             onPress={() => router.push('/auth/signup')}
           >
