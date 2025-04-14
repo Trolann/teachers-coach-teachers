@@ -243,6 +243,49 @@ def generate_credits():
         db.session.rollback()
         return jsonify({'error': 'Failed to generate codes'}), 500
 
+@credits_bp.route('/available', methods=['GET'], endpoint='get_available_credits')
+@require_auth
+def get_available_credits():
+    """Get the total number of credits available to the current user"""
+    try:
+        verifier = CognitoTokenVerifier()
+        user_info = verifier.get_user_attributes(session.get('access_token'))
+        user_email = user_info.get('email')
+        
+        if not user_email:
+            logger.error("No email found in session during credit check")
+            return jsonify({'error': 'User email not found in session'}), 400
+            
+        # Get all pools the user has access to
+        pool_access = CreditPoolAccess.query.filter_by(user_email=user_email).all()
+        pool_ids = [access.pool_id for access in pool_access]
+        
+        # Get all pools owned by the user
+        user = User.query.filter_by(email=user_email).first()
+        if user:
+            owned_pools = CreditPool.query.filter_by(owner_id=user.cognito_sub).all()
+            pool_ids.extend([pool.id for pool in owned_pools])
+            
+        # Remove duplicates
+        pool_ids = list(set(pool_ids))
+        
+        # Get the total credits available
+        total_credits = 0
+        pools = CreditPool.query.filter(CreditPool.id.in_(pool_ids)).all()
+        for pool in pools:
+            if pool.credits_available is not None:
+                total_credits += pool.credits_available
+                
+        return jsonify({
+            'success': True,
+            'total_credits_available': total_credits,
+            'pools_count': len(pools)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting available credits: {e}")
+        return jsonify({'error': 'Failed to get available credits'}), 500
+
 @credits_bp.route('/debug/session', methods=['GET'])
 @require_district_admin
 def debug_session():

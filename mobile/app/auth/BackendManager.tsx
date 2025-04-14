@@ -396,6 +396,28 @@ class BackendManager {
     }
 
     /**
+     * Get the total number of credits available to the current user
+     * 
+     * @returns The total number of credits available across all pools
+     */
+    public async getAvailableCredits(): Promise<number> {
+        try {
+            const response = await this.sendRequest('/api/credits/available', 'GET');
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get available credits');
+            }
+            
+            const data = await response.json();
+            return data.total_credits_available;
+        } catch (error) {
+            console.error('Error getting available credits:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Add additional API methods here. Every backend API call should go through here.
      */
 }
