@@ -24,9 +24,9 @@ class BackendManager {
     }
 
     /**
-     * Get username
+     * Get username (synchronous version for immediate UI display)
      */
-    public async getCachedUserName(): Promise<string> {
+    public getCachedUserName(): string {
         return this.cachedUserName;
     }
 
