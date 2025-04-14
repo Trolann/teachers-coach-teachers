@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Switch, StyleSheet, Image, TouchableOpacity, ImageBackground } from 'react-native';
 import SwipeCards from 'react-native-swipe-cards';
 
+///*
 const mentees = [ // Dummy mentees
   {
     id: 1,
@@ -20,6 +21,9 @@ const mentees = [ // Dummy mentees
     image: require('../assets/images/mentor-profile-picture.png'),
   },
 ];
+//*/
+
+//const mentees = [];
 
 const MentorLandingScreen = () => {
   const [isOnline, setIsOnline] = useState(false);
