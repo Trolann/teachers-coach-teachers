@@ -18,7 +18,7 @@ export function Header(props: { subtitle: string }) {
 
         <TouchableOpacity style={styles.profileSection} onPress={() => setShowNav(true)}>
           <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
-          <Text style={styles.tokenText}>12 🪙</Text>
+          <Text style={styles.tokenText}>16 🪙</Text>
         </TouchableOpacity>
       </View>
 
