@@ -145,17 +145,21 @@ def get_application():
     if not user:
         return jsonify({'error': 'User not found or invalid token'}), 401
 
-    if user.user_type != UserType.MENTOR:
-        return jsonify({'error': 'No application found'}), 404
-    
-    logger.debug(f"Application retrieved for user: {user.cognito_sub}")
+    # if user.user_type != UserType.MENTOR:
+    #     return jsonify({'error': 'No application found'}), 404
 
-    return jsonify({
+
+    return_dict = {
         'user_id': user.cognito_sub,
-        'status': user.application_status.value,
+        'user_name': user.email,
+        'status': user.application_status,
         'submitted_at': user.created_at.isoformat(),
         'profile_data': user.profile
-    })
+    }
+    logger.debug(f"Application retrieved for user: {user.cognito_sub}")
+    logger.error(f'Application data being returned: {return_dict=}')
+
+    return return_dict
 
 @user_bp.route('/get_application_status', methods=['GET'])
 @require_auth
