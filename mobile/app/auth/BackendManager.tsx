@@ -156,7 +156,8 @@ class BackendManager {
             }
             
             const response = await this.sendRequest('/api/users/get_application', 'GET');
-            
+            console.error('Response in getApplication:', response);
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to get application');
@@ -442,14 +443,16 @@ class BackendManager {
         try {
             // Return cached name if available
             if (this.cachedUserName) {
-                return this.cachedUserName;
+                console.error('Using cached user name:', this.cachedUserName);
+                return 'UserName';
             }
             
             // Try to get the name from application data
             const applicationData = await this.getApplication();
-            if (applicationData && applicationData.name) {
-                this.cachedUserName = applicationData.name;
-                return applicationData.name;
+            // if applicationData has the key profile_data
+            if (applicationData && applicationData.profile_data) {
+                this.cachedUserName = applicationData.profile_data.firstName;
+                return applicationData.profile_data.firstName;
             }
             
             return null;
