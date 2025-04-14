@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, Switch, StyleSheet, Image, TouchableOpacity, ImageBackground } from 'react-native';
-import SwipeCards from 'react-native-swipe-cards';
+import Swiper from 'react-native-deck-swiper';
 
-///*
-const mentees = [ // Dummy mentees
+// Dummy mentees
+const mentees = [
   {
     id: 1,
     name: 'Alex Johnson',
@@ -21,14 +21,15 @@ const mentees = [ // Dummy mentees
     image: require('../assets/images/mentor-profile-picture.png'),
   },
 ];
-//*/
-
-//const mentees = [];
 
 const MentorLandingScreen = () => {
   const [isOnline, setIsOnline] = useState(false);
   const [acceptedMentee, setAcceptedMentee] = useState(null);
+  const swiperRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [allSwiped, setAllSwiped] = useState(false);
+  const [buttonsDisabled, setButtonsDisabled] = useState(false);
+
   const userName = 'Susie'; // Replace with dynamic username
 
   const toggleSwitch = () => setIsOnline(previousState => !previousState);
@@ -46,17 +47,18 @@ const MentorLandingScreen = () => {
   );
 
   const handleAccept = () => {
-    const mentee = mentees[currentIndex];
-    setAcceptedMentee(mentee);
-    console.log('Accepted Mentee:', mentee);
-  };
-
-  const handleYes = () => {
-    setCurrentIndex(i => i + 1);
-  };
-
-  const handleNo = () => {
-    setCurrentIndex(i => i + 1);
+    if (swiperRef.current) {
+      const mentee = mentees[currentIndex];
+      setAcceptedMentee(mentee);
+      setButtonsDisabled(true);
+      console.log('Accepted Mentee:', mentee);
+    }
+  };  
+  
+  const handleReject = () => {
+    if (!buttonsDisabled && swiperRef.current) {
+      swiperRef.current.swipeLeft();
+    }
   };
 
   const renderCard = (cardData) => <Card {...cardData} />;
@@ -95,25 +97,57 @@ const MentorLandingScreen = () => {
       </View>
 
       {/* Mentee Cards */}
-      {isOnline && mentees.length > 0 ? (
-        <View style={{ flex: 1, alignItems: 'center' }}>
+      {isOnline && mentees.length > 0 && !allSwiped ? (
+        <View style={{ alignItems: 'center' }}>
           <Text style={styles.noMatchesTitle}>Mentee Request ❤️</Text>
-          <SwipeCards
-            cards={mentees}
-            renderCard={renderCard}
-            renderNoMoreCards={() => <Text>No more mentees</Text>}
-            handleYes={handleYes}
-            handleNo={handleNo}
-            showYup={false}
-            showNope={false}
-            yupView={<View />}
-            nopeView={<View />}
-          />
-          <TouchableOpacity style={styles.acceptButton} onPress={handleAccept}>
-            <Text style={styles.acceptButtonText}>Accept</Text>
-          </TouchableOpacity>
+          <View style={styles.swiperWrapper}>
+            <Swiper
+              ref={swiperRef}
+              cards={mentees}
+              cardIndex={currentIndex}
+              renderCard={renderCard}
+              onSwiped={(cardIndex) => {
+                setCurrentIndex(cardIndex + 1);
+                setButtonsDisabled(false);
+              }}
+              onSwipedAll={() => {
+                console.log('All mentee requests rejected');
+                setAllSwiped(true);
+              }}
+              stackSize={2}
+              backgroundColor="transparent"
+              cardVerticalMargin={20}
+              disableTopSwipe
+              disableBottomSwipe
+              containerStyle={styles.swiperContainer}
+              swipeBackCard={false}
+            />
+            {buttonsDisabled && (   // Disable swipe interaction when mentor clicks "Accept"
+              <View style={styles.overlayBlocker} pointerEvents="auto" />
+            )}
+          </View>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.rejectButton, buttonsDisabled && { opacity: 0.5 }]}
+              onPress={handleReject}
+              disabled={buttonsDisabled}
+            >
+              <Text style={styles.rejectButtonText}>Reject</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.acceptButton, buttonsDisabled && { opacity: 0.5 }]}
+              onPress={handleAccept}
+              disabled={buttonsDisabled}
+            >
+              <Text style={styles.acceptButtonText}>Accept</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      ) : isOnline ? (
+      ) : isOnline && mentees.length > 0 && allSwiped ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyCardText}>No more mentees</Text>
+        </View>
+      ) : isOnline && mentees.length === 0 ? (
         <View style={styles.noMatchesContainer}>
           <Text style={styles.noMatchesTitle}>No Mentee Matches 💔</Text>
           <Text style={styles.noMatchesText}>
@@ -185,10 +219,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
+  swiperWrapper: {
+    height: 360,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  swiperContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    paddingHorizontal: 0,
+    marginHorizontal: 0,
+  },  
   card: {
-    width: 240,
+    width: '90%',
+    maxWidth: 320,
     height: 320,
-    padding: 0,
     backgroundColor: '#f0f0f0',
     borderRadius: 16,
     alignItems: 'center',
@@ -197,8 +244,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
     overflow: 'hidden',
+    alignSelf: 'center',
+    marginLeft: -40,
   },
-  
   cardImage: {
     width: '100%',
     height: '100%',
@@ -219,17 +267,64 @@ const styles = StyleSheet.create({
   cardText: {
     fontSize: 14,
     color: '#ddd',
-  },  
+  },
+  emptyCard: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 320,
+    width: '90%',
+    maxWidth: 320,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignSelf: 'center',
+    padding: 24,
+  },
+  emptyCardText: {
+    fontSize: 20,
+    color: '#888',
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 32,
+    gap: 20,
+  },
+  rejectButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    backgroundColor: '#FF3B30',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rejectButtonText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: '600',
+  },
   acceptButton: {
-    marginTop: 20,
     paddingVertical: 12,
     paddingHorizontal: 40,
     backgroundColor: '#34C759',
     borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   acceptButtonText: {
     fontSize: 18,
     color: '#fff',
     fontWeight: '600',
+  },
+  overlayBlocker: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10,
   },
 });
