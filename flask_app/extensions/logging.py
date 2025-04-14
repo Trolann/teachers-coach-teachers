@@ -98,6 +98,8 @@ def setup_logger():
     getLogger('botocore').setLevel('INFO')
     getLogger('urllib3').setLevel('INFO')
     getLogger('faker').setLevel('INFO')
+    getLogger('openai').setLevel('INFO')
+    getLogger('httpcore').setLevel('INFO')
 
     return root_logger
 
