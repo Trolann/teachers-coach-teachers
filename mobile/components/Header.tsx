@@ -7,24 +7,31 @@ export function Header(props: { subtitle: string }) {
   const [showNav, setShowNav] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState<string | null>(null);
   const router = useRouter();
   const backendManager = BackendManager.getInstance();
   
   useEffect(() => {
-    const fetchCredits = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
+        
+        // Fetch credits
         const availableCredits = await backendManager.getAvailableCredits();
         setCredits(availableCredits);
+        
+        // Fetch user name
+        const name = await backendManager.getUserName();
+        setUserName(name || 'User');
       } catch (error) {
-        console.error('Error fetching credits:', error);
+        console.error('Error fetching data:', error);
         setCredits(0); // Default to 0 on error
       } finally {
         setLoading(false);
       }
     };
     
-    fetchCredits();
+    fetchData();
   }, []);
 
   return (
@@ -32,7 +39,7 @@ export function Header(props: { subtitle: string }) {
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.greeting}>
-            Hi, Jessica <Text style={styles.wave}>👋</Text>
+            Hi, {userName || 'User'} <Text style={styles.wave}>👋</Text>
           </Text>
           <Text style={styles.subtitle}>{props.subtitle}</Text>
         </View>
@@ -70,7 +77,12 @@ export function Header(props: { subtitle: string }) {
               <Text style={styles.navItem}>⚙️  Settings</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => { setShowNav(false); router.push('/auth/login'); }}>
+            <TouchableOpacity onPress={() => { 
+              setShowNav(false); 
+              // Clear user cache on logout
+              backendManager.clearUserCache();
+              router.push('/auth/login'); 
+            }}>
               <Text style={[styles.navItem, styles.logoutItem]}>🚪  Logout</Text>
             </TouchableOpacity>
 

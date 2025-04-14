@@ -10,6 +10,8 @@ import TokenManager from './TokenManager';
 class BackendManager {
     private static instance: BackendManager;
     private tokenManager: TokenManager;
+    private cachedUserName: string | null = null;
+    private cachedUserData: any = null;
 
     private constructor() {
         this.tokenManager = TokenManager.getInstance();
@@ -148,6 +150,11 @@ class BackendManager {
      */
     public async getApplication(): Promise<any> {
         try {
+            // Return cached data if available
+            if (this.cachedUserData) {
+                return this.cachedUserData;
+            }
+            
             const response = await this.sendRequest('/api/users/get_application', 'GET');
             
             if (!response.ok) {
@@ -155,7 +162,16 @@ class BackendManager {
                 throw new Error(errorData.error || 'Failed to get application');
             }
             
-            return await response.json();
+            const data = await response.json();
+            // Cache the user data
+            this.cachedUserData = data;
+            
+            // Cache the user name if available
+            if (data && data.name) {
+                this.cachedUserName = data.name;
+            }
+            
+            return data;
         } catch (error) {
             console.error('Error getting application:', error);
             throw error;
@@ -415,6 +431,40 @@ class BackendManager {
             console.error('Error getting available credits:', error);
             throw error;
         }
+    }
+
+    /**
+     * Get the user's full name from application data
+     * 
+     * @returns The user's full name or null if not available
+     */
+    public async getUserName(): Promise<string | null> {
+        try {
+            // Return cached name if available
+            if (this.cachedUserName) {
+                return this.cachedUserName;
+            }
+            
+            // Try to get the name from application data
+            const applicationData = await this.getApplication();
+            if (applicationData && applicationData.name) {
+                this.cachedUserName = applicationData.name;
+                return applicationData.name;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error getting user name:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Clear cached user data (useful after logout)
+     */
+    public clearUserCache(): void {
+        this.cachedUserName = null;
+        this.cachedUserData = null;
     }
 
     /**
