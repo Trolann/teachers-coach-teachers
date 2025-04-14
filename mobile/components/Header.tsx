@@ -1,10 +1,31 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Modal, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import BackendManager from '../app/auth/BackendManager';
 
 export function Header(props: { subtitle: string }) {
   const [showNav, setShowNav] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const backendManager = BackendManager.getInstance();
+  
+  useEffect(() => {
+    const fetchCredits = async () => {
+      try {
+        setLoading(true);
+        const availableCredits = await backendManager.getAvailableCredits();
+        setCredits(availableCredits);
+      } catch (error) {
+        console.error('Error fetching credits:', error);
+        setCredits(0); // Default to 0 on error
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCredits();
+  }, []);
 
   return (
     <>
@@ -18,7 +39,11 @@ export function Header(props: { subtitle: string }) {
 
         <TouchableOpacity style={styles.profileSection} onPress={() => setShowNav(true)}>
           <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
-          <Text style={styles.tokenText}>16 🪙</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#666" style={styles.tokenLoader} />
+          ) : (
+            <Text style={styles.tokenText}>{credits ?? 0} 🪙</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -94,6 +119,10 @@ const styles = StyleSheet.create({
     color: '#333',
     marginTop: 4,
     textAlign: 'center',
+  },
+  tokenLoader: {
+    marginTop: 4,
+    height: 14, // Match the height of tokenText
   },
   modalOverlay: {
     flex: 1,
