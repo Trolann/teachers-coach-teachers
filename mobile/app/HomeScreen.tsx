@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from 'react';
-import { Image, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Header } from '@/components/Header';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import MenteeCard from '@/components/MenteeCard';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import MenteeCard from '@/components/MenteeCard';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = {
   goToCallScreen: () => void;
@@ -20,21 +20,23 @@ export const HomeScreen = ({ goToCallScreen }: Props) => {
   }, []);
 
   return (
-    <View style={styles.safeArea}>
-      {/* Confetti positioned absolutely over everything */}
-      <ConfettiCannon
-        count={80}
-        origin={{ x: -10, y: 0 }}
-        autoStart={false}
-        fadeOut={true}
-        ref={confettiRef}
-        explosionSpeed={400}
-        fallSpeed={2900}
-      />
-
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        {/* Confetti positioned absolutely over everything */}
+        <View style={StyleSheet.absoluteFill}>
+          <ConfettiCannon
+            count={80}
+            origin={{ x: -10, y: 0 }}
+            autoStart={false}
+            fadeOut={true}
+            ref={confettiRef}
+            explosionSpeed={400}
+            fallSpeed={2900}
+          />
+        </View>
+
         <Text style={styles.cardTitle}>
-          You've Matched with {mentor?.name || 'your mentor'} ❤️
+          You've Matched with {mentor?.name || 'your mentor'} 🥳
         </Text>
 
         <View style={styles.bottomContainer}>
@@ -45,13 +47,18 @@ export const HomeScreen = ({ goToCallScreen }: Props) => {
               toggleInfo={undefined}
             />
 
-            <TouchableOpacity style={styles.button} onPress={goToCallScreen}>
-              <Text style={styles.buttonText}>Join Video Call ☎️</Text>
-            </TouchableOpacity>
+
+
           </View>
         </View>
       </View>
-    </View>
+      <TouchableOpacity style={styles.button} onPress={goToCallScreen}>
+              <View style={styles.buttonContent}>
+                <Text style={styles.buttonText}>Join Video Call</Text>
+                <Ionicons name="videocam-outline" size={24} color="#fff" style={{ marginLeft: 8 }} />
+              </View>
+            </TouchableOpacity>
+    </SafeAreaView>
   );
 };
 
@@ -60,20 +67,19 @@ export const HomeScreen = ({ goToCallScreen }: Props) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f7f7f7',
   },
   absoluteFill: {
     position: 'absolute',
     top: 0,
     right: 0,
     bottom: 0,
-    left: 0
+    left: 0,
   },
 
   container: {
+    backgroundColor: '#f7f7f7',
     flex: 1,
-    paddingHorizontal: 15,
-    paddingTop: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -81,15 +87,16 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f7f7f7',
   },
 
   card: {
-    backgroundColor: '#fefefe',
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
     alignItems: 'center',
@@ -100,16 +107,18 @@ const styles = StyleSheet.create({
     color: '#222',
     marginBottom: 20,
     textAlign: 'center',
+    paddingBottom: 10,
   },
   button: {
     backgroundColor: '#00c851',
     paddingVertical: 12,
     paddingHorizontal: 25,
-    borderRadius: 10,
+    borderRadius: 0,
+    paddingBottom: 10,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: '500',
   },
 
@@ -128,6 +137,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: '#555',
     paddingBottom: 15,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
 });

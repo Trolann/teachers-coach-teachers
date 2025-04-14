@@ -8,6 +8,7 @@ import MenteeCard from '@/components/MenteeCard';
 
 export default function MenteeLandingScreen() {
   const router = useRouter();
+  const [matchedMentor, setMatchedMentor] = useState(null);
 
   const [infoVisible, setInfoVisible] = useState(null);
 
@@ -45,27 +46,28 @@ export default function MenteeLandingScreen() {
     }).start(() => {
       console.log(`Liked ${card.name}`);
       setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.id !== card.id));
+      setMatchedMentor(card);
     });
 
     const handleJoin = () => {
-      // Navigate to the stream-video screen with card props
       router.push({
         pathname: '/stream-video',
         params: {
           mentor: JSON.stringify(mentorList[0]),
         },
       });
+
     };
 
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Alert.alert(
-        "Join Call",
-        `Do you want to join a call with ${card.name}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Join", onPress: handleJoin },
-        ]
-      );
+      // Alert.alert(
+      //   "Join Call",
+      //   `Do you want to join a call with ${card.name}?`,
+      //   [
+      //     { text: "Cancel", style: "cancel" },
+      //     { text: "Join", onPress: handleJoin },
+      //   ]
+      // );
     } else if (Platform.OS === 'web') {
       if (window.confirm(`Do you want to join a call with ${card.name}?`)) {
         handleJoin();
@@ -165,9 +167,32 @@ export default function MenteeLandingScreen() {
         </TouchableOpacity>
 
       </View>
-      {/* <TouchableOpacity onPress={() => router.navigate('/video-meeting-page')}>
-        <Ionicons name="call-outline" size={40} color="black" style={{ position: 'absolute', bottom: 20, right: 20 }} />
-      </TouchableOpacity> */}
+      {matchedMentor && (
+        <View style={styles.congratsOverlay}>
+          <View style={styles.congratsCard}>
+            <Text style={styles.congratsTitle}>🎉 Congrats!</Text>
+            <Text style={styles.congratsText}>
+              You've matched with <Text style={{ fontWeight: '600' }}>{matchedMentor.name}</Text>!
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.continueButton, { marginTop: 20 }]}
+              onPress={() => {
+                const selectedMentor = matchedMentor;
+                setMatchedMentor(null); // close modal first
+                router.push({
+                  pathname: '/stream-video',
+                  params: {
+                    mentor: JSON.stringify(selectedMentor),
+                  },
+                });
+              }}
+            >
+              <Text style={styles.continueButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -314,5 +339,51 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     textAlign: 'center',
-  }
+  },
+  congratsOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  congratsCard: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    alignItems: 'center',
+  },
+  congratsTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#00c851',
+    marginBottom: 10,
+  },
+  congratsText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+  },
+  continueButton: {
+    backgroundColor: '#00c851',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+  },
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+
 });

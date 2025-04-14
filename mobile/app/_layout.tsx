@@ -21,6 +21,7 @@ export default function RootLayout() {
         <Stack.Screen name="pre-application" />
         <Stack.Screen name="pre-matching-mentee" />
         <Stack.Screen name="+not-found" options={{ animation: 'fade' }} />
+        <Stack.Screen name="mentee-matching" options={{ animation: 'fade' }} />
       </Stack>
 
       <StatusBar style="auto" />
