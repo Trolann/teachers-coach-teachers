@@ -21,6 +21,7 @@ export function Header(props: { subtitle: string }) {
         setCredits(availableCredits);
         
         // Fetch user name
+        const application = await backendManager.getApplication();
         const name = await backendManager.getUserName();
         setUserName(name || 'User');
       } catch (error) {
@@ -39,7 +40,7 @@ export function Header(props: { subtitle: string }) {
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.greeting}>
-            Hi, {userName || 'User'} <Text style={styles.wave}>👋</Text>
+            Hi, {userName || backendManager.getCachedUserName()} <Text style={styles.wave}>👋</Text>
           </Text>
           <Text style={styles.subtitle}>{props.subtitle}</Text>
         </View>

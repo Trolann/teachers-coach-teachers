@@ -24,6 +24,13 @@ class BackendManager {
     }
 
     /**
+     * Get username
+     */
+    public async getCachedUserName(): Promise<string> {
+        return this.cachedUserName;
+    }
+
+    /**
      * Load cached user name from secure storage
      */
     private async loadCachedName(): Promise<void> {
