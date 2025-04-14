@@ -10,7 +10,7 @@ import TokenManager from './TokenManager';
 class BackendManager {
     private static instance: BackendManager;
     private tokenManager: TokenManager;
-    private cachedUserName: string | null = null;
+    private cachedUserName: string = "User";
     private cachedUserData: any = null;
 
     private constructor() {
@@ -168,8 +168,8 @@ class BackendManager {
             this.cachedUserData = data;
             
             // Cache the user name if available
-            if (data && data.name) {
-                this.cachedUserName = data.name;
+            if (data && data.profile_data && data.profile_data.firstName) {
+                this.cachedUserName = data.profile_data.firstName;
             }
             
             return data;
@@ -437,25 +437,24 @@ class BackendManager {
     /**
      * Get the user's full name from application data
      * 
-     * @returns The user's full name or null if not available
+     * @returns The user's first name (cached or from backend)
      */
-    public async getUserName(): Promise<string | null> {
+    public async getUserName(): Promise<string> {
         try {
-            // Return cached name if available
-            if (this.cachedUserName) {
-                console.error('Using cached user name:', this.cachedUserName);
-                return 'UserName';
-            }
+            // Return cached name immediately
+            const currentCachedName = this.cachedUserName;
             
-            // Try to get the name from application data
-            const applicationData = await this.getApplication();
-            // if applicationData has the key profile_data
-            if (applicationData && applicationData.profile_data) {
-                this.cachedUserName = applicationData.profile_data.firstName;
-                return applicationData.profile_data.firstName;
-            }
+            // Try to get the latest name from application data in the background
+            this.getApplication().then(applicationData => {
+                if (applicationData && applicationData.profile_data && applicationData.profile_data.firstName) {
+                    this.cachedUserName = applicationData.profile_data.firstName;
+                }
+            }).catch(error => {
+                console.error('Error updating user name in background:', error);
+            });
             
-            return null;
+            // Return the cached name while the update happens in background
+            return currentCachedName;
         } catch (error) {
             console.error('Error getting user name:', error);
             return null;
@@ -466,7 +465,7 @@ class BackendManager {
      * Clear cached user data (useful after logout)
      */
     public clearUserCache(): void {
-        this.cachedUserName = null;
+        this.cachedUserName = "User";
         this.cachedUserData = null;
     }
 
