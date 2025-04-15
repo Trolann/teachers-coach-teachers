@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from flask_app.models.user import User, UserType
 from flask_app.models.embedding import UserEmbedding
+from flask_app.config import EXCLUDED_EMBEDDING_FIELDS
 from extensions.embeddings import EmbeddingFactory, TheAlgorithm
 from extensions.logging import get_logger
 from extensions.database import db
@@ -138,31 +139,14 @@ def import_mentors_from_json():
                 embedding_data = {}
 
                 # Add mentorSkills as bio if available
-                if 'mentorSkills' in profile:
-                    embedding_data['mentorSkills'] = profile['mentorSkills']
+                for item in profile:
+                    if item in EXCLUDED_EMBEDDING_FIELDS:
+                        continue
+                    if isinstance(profile[item], list):
+                        embedding_data[item] = ', '.join(profile[item])
+                    else:
+                        embedding_data[item] = str(profile[item])
 
-                # Add primarySubject as expertise if available
-                if 'primarySubject' in profile:
-                    embedding_data['primarySubject'] = profile['primarySubject']
-
-                # Add location information
-                location_parts = []
-                if 'country' in profile and profile['country']:
-                    location_parts.append(profile['country'])
-                if 'stateProvince' in profile and profile['stateProvince']:
-                    location_parts.append(profile['stateProvince'])
-                if 'schoolDistrict' in profile and profile['schoolDistrict']:
-                    location_parts.append(profile['schoolDistrict'])
-                
-                if location_parts:
-                    embedding_data['location'] = ', '.join(location_parts)
-
-                # Add any other relevant fields
-                for key, value in profile.items():
-                    if key not in embedding_data and isinstance(value, (str, int, float)):
-                        # Convert camelCase to snake_case for consistency
-                        snake_key = ''.join(['_' + c.lower() if c.isupper() else c for c in key]).lstrip('_')
-                        embedding_data[snake_key] = str(value)
 
                 # Store the embedding data for later processing
                 if embedding_data:
@@ -194,7 +178,7 @@ def import_mentors_from_json():
         for future in concurrent.futures.as_completed(future_to_sub.keys()):
             cognito_sub = future_to_sub[future]
             embeddings_dict = future.result()
-            
+
             if embeddings_dict:
                 # Collect the embeddings to store later in the main thread
                 embeddings_to_store.append((cognito_sub, embeddings_dict))

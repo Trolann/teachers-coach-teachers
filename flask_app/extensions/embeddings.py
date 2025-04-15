@@ -3,7 +3,7 @@ import openai
 from flask_app.extensions.logging import get_logger
 from flask_app.models.embedding import UserEmbedding
 from flask_app.extensions.database import db
-from flask_app.config import OpenAIConfig
+from flask_app.config import OpenAIConfig, EXCLUDED_EMBEDDING_FIELDS
 
 logger = get_logger(__name__)
 
@@ -397,11 +397,20 @@ class TheAlgorithm:
         
         # Initialize excluded_keys if None
         if excluded_keys is None:
-            excluded_keys = []
+            excluded_keys = EXCLUDED_EMBEDDING_FIELDS
+
+        # Remove excluded keys from search, if there's no searches left after they're removed, error out
+        for key in excluded_keys:
+            if key in embedding_to_search_for:
+                embedding_to_search_for.pop(key)
+
+        if not embedding_to_search_for:
+            logger.error("None or no valid keys provided, unable to find any embeddings")
+            return []
         
         # Generate embeddings for the search terms
         search_embeddings = self.embedding_factory.generate_embeddings(user_id, embedding_to_search_for)
-        
+        logger.error(f'Search embeddings keys: {search_embeddings.keys()}')
         # Dictionary to store points for each user_id
         user_points = {}
         # Dictionary to store user embeddings

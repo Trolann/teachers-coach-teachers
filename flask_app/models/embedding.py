@@ -35,6 +35,6 @@ class UserEmbedding(db.Model):
         self.user_id = user_id
         self.embedding_type = embedding_type
         self.vector_embedding = vector_embedding
-        logger.info(f"Created {embedding_type} embedding for user {user_id}")
+        logger.debug(f"Created {embedding_type} embedding for user {user_id}")
 
 

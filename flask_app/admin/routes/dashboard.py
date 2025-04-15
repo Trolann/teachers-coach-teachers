@@ -3,6 +3,7 @@ from extensions.database import db
 from flask_app.models.user import User, UserType, ApplicationStatus
 from extensions.cognito import require_auth, CognitoTokenVerifier
 from extensions.logging import get_logger
+from extensions.embeddings import EmbeddingFactory
 from sqlalchemy import text
 from os import path
 
@@ -12,6 +13,7 @@ logger = get_logger(__name__)
 current_dir = path.dirname(path.abspath(__file__))
 template_dir = path.join(current_dir, '..', 'templates')
 static_dir = path.join(current_dir, '..', 'static')
+embedding_factory = EmbeddingFactory()
 
 # Create blueprint with template folder specified
 admin_dashboard_bp = Blueprint('admin_dashboard', __name__,
@@ -120,6 +122,8 @@ def _update_mentor_status(mentor_id, status, action_name):
             return {'success': False, 'error': 'Mentor not found'}, 404
             
         user.application_status = status
+        if 'APPROVED' in status:
+            embedding_factory.store_embedding(user.cognito_sub, user.profile)
         logger.info(f'{action_name.capitalize()} mentor {mentor_id} by {session.get("username")}')
         db.session.commit()
         logger.info(f'Mentor {mentor_id} {action_name} successfully')
