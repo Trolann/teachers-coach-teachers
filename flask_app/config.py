@@ -3,6 +3,8 @@ from extensions.logging import get_logger
 
 logger = get_logger(__name__)
 
+EXCLUDED_EMBEDDING_FIELDS = ('id', 'firstName', 'lastName', 'phoneNumber')
+
 class OpenAIConfig:
     def __init__(self):
         logger.info("Initializing OpenAI configuration")

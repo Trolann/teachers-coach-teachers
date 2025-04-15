@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from flask_app.models.user import User, UserType
+from flask_app.models.embedding import UserEmbedding
+from flask_app.config import EXCLUDED_EMBEDDING_FIELDS
 from extensions.embeddings import EmbeddingFactory, TheAlgorithm
 from extensions.logging import get_logger
 from extensions.database import db
@@ -39,6 +41,8 @@ def generate_embeddings(cognito_sub: str, embedding_data: Dict[str, str]) -> Opt
     """
     Generate embeddings for a user - this is the function that will be threaded
     
+    This function ONLY calls the OpenAI API and does not interact with the database.
+    
     Args:
         cognito_sub: The user's cognito sub ID
         embedding_data: The data to generate embeddings from
@@ -48,7 +52,8 @@ def generate_embeddings(cognito_sub: str, embedding_data: Dict[str, str]) -> Opt
                                          or None if there was an error
     """
     try:
-        embeddings_dict = embedding_factory.generate_embedding_dict(cognito_sub, embedding_data)
+        # Only call the OpenAI API part, not the database operations
+        embeddings_dict = embedding_factory.generate_embeddings(cognito_sub, embedding_data)
         logger.debug(f'Generated embeddings for user {cognito_sub}')
         return embeddings_dict
     except Exception as e:
@@ -134,31 +139,14 @@ def import_mentors_from_json():
                 embedding_data = {}
 
                 # Add mentorSkills as bio if available
-                if 'mentorSkills' in profile:
-                    embedding_data['mentorSkills'] = profile['mentorSkills']
+                for item in profile:
+                    if item in EXCLUDED_EMBEDDING_FIELDS:
+                        continue
+                    if isinstance(profile[item], list):
+                        embedding_data[item] = ', '.join(profile[item])
+                    else:
+                        embedding_data[item] = str(profile[item])
 
-                # Add primarySubject as expertise if available
-                if 'primarySubject' in profile:
-                    embedding_data['primarySubject'] = profile['primarySubject']
-
-                # Add location information
-                location_parts = []
-                if 'country' in profile and profile['country']:
-                    location_parts.append(profile['country'])
-                if 'stateProvince' in profile and profile['stateProvince']:
-                    location_parts.append(profile['stateProvince'])
-                if 'schoolDistrict' in profile and profile['schoolDistrict']:
-                    location_parts.append(profile['schoolDistrict'])
-                
-                if location_parts:
-                    embedding_data['location'] = ', '.join(location_parts)
-
-                # Add any other relevant fields
-                for key, value in profile.items():
-                    if key not in embedding_data and isinstance(value, (str, int, float)):
-                        # Convert camelCase to snake_case for consistency
-                        snake_key = ''.join(['_' + c.lower() if c.isupper() else c for c in key]).lstrip('_')
-                        embedding_data[snake_key] = str(value)
 
                 # Store the embedding data for later processing
                 if embedding_data:
@@ -177,29 +165,51 @@ def import_mentors_from_json():
         db.session.flush()
         
         # Now use thread pool to generate embeddings in parallel (only the OpenAI calls)
-        futures = []
+        # Map futures to cognito_sub for easier tracking
+        future_to_sub = {}
         for cognito_sub, embedding_data in embedding_tasks:
-            futures.append(openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data))
+            future = openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data)
+            future_to_sub[future] = cognito_sub
         
         # Process results as they complete
         successful_embeddings = 0
-        for future in concurrent.futures.as_completed(futures):
+        embeddings_to_store = []  # Collect all embeddings to store in main thread
+        
+        for future in concurrent.futures.as_completed(future_to_sub.keys()):
+            cognito_sub = future_to_sub[future]
             embeddings_dict = future.result()
+
             if embeddings_dict:
-                cognito_sub = ''
-                # Get the cognito_sub from the completed task
-                # We need to find which task this future corresponds to
-                for i, (sub, _) in enumerate(embedding_tasks):
-                    if futures[i].done() and futures[i] == future:
-                        cognito_sub = sub
-                        break
+                # Collect the embeddings to store later in the main thread
+                embeddings_to_store.append((cognito_sub, embeddings_dict))
+        
+        # Store all embeddings in the database (in the main thread)
+        for cognito_sub, embeddings_dict in embeddings_to_store:
+            try:
+                # Store each embedding in the database directly without calling store_embeddings_dict
+                for embedding_type, vector_embedding in embeddings_dict.items():
+                    # Check if an embedding of this type already exists for this user
+                    existing_embedding = UserEmbedding.query.filter_by(
+                        user_id=cognito_sub,
+                        embedding_type=embedding_type
+                    ).first()
+
+                    if existing_embedding:
+                        # Update existing embedding
+                        logger.info(f"Updating existing {embedding_type} embedding for user {cognito_sub}")
+                        existing_embedding.vector_embedding = vector_embedding
+                    else:
+                        # Create new embedding
+                        new_embedding = UserEmbedding(
+                            user_id=cognito_sub,
+                            embedding_type=embedding_type,
+                            vector_embedding=vector_embedding
+                        )
+                        db.session.add(new_embedding)
                 
-                # Store the embeddings in the database (in the main thread)
-                try:
-                    embedding_factory.store_embeddings_dict(cognito_sub, embeddings_dict)
-                    successful_embeddings += 1
-                except Exception as e:
-                    logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
+                successful_embeddings += 1
+            except Exception as e:
+                logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
         
         # Commit all changes
         db.session.commit()
@@ -334,32 +344,54 @@ def _process_profile_generation(num_profiles: int) -> None:
         db.session.flush()
         
         # Now use thread pool to generate embeddings in parallel (only the OpenAI calls)
-        futures = []
+        # Map futures to cognito_sub for easier tracking
+        future_to_sub = {}
         for cognito_sub, embedding_data in embedding_tasks:
-            futures.append(openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data))
+            future = openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data)
+            future_to_sub[future] = cognito_sub
         
         # Process results as they complete
         successful_embeddings = 0
-        for future in concurrent.futures.as_completed(futures):
+        embeddings_to_store = []  # Collect all embeddings to store in main thread
+        
+        for future in concurrent.futures.as_completed(future_to_sub.keys()):
+            cognito_sub = future_to_sub[future]
             embeddings_dict = future.result()
+            
             if embeddings_dict:
-                cognito_sub = ''
-                # Get the cognito_sub from the completed task
-                # We need to find which task this future corresponds to
-                for i, (sub, _) in enumerate(embedding_tasks):
-                    if futures[i].done() and futures[i] == future:
-                        cognito_sub = sub
-                        break
+                # Collect the embeddings to store later in the main thread
+                embeddings_to_store.append((cognito_sub, embeddings_dict))
+        
+        # Store all embeddings in the database (in the main thread)
+        for cognito_sub, embeddings_dict in embeddings_to_store:
+            try:
+                # Store each embedding in the database directly without calling store_embeddings_dict
+                for embedding_type, vector_embedding in embeddings_dict.items():
+                    # Check if an embedding of this type already exists for this user
+                    existing_embedding = UserEmbedding.query.filter_by(
+                        user_id=cognito_sub,
+                        embedding_type=embedding_type
+                    ).first()
+
+                    if existing_embedding:
+                        # Update existing embedding
+                        logger.info(f"Updating existing {embedding_type} embedding for user {cognito_sub}")
+                        existing_embedding.vector_embedding = vector_embedding
+                    else:
+                        # Create new embedding
+                        new_embedding = UserEmbedding(
+                            user_id=cognito_sub,
+                            embedding_type=embedding_type,
+                            vector_embedding=vector_embedding
+                        )
+                        db.session.add(new_embedding)
                 
-                # Store the embeddings in the database (in the main thread)
-                try:
-                    embedding_factory.store_embeddings_dict(cognito_sub, embeddings_dict)
-                    successful_embeddings += 1
-                    # Update progress for embedding generation
-                    with progress_lock:
-                        generation_progress['current'] += 0.5  # Count as the other half of the work
-                except Exception as e:
-                    logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
+                successful_embeddings += 1
+                # Update progress for embedding generation
+                with progress_lock:
+                    generation_progress['current'] += 0.5  # Count as the other half of the work
+            except Exception as e:
+                logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
         
         # Commit all changes
         db.session.commit()
