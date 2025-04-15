@@ -275,14 +275,14 @@ class TheAlgorithm:
             List of embedding type strings
         """
         try:
-            embedding_types = (
-                db.session.query(UserEmbedding.embedding_type)
-                .filter_by(user_id=user_id)
-                .distinct()
-                .all()
-            )
+            embedding_types = UserEmbedding.query.filter_by(user_id=user_id).distinct(UserEmbedding.embedding_type).all()
+            logger.error(f"Found {len(embedding_types)} embedding types for user {user_id}")
+            logger.error(f'Embedding types: {embedding_types}')
+            return_types = []
+            for embedding_type in embedding_types:
+                return_types.append(embedding_type.embedding_type)
             # Extract column names from result
-            return [et[0] for et in embedding_types]
+            return return_types
         except Exception as e:
             logger.error(f"Error getting embedding types for user {user_id}: {str(e)}")
             return []
@@ -422,6 +422,6 @@ class TheAlgorithm:
         return result
 
 # Create the singleton instances
-embedding_factory = EmbeddingFactory()
-the_algorithm = TheAlgorithm()
-logger.info(f'EmbeddingFactory initialized with model: {embedding_factory.embedding_model}')
+#embedding_factory = EmbeddingFactory()
+#the_algorithm = TheAlgorithm()
+#logger.info(f'EmbeddingFactory initialized with model: {embedding_factory.embedding_model}')
