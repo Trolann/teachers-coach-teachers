@@ -107,13 +107,8 @@ class EmbeddingFactory:
         Returns:
             Dict[str, List[float]]: Dictionary with embedding types as keys and vector embeddings as values
         """
-        # Add entire profile embedding
-        processed_dict = embedding_dict.copy()
-        entire_profile = "\n\n".join([f"{key}: {value}" for key, value in embedding_dict.items()])
-        processed_dict["entire_profile"] = entire_profile
-
-        # Generate embeddings for the provided text
-        return self.generate_embeddings(user_id, processed_dict)
+        # Generate embeddings for each field individually
+        return self.generate_embeddings(user_id, embedding_dict)
     
     def store_embeddings_dict(self, user_id: str, embeddings_dict: Dict[str, List[float]]) -> None:
         """
@@ -208,7 +203,7 @@ class TheAlgorithm:
         Only returns embeddings for active mentors (user_type = 'MENTOR' and is_active = True).
         
         Args:
-            embedding_type: The type of embedding to search for
+            embedding_type: The type of embedding to search for, or 'all' to search across all types
             vector: The vector to compare against
             limit: Maximum number of results to return
             
@@ -232,7 +227,7 @@ class TheAlgorithm:
                     .all()
                 )
             else:
-                logger.error(f'Searching for all embeddings')
+                logger.debug(f'Searching across all embedding types')
                 closest_embeddings = (
                     UserEmbedding.query
                     .join(User, UserEmbedding.user_id == User.cognito_sub)
@@ -411,7 +406,7 @@ class TheAlgorithm:
         available_embeddings = []
         for embedding_type in _available_embedding_types:
             available_embeddings.append(embedding_type.embedding_type)
-        logger.error(f"Available embedding types in database: {available_embeddings}")
+        logger.debug(f"Available embedding types in database: {available_embeddings}")
         
         # Process each key in the search request
         for embedding_type, vector in search_embeddings.items():
