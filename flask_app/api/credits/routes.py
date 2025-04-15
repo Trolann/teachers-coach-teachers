@@ -3,7 +3,7 @@ from extensions.logging import get_logger
 from models.credits import CreditRedemption, CreditPool, CreditPoolAccess
 from models.user import User
 from extensions.database import db
-from extensions.cognito import require_auth, CognitoTokenVerifier
+from extensions.cognito import require_auth, CognitoTokenVerifier, parse_headers
 from datetime import datetime
 
 logger = get_logger(__name__)
@@ -35,7 +35,7 @@ def list_pools():
             user = User.query.filter_by(email=user_email).first()
             if not user:
                 return jsonify({'error': 'User not found'}), 404
-            pools = CreditPool.query.filter_by(owner_id=user.id).all()
+            pools = CreditPool.query.filter_by(owner_id=user.cognito_sub).all()
         else:
             # If no email, get pools for current user
             pools = CreditPool.query.filter_by(owner_id=session.get('user_id')).all()
@@ -242,6 +242,62 @@ def generate_credits():
         logger.error(f"Error generating codes: {e}")
         db.session.rollback()
         return jsonify({'error': 'Failed to generate codes'}), 500
+
+@credits_bp.route('/available', methods=['GET'], endpoint='get_available_credits')
+@require_auth
+def get_available_credits():
+    """Get the total number of credits available to the current user"""
+    try:
+        verifier = CognitoTokenVerifier()
+        if not session.get('access_token'):
+            auth_header = request.headers.get('Authorization')
+            # Parse tokens from request headers
+            if isinstance(auth_header, str):
+                token = auth_header.replace('Bearer ', '')
+                refresh_token = ''
+                id_token = ''
+                expires_in = ''
+            else:
+                token, refresh_token, id_token, expires_in = parse_headers(auth_header)
+        else:
+            token = session.get('access_token')
+        user_info = verifier.get_user_attributes(token)
+
+        user_email = user_info.get('email')
+        
+        if not user_email:
+            logger.error("No email found in session during credit check")
+            return jsonify({'error': 'User email not found in session'}), 400
+            
+        # Get all pools the user has access to
+        pool_access = CreditPoolAccess.query.filter_by(user_email=user_email).all()
+        pool_ids = [access.pool_id for access in pool_access]
+        
+        # Get all pools owned by the user
+        user = User.query.filter_by(email=user_email).first()
+        if user:
+            owned_pools = CreditPool.query.filter_by(owner_id=user.cognito_sub).all()
+            pool_ids.extend([pool.id for pool in owned_pools])
+            
+        # Remove duplicates
+        pool_ids = list(set(pool_ids))
+        
+        # Get the total credits available
+        total_credits = 0
+        pools = CreditPool.query.filter(CreditPool.id.in_(pool_ids)).all()
+        for pool in pools:
+            if pool.credits_available is not None:
+                total_credits += pool.credits_available
+                
+        return jsonify({
+            'success': True,
+            'total_credits_available': total_credits,
+            'pools_count': len(pools)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting available credits: {e}")
+        return jsonify({'error': 'Failed to get available credits'}), 500
 
 @credits_bp.route('/debug/session', methods=['GET'])
 @require_district_admin

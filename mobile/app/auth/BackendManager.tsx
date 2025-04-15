@@ -1,5 +1,8 @@
 import { API_URL } from '../../config/api';
 import TokenManager from './TokenManager';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 /**
  * BackendManager handles all API calls to the backend,
@@ -10,9 +13,68 @@ import TokenManager from './TokenManager';
 class BackendManager {
     private static instance: BackendManager;
     private tokenManager: TokenManager;
+    private cachedUserName: string = "User";
+    private cachedUserData: any = null;
+    private readonly USER_NAME_KEY = 'cached_user_name';
 
     private constructor() {
         this.tokenManager = TokenManager.getInstance();
+        // Load cached name from storage when instance is created
+        this.loadCachedName();
+    }
+
+    /**
+     * Get username (synchronous version for immediate UI display)
+     */
+    public getCachedUserName(): string {
+        return this.cachedUserName;
+    }
+
+    /**
+     * Load cached user name from secure storage
+     */
+    private async loadCachedName(): Promise<void> {
+        try {
+            const storedName = await this.getStorageItem(this.USER_NAME_KEY);
+            if (storedName) {
+                this.cachedUserName = storedName;
+            }
+        } catch (error) {
+            console.error('Error loading cached name:', error);
+        }
+    }
+
+    /**
+     * Store item in secure storage based on platform
+     */
+    private async setStorageItem(key: string, value: string): Promise<void> {
+        if (Platform.OS === 'web') {
+            await AsyncStorage.setItem(key, value);
+        } else {
+            await SecureStore.setItemAsync(key, value);
+        }
+    }
+
+    /**
+     * Get item from secure storage based on platform
+     */
+    private async getStorageItem(key: string): Promise<string | null> {
+        if (Platform.OS === 'web') {
+            return await AsyncStorage.getItem(key);
+        } else {
+            return await SecureStore.getItemAsync(key);
+        }
+    }
+
+    /**
+     * Remove item from secure storage based on platform
+     */
+    private async removeStorageItem(key: string): Promise<void> {
+        if (Platform.OS === 'web') {
+            await AsyncStorage.removeItem(key);
+        } else {
+            await SecureStore.deleteItemAsync(key);
+        }
     }
 
     /**
@@ -148,14 +210,30 @@ class BackendManager {
      */
     public async getApplication(): Promise<any> {
         try {
-            const response = await this.sendRequest('/api/users/get_application', 'GET');
+            // Return cached data if available
+            if (this.cachedUserData) {
+                return this.cachedUserData;
+            }
             
+            const response = await this.sendRequest('/api/users/get_application', 'GET');
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to get application');
             }
             
-            return await response.json();
+            const data = await response.json();
+            // Cache the user data
+            this.cachedUserData = data;
+            
+            // Cache the user name if available
+            if (data && data.profile_data && data.profile_data.firstName) {
+                this.cachedUserName = data.profile_data.firstName;
+                // Store in persistent storage
+                await this.setStorageItem(this.USER_NAME_KEY, data.profile_data.firstName);
+            }
+            
+            return data;
         } catch (error) {
             console.error('Error getting application:', error);
             throw error;
@@ -392,6 +470,73 @@ class BackendManager {
         } catch (error) {
             console.error('Error finding matches:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Get the total number of credits available to the current user
+     * 
+     * @returns The total number of credits available across all pools
+     */
+    public async getAvailableCredits(): Promise<number> {
+        try {
+            const response = await this.sendRequest('/api/credits/available', 'GET');
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get available credits');
+            }
+            
+            const data = await response.json();
+            return data.total_credits_available;
+        } catch (error) {
+            console.error('Error getting available credits:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get the user's full name from application data
+     * 
+     * @returns The user's first name (cached or from backend)
+     */
+    public async getUserName(): Promise<string> {
+        try {
+            // Return cached name immediately
+            const currentCachedName = this.cachedUserName;
+            
+            // Try to get the latest name from application data in the background
+            this.getApplication().then(applicationData => {
+                if (applicationData && applicationData.profile_data && applicationData.profile_data.firstName) {
+                    this.cachedUserName = applicationData.profile_data.firstName;
+                    // Store in persistent storage
+                    this.setStorageItem(this.USER_NAME_KEY, applicationData.profile_data.firstName)
+                        .catch(err => console.error('Error storing name:', err));
+                }
+            }).catch(error => {
+                console.error('Error updating user name in background:', error);
+            });
+            
+            // Return the cached name while the update happens in background
+            return currentCachedName;
+        } catch (error) {
+            console.error('Error getting user name:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Clear cached user data (useful after logout)
+     */
+    public async clearUserCache(): Promise<void> {
+        this.cachedUserName = "User";
+        this.cachedUserData = null;
+        
+        // Clear from persistent storage
+        try {
+            await this.removeStorageItem(this.USER_NAME_KEY);
+        } catch (error) {
+            console.error('Error clearing cached name:', error);
         }
     }
 
