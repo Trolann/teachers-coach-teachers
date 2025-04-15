@@ -220,16 +220,28 @@ class TheAlgorithm:
             from flask_app.models.user import User, UserType, ApplicationStatus
             
             # Join with User model to filter by user_type and is_active
-            closest_embeddings = (
-                UserEmbedding.query
-                .join(User, UserEmbedding.user_id == User.cognito_sub)
-                .filter(UserEmbedding.embedding_type == embedding_type)
-                .filter(User.user_type == UserType.MENTOR)
-                .filter(User.is_active == True)
-                .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
-                .limit(limit)
-                .all()
-            )
+            if embedding_type != 'all':
+                closest_embeddings = (
+                    UserEmbedding.query
+                    .join(User, UserEmbedding.user_id == User.cognito_sub)
+                    .filter(UserEmbedding.embedding_type == embedding_type)
+                    .filter(User.user_type == UserType.MENTOR)
+                    .filter(User.is_active == True) # TODO: Update to use Sohini's is_active based on mentor availability
+                    .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
+                    .limit(limit)
+                    .all()
+                )
+            else:
+                logger.error(f'Searching for all embeddings')
+                closest_embeddings = (
+                    UserEmbedding.query
+                    .join(User, UserEmbedding.user_id == User.cognito_sub)
+                    .filter(User.user_type == UserType.MENTOR)
+                    .filter(User.is_active == True) # TODO: Update to use Sohini's is_active based on mentor availability
+                    .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
+                    .limit(limit)
+                    .all()
+                )
             logger.debug(f"Found {len(closest_embeddings)} active mentor matches for embedding type '{embedding_type}'")
             return closest_embeddings
         except Exception as e:
@@ -395,9 +407,11 @@ class TheAlgorithm:
         user_embeddings = {}
         
         # Get all available embedding types in the database
-        available_embedding_types = db.session.query(UserEmbedding.embedding_type).distinct().all()
-        available_embedding_types = [et[0] for et in available_embedding_types]
-        logger.debug(f"Available embedding types in database: {available_embedding_types}")
+        _available_embedding_types = UserEmbedding.query.distinct(UserEmbedding.embedding_type).all()
+        available_embeddings = []
+        for embedding_type in _available_embedding_types:
+            available_embeddings.append(embedding_type.embedding_type)
+        logger.error(f"Available embedding types in database: {available_embeddings}")
         
         # Process each key in the search request
         for embedding_type, vector in search_embeddings.items():
@@ -407,7 +421,7 @@ class TheAlgorithm:
                 continue
                 
             # Check if this embedding type exists in the database
-            if embedding_type in available_embedding_types:
+            if embedding_type in available_embeddings:
                 logger.debug(f"Searching for specific embedding type: {embedding_type}")
                 # Process this specific embedding search
                 self._process_embedding_search(
@@ -419,16 +433,13 @@ class TheAlgorithm:
                 )
             else:
                 logger.debug(f"Embedding type {embedding_type} not found in database, searching across all types")
-                # If this key doesn't exist in the database, search across all embedding types
-                for available_type in available_embedding_types:
-                    if available_type not in excluded_keys:
-                        self._process_embedding_search(
-                            available_type,
-                            vector,
-                            user_points,
-                            user_embeddings,
-                            limit
-                        )
+                self._process_embedding_search(
+                    'all',
+                    vector,
+                    user_points,
+                    user_embeddings,
+                    limit
+                )
         
         # Step 4: Prepare and return the final result list
         result = self._prepare_result_list(user_points, user_embeddings, limit)
