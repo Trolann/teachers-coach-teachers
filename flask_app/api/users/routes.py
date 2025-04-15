@@ -93,7 +93,10 @@ def submit_application():
         logger.info(f'User already has a profile or application status is not PENDING')
         return jsonify({'error': 'Application already submitted.'}), 403
 
-    user.application_status = ApplicationStatus.PENDING if user.user_type == 'MENTOR' else ApplicationStatus.APPROVED
+    user.application_status = ApplicationStatus.PENDING
+    if user.user_type == 'MENTEE':
+        user.application_status = ApplicationStatus.APPROVED
+        embedding_factory.store_embedding(user.cognito_sub, profile_data)
     user.profile = profile_data
     db.session.commit()
 
