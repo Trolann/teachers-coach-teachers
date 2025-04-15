@@ -276,8 +276,8 @@ class TheAlgorithm:
         """
         try:
             embedding_types = UserEmbedding.query.filter_by(user_id=user_id).distinct(UserEmbedding.embedding_type).all()
-            logger.error(f"Found {len(embedding_types)} embedding types for user {user_id}")
-            logger.error(f'Embedding types: {embedding_types}')
+            logger.debug(f"Found {len(embedding_types)} embedding types for user {user_id}")
+            logger.debug(f'Embedding types: {embedding_types}')
             return_types = []
             for embedding_type in embedding_types:
                 return_types.append(embedding_type.embedding_type)
@@ -332,7 +332,8 @@ class TheAlgorithm:
         Helper method to process a single embedding search and update rankings.
         
         This method finds the closest embeddings for a given vector and
-        assigns points based on their rank.
+        assigns points based on their rank. It's used both for searching
+        specific embedding types and for fallback searches across all types.
         
         Args:
             embedding_type: The type of embedding to search for
@@ -354,24 +355,36 @@ class TheAlgorithm:
         # Assign points based on rank
         self._assign_points_for_embeddings(closest_embeddings, user_points, user_embeddings)
     
-    def get_closest_embeddings(self, user_id: str, embedding_to_search_for: Dict[str, str], limit: int = 10) -> List[Dict[str, Any]]:
+    def get_closest_embeddings(
+        self, 
+        user_id: str, 
+        embedding_to_search_for: Dict[str, str], 
+        limit: int = 10,
+        excluded_keys: List[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Find the closest embeddings to the given embedding dictionary.
         
-        This method implements a two-step approach:
-        1. First, query the DB to get all vector keys the current user has
-        2. For each key, perform searching and ranking
-        3. For each key in embedding_to_search_for, encode and search across the entire vector database
+        This method implements a targeted approach:
+        1. For each key in embedding_to_search_for, check if that key exists in the database
+        2. If the key exists, search only for that specific key
+        3. If the key doesn't exist, search across all embedding types
         4. Aggregate all rankings to produce a final sorted list
+        5. Exclude any keys specified in excluded_keys
         
         Args:
             user_id: The ID of the user making the search
             embedding_to_search_for: Dictionary with keys as identifiers and values as text to embed
             limit: Maximum number of results to return (default: 10)
+            excluded_keys: List of keys to exclude from the search (default: None)
             
         Returns:
             A list of closest embeddings, sorted by match score (best matches first)
         """
+        
+        # Initialize excluded_keys if None
+        if excluded_keys is None:
+            excluded_keys = []
         
         # Generate embeddings for the search terms
         search_embeddings = self.embedding_factory.generate_embeddings(user_id, embedding_to_search_for)
@@ -381,32 +394,22 @@ class TheAlgorithm:
         # Dictionary to store user embeddings
         user_embeddings = {}
         
-        # Step 1: Get all embedding types for the current user
-        user_embedding_types = self._get_user_embedding_types(user_id)
-        logger.debug(f"Found {len(user_embedding_types)} embedding types for user {user_id}")
+        # Get all available embedding types in the database
+        available_embedding_types = db.session.query(UserEmbedding.embedding_type).distinct().all()
+        available_embedding_types = [et[0] for et in available_embedding_types]
+        logger.debug(f"Available embedding types in database: {available_embedding_types}")
         
-        # Step 2: For each embedding type the user has, find closest matches
-        for embedding_type in user_embedding_types:
-            # Get the user's embedding for this type
-            user_embedding = UserEmbedding.query.filter_by(
-                user_id=user_id,
-                embedding_type=embedding_type
-            ).first()
-            
-            if user_embedding:
-                # Process this embedding search
-                self._process_embedding_search(
-                    embedding_type,
-                    user_embedding.vector_embedding,
-                    user_points,
-                    user_embeddings,
-                    limit
-                )
-        
-        # Step 3: For each key in embedding_to_search_for, search across all vectors
-        if search_embeddings:
-            for embedding_type, vector in search_embeddings.items():
-                # Process this embedding search
+        # Process each key in the search request
+        for embedding_type, vector in search_embeddings.items():
+            # Skip excluded keys
+            if embedding_type in excluded_keys:
+                logger.debug(f"Skipping excluded key: {embedding_type}")
+                continue
+                
+            # Check if this embedding type exists in the database
+            if embedding_type in available_embedding_types:
+                logger.debug(f"Searching for specific embedding type: {embedding_type}")
+                # Process this specific embedding search
                 self._process_embedding_search(
                     embedding_type,
                     vector,
@@ -414,6 +417,18 @@ class TheAlgorithm:
                     user_embeddings,
                     limit
                 )
+            else:
+                logger.debug(f"Embedding type {embedding_type} not found in database, searching across all types")
+                # If this key doesn't exist in the database, search across all embedding types
+                for available_type in available_embedding_types:
+                    if available_type not in excluded_keys:
+                        self._process_embedding_search(
+                            available_type,
+                            vector,
+                            user_points,
+                            user_embeddings,
+                            limit
+                        )
         
         # Step 4: Prepare and return the final result list
         result = self._prepare_result_list(user_points, user_embeddings, limit)
