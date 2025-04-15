@@ -49,6 +49,8 @@ class EmbeddingFactory:
         Takes in a dictionary of key value pairs, generates embeddings on each value and returns a dict
         with the same keys with 'embedding' appended to the key and the value being the embedding.
         
+        This method is thread-safe and can be called from multiple threads.
+        
         Args:
             user_id: The ID of the user - prevents abuse on the OpenAI end
             embedding_dict: Dictionary with keys as identifiers and values as text to embed
@@ -75,7 +77,7 @@ class EmbeddingFactory:
                 result_dict[key] = embedding
                 logger.debug(f"Generated embedding for key '{key}' with length {len(embedding)}")
             except Exception as e:
-                print(f"Error generating embedding for key '{key}': {str(e)}")
+                logger.error(f"Error generating embedding for key '{key}': {str(e)}")
 
         logger.info(f'generate_embeddings completed for user {user_id}, created {len(result_dict)} embeddings')
         return result_dict
@@ -113,6 +115,8 @@ class EmbeddingFactory:
     def store_embeddings_dict(self, user_id: str, embeddings_dict: Dict[str, List[float]]) -> None:
         """
         Store pre-generated embeddings in the database.
+        
+        This method should only be called from the main thread to avoid thread-related database errors.
         
         Args:
             user_id: The ID of the user
