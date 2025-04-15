@@ -102,6 +102,8 @@ class EmbeddingFactory:
         """
         Generate embeddings for a user without storing them in the database.
         
+        This method is deprecated. Use generate_embeddings directly instead.
+        
         Args:
             user_id: The ID of the user
             embedding_dict: Dictionary with text to generate embeddings for
