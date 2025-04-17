@@ -14,7 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 const apiKey = 'mmhfdzb5evj2'; // the API key can be found in the "Credentials" section
 const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3Byb250by5nZXRzdHJlYW0uaW8iLCJzdWIiOiJ1c2VyL0Nhcm5vcl9KYXgiLCJ1c2VyX2lkIjoiQ2Fybm9yX0pheCIsInZhbGlkaXR5X2luX3NlY29uZHMiOjYwNDgwMCwiaWF0IjoxNzQ0Mzc0OTg0LCJleHAiOjE3NDQ5Nzk3ODR9.tyeH6gPPuyJeCWjVA5YngNigKhCm591eSEcBWEONhnU'; // the token can be found in the "Credentials" section
 const userId = 'Carnor_Jax'; // the user id can be found in the "Credentials" section
-const callId = 'A1PgPPoAnh7n'; // the call id can be found in the "Credentials" section
+const callId = 'A1PgPPoAnh7n';
 
 // 3. Create a user object
 const user = {

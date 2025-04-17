@@ -53,11 +53,11 @@ export const HomeScreen = ({ goToCallScreen }: Props) => {
         </View>
       </View>
       <TouchableOpacity style={styles.button} onPress={goToCallScreen}>
-              <View style={styles.buttonContent}>
-                <Text style={styles.buttonText}>Join Video Call</Text>
-                <Ionicons name="videocam-outline" size={24} color="#fff" style={{ marginLeft: 8 }} />
-              </View>
-            </TouchableOpacity>
+        <View style={styles.buttonContent}>
+          <Text style={styles.buttonText}>Join Video Call</Text>
+          <Ionicons name="videocam-outline" size={24} color="#fff" style={{ marginLeft: 8 }} />
+        </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };

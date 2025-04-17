@@ -14,7 +14,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true); 
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
