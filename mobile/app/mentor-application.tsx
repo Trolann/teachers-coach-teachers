@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput } from
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import BackendManager from './auth/BackendManager';
 
 export default function MentorApplicationScreen() {
   const router = useRouter();
@@ -27,7 +28,20 @@ export default function MentorApplicationScreen() {
 
   const handleSubmit = async () => {
     try {
-        // TODO: Send data to the backend (currently just an alert success message)
+      // Send data to backend
+      // const backendManager = BackendManager.getInstance();
+
+      // const applicationData = {
+      //   user_type: 'mentor',
+      //   name: `${formData.firstName} ${formData.lastName}`,
+      //   skills: formData.mentorSkills.split(',').map(skill => skill.trim()),
+      //   experience: formData.primarySubject,
+      //   availability: formData.timeZone,
+      //   bio: `From ${formData.country}, ${formData.stateProvince}. Working in ${formData.schoolDistrict}.`
+      // };
+
+      // const result = await backendManager.submitApplication(applicationData);
+      // console.log('Application submitted:', result);
       
       Alert.alert(
         "Success",
