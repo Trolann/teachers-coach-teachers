@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, Switch, StyleSheet, Image, TouchableOpacity, ImageBackground } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
+import BackendManager from './auth/BackendManager';
 
 // Dummy mentees
 const mentees = [
@@ -32,7 +33,31 @@ const MentorLandingScreen = () => {
 
   const userName = 'Susie'; // Replace with dynamic username
 
-  const toggleSwitch = () => setIsOnline(previousState => !previousState);
+  const toggleSwitch = async (value: boolean) => {
+    // Update local state immediately
+    setIsOnline(value);
+  
+    // Decide which endpoint to call
+    const path = value
+      ? '/api/mentor_status/set_online'
+      : '/api/mentor_status/set_offline';
+  
+    try {
+      // Make the authenticated POST
+      const response = await BackendManager
+        .getInstance()
+        .sendRequest(path, 'POST');
+  
+      if (!response.ok) {
+        setIsOnline(!value);
+        const err = await response.json();
+        console.error('Status toggle failed:', err);
+      }
+    } catch (error) {
+      setIsOnline(!value);
+      console.error('Error toggling status:', error);
+    }
+  };  
 
   const Card = ({ name, primarySubject, district, image }) => (
     <View style={styles.card}>
