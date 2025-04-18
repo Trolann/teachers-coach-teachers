@@ -10,9 +10,11 @@ def create_api_blueprint():
         api_bp = Blueprint('api', __name__)
         logger.debug('Created base API Blueprint instance')
 
-        # Register credit routes
         from .credits.routes import credits_bp
         api_bp.register_blueprint(credits_bp, url_prefix='/credits')
+
+        from .users.picture_routes import picture_bp
+        api_bp.register_blueprint(picture_bp, url_prefix='/pictures')
 
         from .users.routes import user_bp
         api_bp.register_blueprint(user_bp, url_prefix='/users')
