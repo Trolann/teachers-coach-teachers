@@ -24,6 +24,8 @@ npm install -g expo-cli
 
 4. **Environment Variables**:
    - Copy the `.env.example` file to `.env` and update the values.
+   - In the `mobile` directory, copy the `.env.example` file to `.env` and update the values.
+   - Both values needed can be found in the Discord pins.
 ```bash
 cp .env.example .env && cp mobile/.env.example mobile/.env
 ```
@@ -42,7 +44,7 @@ cp .env.example .env && cp mobile/.env.example mobile/.env
     - FLASK_ENV should remain as development for local development
     - ADMIN_GROUP_NAME and DISTRICT_ADMIN_GROUP_NAME should remain defaults unless the Cognito admin has changed group names
     - COGNITO_* and AWS_* you must get from Trevor
-  - Mobile `.env` file is for `mobile/` directory:
+  - Mobile `.env` file is for `mobile/`:
     - EXPO_PUBLIC_COGNITO_CLIENT_ID is the same as the client id in the root `.env` file
     - EXPO_PUBLIC_COGNITO_REGION is the same as the region in the root `.env` file
 ---
