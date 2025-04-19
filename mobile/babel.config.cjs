@@ -4,7 +4,6 @@ module.exports = function(api) {
     presets: ['babel-preset-expo'],
     plugins: [
       '@babel/plugin-transform-class-static-block',
-      'expo-router/babel',
       [
         'module-resolver',
         {

@@ -100,10 +100,10 @@ export default function SignupScreen() {
                 placeholderTextColor="#848282"
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons 
-                    name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                    size={20} 
-                    color="#848282" 
+                <Ionicons
+                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#848282"
                 />
               </TouchableOpacity>
             </View>
@@ -122,7 +122,7 @@ export default function SignupScreen() {
           </View>
 
           {/* Login Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.loginButton}
             onPress={() => router.push('/auth/login')}
           >
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#666',
   },
-  
+
   inputContainer: {
     gap: 15,
     marginBottom: 20,

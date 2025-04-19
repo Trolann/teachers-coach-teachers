@@ -2,6 +2,10 @@
   "compilerOptions": {
     "baseUrl": ".",
     "allowSyntheticDefaultImports": true,
+    "jsx": "react",
+    "typeRoots": [
+      "./types"
+    ],
     "paths": {
       "@/*": [
         "./*"
@@ -19,7 +23,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ],
-    "jsx": "react"
-  }
+    "expo-env.d.ts",
+    "app/video-meetinsg-page.js",
+    "app/stream-video.tsx"
+  ]
+}

@@ -24,6 +24,8 @@ npm install -g expo-cli
 
 4. **Environment Variables**:
    - Copy the `.env.example` file to `.env` and update the values.
+   - In the `mobile` directory, copy the `.env.example` file to `.env` and update the values.
+   - Both values needed can be found in the Discord pins.
 ```bash
 cp .env.example .env && cp mobile/.env.example mobile/.env
 ```
@@ -42,7 +44,7 @@ cp .env.example .env && cp mobile/.env.example mobile/.env
     - FLASK_ENV should remain as development for local development
     - ADMIN_GROUP_NAME and DISTRICT_ADMIN_GROUP_NAME should remain defaults unless the Cognito admin has changed group names
     - COGNITO_* and AWS_* you must get from Trevor
-  - Mobile `.env` file is for `mobile/` directory:
+  - Mobile `.env` file is for `mobile/`:
     - EXPO_PUBLIC_COGNITO_CLIENT_ID is the same as the client id in the root `.env` file
     - EXPO_PUBLIC_COGNITO_REGION is the same as the region in the root `.env` file
 ---
@@ -245,7 +247,7 @@ If this is your first time using Expo with a simulator, follow this guide to set
    ```
 3. **Verify Simulator Availability**:
    - Open Xcode > Preferences > Components.
-   - Download any additional simulators (e.g., iOS 16.4).
+   - Download any additional simulators
 
 ---
 
@@ -286,14 +288,40 @@ exp://localhost:8081
 ---
 
 ### **Step 2: Open on iOS Simulator**
-1. Ensure the iOS simulator is running. Open it manually via Xcode:
-   - Xcode > Open Developer Tools > Simulator.
-2. In the terminal running Expo, press:
-   ```plaintext
-   i
-   ```
-   - Expo CLI will automatically build and launch the app in the iOS simulator.
+### 1. Open iOS Simulator
+- Use **Spotlight Search** (`Cmd + Space`) and search for **Simulator** to open it.
 
+### 2. Add a New Simulator (if first time using Simulator)
+- Open **Xcode**.
+- From the menu bar, go to **Window > Devices and Simulators**.
+- Select **Simulators** at the top of the sidebar.
+- Click the **Add (+) button** in the lower-left corner.
+- Choose a **Device Type** and **OS Version** for your simulator.
+- Optionally, provide a name for your simulator.
+- Click **Create** to finalize the new simulator.
+
+### 3. Ensure Xcode is Installed
+- Xcode must be installed for the iOS Simulator to function.
+- Install it from the **Mac App Store** if not already installed.
+
+### 4. Install Watchman (Recommended for Performance)
+Watchman is a tool that improves performance by monitoring filesystem changes.
+
+Run the following commands in your terminal:
+
+```bash
+brew update
+brew install watchman
+```
+
+### 5. Run the App on the iOS Simulator
+
+#### Automatic Launch:
+- If you see a **QR code** when running the Expo project, press **`i`** in the terminal, and the simulator should open automatically.
+
+#### Manual Launch (if automatic fails):
+1. Open the **Expo Go** app on the iOS Simulator.
+2. Enter the **Expo project URL** manually.
 ---
 
 ### **Step 3: Open on Android Emulator**

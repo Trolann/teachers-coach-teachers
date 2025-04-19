@@ -9,13 +9,25 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dyashik.TeacherCoachTeachers",
+      "infoPlist": {
+        "NSCameraUsageDescription": "We need access to your camera for video calls.",
+        "NSMicrophoneUsageDescription": "We need access to your mic for voice calls."
+      },
+      "appleTeamId": "LANP267Q8M",
+      "userInterfaceStyle": "light"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.dyashik.TeacherCoachTeachers",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -33,7 +45,24 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-secure-store"
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
+        }
+      ],
+      "expo-secure-store",
+      [
+        "react-native-permissions",
+        {
+          "permissions": [
+            "CAMERA",
+            "MICROPHONE"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
