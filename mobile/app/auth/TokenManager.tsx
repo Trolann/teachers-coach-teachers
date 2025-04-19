@@ -214,6 +214,8 @@ class TokenManager {
       }
     } catch (error) {
       console.error('Error logging in with credentials:', error);
+      // Print stack trace for debugging
+      console.error('Stack trace:', error.stack);
       throw error;
     }
   }

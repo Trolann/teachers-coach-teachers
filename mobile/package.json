@@ -60,7 +60,6 @@
     "react-native-device-info": "^14.0.4",
     "react-native-encrypted-storage": "^4.0.3",
     "react-native-gesture-handler": "~2.20.2",
-    "react-native-get-random-values": "~1.11.0",
     "react-native-incall-manager": "^4.2.0",
     "react-native-keep-awake": "4.0.0",
     "react-native-modal": "^14.0.0-rc.1",
@@ -73,7 +72,8 @@
     "react-native-svg": "^15.11.2",
     "react-native-swipe-cards": "^0.1.1",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5"
+    "react-native-webview": "13.12.4",
+    "react-native-get-random-values": "~1.11.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

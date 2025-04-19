@@ -16,7 +16,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       const success = await TokenManager.getInstance().loginWithCredentials(email, password);
-      console.error('Login status:', success);
+      console.log('Login status:', success);
       if (success) {
         router.replace('/pre-application');
       } else {
@@ -25,7 +25,7 @@ export default function LoginScreen() {
     } catch (error) {
       console.error('Login failed:', error);
     }
-  };
+};
 
   return (
     <ThemedView style={styles.container}>
