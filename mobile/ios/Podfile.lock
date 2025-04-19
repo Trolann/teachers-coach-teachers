@@ -1654,12 +1654,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-zego-express-engine (3.20.2):
-    - React
-    - ZegoExpressEngine (= 3.20.2)
-  - react-native-zego-zim (2.20.0):
-    - React
-    - ZIM (= 2.20.0)
   - React-nativeconfig (0.76.9)
   - React-NativeModulesApple (0.76.9):
     - glog
@@ -2254,14 +2248,6 @@ PODS:
     - Yoga
   - WebRTC-SDK (125.6422.07)
   - Yoga (0.0.0)
-  - zego-uikit-prebuilt-call-rn (6.3.2):
-    - React-Core
-  - zego-uikit-rn (2.17.4):
-    - React-Core
-    - ZegoUIKitReport (= 0.2.10)
-  - ZegoExpressEngine (3.20.2)
-  - ZegoUIKitReport (0.2.10)
-  - ZIM (2.20.0)
   - ZXingObjC/Core (3.6.9)
   - ZXingObjC/OneD (3.6.9):
     - ZXingObjC/Core
@@ -2339,8 +2325,6 @@ DEPENDENCIES:
   - "react-native-netinfo (from `../node_modules/@react-native-community/netinfo`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-webview (from `../node_modules/react-native-webview`)
-  - react-native-zego-express-engine (from `../node_modules/zego-express-engine-reactnative`)
-  - react-native-zego-zim (from `../node_modules/zego-zim-react-native`)
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -2383,16 +2367,11 @@ DEPENDENCIES:
   - "stream-react-native-webrtc (from `../node_modules/@stream-io/react-native-webrtc`)"
   - "stream-video-react-native (from `../node_modules/@stream-io/video-react-native-sdk`)"
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
-  - "zego-uikit-prebuilt-call-rn (from `../node_modules/@zegocloud/zego-uikit-prebuilt-call-rn`)"
-  - "zego-uikit-rn (from `../node_modules/@zegocloud/zego-uikit-rn`)"
 
 SPEC REPOS:
   trunk:
     - SocketRocket
     - WebRTC-SDK
-    - ZegoExpressEngine
-    - ZegoUIKitReport
-    - ZIM
     - ZXingObjC
 
 EXTERNAL SOURCES:
@@ -2533,10 +2512,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-webview:
     :path: "../node_modules/react-native-webview"
-  react-native-zego-express-engine:
-    :path: "../node_modules/zego-express-engine-reactnative"
-  react-native-zego-zim:
-    :path: "../node_modules/zego-zim-react-native"
   React-nativeconfig:
     :path: "../node_modules/react-native/ReactCommon"
   React-NativeModulesApple:
@@ -2621,10 +2596,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@stream-io/video-react-native-sdk"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
-  zego-uikit-prebuilt-call-rn:
-    :path: "../node_modules/@zegocloud/zego-uikit-prebuilt-call-rn"
-  zego-uikit-rn:
-    :path: "../node_modules/@zegocloud/zego-uikit-rn"
 
 SPEC CHECKSUMS:
   boost: 1dca942403ed9342f98334bf4c3621f011aa7946
@@ -2695,8 +2666,6 @@ SPEC CHECKSUMS:
   react-native-netinfo: f0a9899081c185db1de5bb2fdc1c88c202a059ac
   react-native-safe-area-context: 0dfbd139206a79364916959bc8b1a6bea3caba97
   react-native-webview: b8f9b1f9bdb081c239e46d9bf030881d2678f25d
-  react-native-zego-express-engine: f41e8524a6e78321ff784bebfbd538562082c968
-  react-native-zego-zim: 7000b41c7fc4d0fe2d384d8e9d775e9319bffdf4
   React-nativeconfig: 8efdb1ef1e9158c77098a93085438f7e7b463678
   React-NativeModulesApple: 958d4f6c5c2ace4c0f427cf7ef82e28ae6538a22
   React-perflogger: 9b4f13c0afe56bc7b4a0e93ec74b1150421ee22d
@@ -2741,11 +2710,6 @@ SPEC CHECKSUMS:
   stream-video-react-native: 525a51f4e7d48658d3283aef9e349b49f4c0e962
   WebRTC-SDK: dff00a3892bc570b6014e046297782084071657e
   Yoga: 40f19fff64dce86773bf8b602c7070796c007970
-  zego-uikit-prebuilt-call-rn: e0177781b46867402ac0857b87b799a4732e9e0a
-  zego-uikit-rn: bf27ce4a9542d615b94451f45da7a982a2638f63
-  ZegoExpressEngine: 0064f6044b5d1d00c40d815455e6ee032f1cb56b
-  ZegoUIKitReport: a993f7ccc5d243998a7e601a60e16fcd6c084417
-  ZIM: 1376cbc14e92c31425d91a5bd0874c0b501e4e76
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
 PODFILE CHECKSUM: f30f09e6f6e1bca4c856bcd9313d2d014c23f2c1

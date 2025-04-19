@@ -21,4 +21,4 @@ EXPOSE 19000
 EXPOSE 8081
 
 # Run Expo
-CMD ["npx", "expo", "start", "--lan"]
+CMD ["npx", "expo", "start", "--tunnel", "--lan"]
