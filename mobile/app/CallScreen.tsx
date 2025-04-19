@@ -42,6 +42,7 @@ export const CallScreen = ({goToHomeScreen, callId}: Props) => {
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -55,6 +56,8 @@ const styles = StyleSheet.create({
     color: '#005fff',
   },
 });
+
+export default CallScreen;
 
 const joinStyles = StyleSheet.create({
     container: {

@@ -35,7 +35,7 @@ export default function App() {
   const goToHomeScreen = () => {
     setActiveScreen('home');
     router.push({
-      pathname: '/HomeScreen',
+      pathname: '/mentee-matching',
     });
   };
   return (

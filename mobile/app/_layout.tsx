@@ -12,16 +12,19 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack
         screenOptions={{
-          headerShown: false, // 🔥 globally remove all headers
-          animation: 'slide_from_right', // 👈 accordion-style right-slide
-          presentation: 'card', // 👌 native feel
+          headerShown: false, 
+          animation: 'fade',
+          presentation: 'card', 
         }}
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="pre-application" />
-        <Stack.Screen name="pre-matching-mentee" />
-        <Stack.Screen name="+not-found" options={{ animation: 'fade' }} />
-        <Stack.Screen name="mentee-matching" options={{ animation: 'fade' }} />
+        <Stack.Screen name="pre-matching-mentee"/>
+        <Stack.Screen name="+not-found"/>
+        <Stack.Screen name="mentee-matching"/>
+        <Stack.Screen name="stream-video"/>
+        <Stack.Screen name="CallScreen" options={{ animation: 'slide_from_bottom' }}/>
+        <Stack.Screen name="HomeScreen"/>
       </Stack>
 
       <StatusBar style="auto" />

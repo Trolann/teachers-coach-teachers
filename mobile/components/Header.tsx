@@ -24,7 +24,7 @@ export function Header(props: { subtitle: string }) {
 
       {/* Modal for Nav Options */}
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={showNav}
         onRequestClose={() => setShowNav(false)}

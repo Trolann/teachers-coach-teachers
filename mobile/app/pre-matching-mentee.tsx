@@ -135,12 +135,12 @@ export default function FindMentorScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.navbar}>
+      {/* <View style={styles.navbar}>
         <Ionicons name="home" size={28} color="gray" />
         <Ionicons name="time-outline" size={28} color="gray" />
         <Ionicons name="heart-outline" size={28} color="gray" />
         <Ionicons name="person-outline" size={28} color="gray" />
-      </View>
+      </View> */}
     </SafeAreaView>
   );
 }
@@ -152,8 +152,9 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    justifyContent: 'center',
     paddingTop: 20,
+    paddingBottom: 40,
+    flexGrow: 1,
   },
   header: {
     flexDirection: 'row',
@@ -185,6 +186,8 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   mentorContainer: {
+    paddingTop: 20,
+    paddingBottom: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
