@@ -1,10 +1,11 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import sendAlert from './utils/alerts';
 import TokenManager from './auth/TokenManager';
+import { Platform } from 'react-native';
 
 export default function PreApplicationScreen() {
   const router = useRouter();
@@ -23,16 +24,28 @@ export default function PreApplicationScreen() {
         console.error('Role storage mismatch!');
       }
   
-      const message = `Please fill out an application to join as a ${role}.`;
-      
-      const redirectPath =
-        role === 'mentor' ? '/mentor-application' :
-        role === 'mentee' ? '/mentee-application' :
-        '/(tabs)';
-      
-      sendAlert("🎉", message, () => {
+      // Define redirectPath before using it
+      const redirectPath = role === 'mentor' ? '/mentor-application' : '/mentee-application';
+  
+      const message = `Welcome! You've been registered as a ${role}. Please fill out an application to join.`;
+  
+      if (Platform.OS === 'web') {
+        alert(message);
         router.replace(redirectPath);
-      });
+      } else {
+        Alert.alert(
+          "Success 🎉",
+          message,
+          [
+            {
+              text: "Continue",
+              onPress: () => {
+                router.replace(redirectPath);
+              },
+            }
+          ]
+        );
+      }
   
     } catch (error) {
       console.error('Role selection failed:', error);
@@ -51,7 +64,7 @@ export default function PreApplicationScreen() {
         {/* Welcome Text */}
         <View style={styles.welcomeContainer}>
           <ThemedText style={styles.welcomeText}>
-            We're happy to see you here.
+            We're happy to see you 🙂
           </ThemedText>
           <ThemedText style={styles.descriptionText}>
             You are about to embark on a journey of professional development and collaboration.
@@ -61,11 +74,11 @@ export default function PreApplicationScreen() {
 
         {/* Selection Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.selectionButton}
+          <TouchableOpacity
+            style={[styles.selectionButton, styles.mentorButton]}
             onPress={() => handleRoleSelection('mentor')}
           >
-            <ThemedText style={styles.buttonText}>Mentor</ThemedText>
+            <ThemedText style={styles.buttonText}>Continue as a Mentor 🍎</ThemedText>
           </TouchableOpacity>
 
           <View style={styles.dividerContainer}>
@@ -74,11 +87,11 @@ export default function PreApplicationScreen() {
             <View style={styles.divider} />
           </View>
 
-          <TouchableOpacity 
-            style={styles.selectionButton}
+          <TouchableOpacity
+            style={[styles.selectionButton, styles.menteeButton]}
             onPress={() => handleRoleSelection('mentee')}
           >
-            <ThemedText style={styles.buttonText}>Mentee</ThemedText>
+            <ThemedText style={styles.buttonText}>Continue as a Mentee 🎓</ThemedText>
           </TouchableOpacity>
         </View>
       </View>
@@ -89,20 +102,28 @@ export default function PreApplicationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
-  },
-  card: {
-    backgroundColor: 'white',
-    margin: 20,
-    borderRadius: 30,
-    padding: 20,
-    flex: 1,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 25,
+    paddingVertical: 120,
+    paddingHorizontal: 30,
+    width: '100%',
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 10,
+  },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
   },
   logo: {
     width: 80,
@@ -113,44 +134,55 @@ const styles = StyleSheet.create({
   },
   welcomeContainer: {
     alignItems: 'center',
-    marginBottom: 40,
-    paddingHorizontal: 40,
-    maxWidth: 500
+    marginBottom: 45,
+    paddingHorizontal: 20,
   },
   welcomeText: {
-    fontSize: 28,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 20,
+    fontSize: 23.95,
+    fontWeight: '700',
+    color: '#2B2D42',
+    marginBottom: 15,
+    lineHeight: 40,
     textAlign: 'center',
   },
   descriptionText: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    lineHeight: 24,
-    maxWidth: '80%'
+    lineHeight: 30,
+    maxWidth: '100%',
   },
   buttonContainer: {
-    width: '70%',
-    gap: 15,
+    width: '100%',
+    maxWidth: 400,
+    gap: 10,
   },
   selectionButton: {
-    backgroundColor: '#82CD7B',
-    padding: 14,
-    borderRadius: 25,
+    paddingVertical: 16,
+    borderRadius: 30,
     alignItems: 'center',
     width: '100%',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+  },
+  mentorButton: {
+    backgroundColor: '#4CAF50',
+  },
+  menteeButton: {
+    backgroundColor: '#007BFF',
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 15,
+    marginVertical: 10,
     width: '100%',
   },
   divider: {
@@ -161,5 +193,7 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: 10,
     color: '#848282',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
