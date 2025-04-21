@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import BackendManager from './auth/BackendManager';
 
 export default function MenteeApplicationScreen() {
   const router = useRouter();
@@ -25,8 +27,35 @@ export default function MenteeApplicationScreen() {
     }));
   };
 
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission denied", "Permission to access your media is required.");
+      return;
+    }
+  
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 1,
+    });
+  
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      setSelectedImage(asset);
+    }
+  };   
+
   const handleSubmit = async () => {
     try {      
+      const backendManager = BackendManager.getInstance();
+
+      // Upload image if selected
+      if (selectedImage) {
+        await backendManager.submitPicture(selectedImage.uri);
+      }
+      
       Alert.alert(
         "Success",
         "Your mentee profile has been saved successfully!",
@@ -160,6 +189,22 @@ export default function MenteeApplicationScreen() {
                 placeholderTextColor="#888"
               />
             </View>
+          </View>
+
+          {/* Image Picker */}
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <TouchableOpacity onPress={pickImage}>
+              {selectedImage ? (
+                <Image
+                  source={{ uri: selectedImage.uri }}
+                  style={{ width: 100, height: 100, borderRadius: 50 }}
+                />
+              ) : (
+                <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' }}>
+                  <ThemedText>Pick Image</ThemedText>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Submit Button */}
