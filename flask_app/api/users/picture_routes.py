@@ -1,4 +1,7 @@
-from flask import Blueprint, request, jsonify import os
+from flask import Blueprint, request, jsonify, send_file
+import os
+import mimetypes
+from extensions.cognito import require_auth
 from flask_app.api.users.routes import get_user_from_token
 
 picture_bp = Blueprint('picture_bp', __name__, url_prefix='/pictures')
@@ -17,7 +20,8 @@ def upload_picture():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
-    filename = f"{user_id}.png"
+    extension = mimetypes.guess_extension(file.mimetype) or '.png'
+    filename = f"{user_id}{extension}"
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
 

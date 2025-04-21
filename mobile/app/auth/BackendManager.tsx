@@ -91,6 +91,70 @@ class BackendManager {
     }
 
     /**
+     * Submit a user picture
+     * 
+     * @param imageUri - URI of the selected image
+     * @returns The response from the API
+     */
+    public async submitPicture(imageUri: string): Promise<any> {
+        try {
+            const headers = await this.getAuthHeaders();
+            headers.delete('Content-Type'); // Let fetch auto-set it for FormData
+
+            const res = await fetch(imageUri);
+            const blob = await res.blob();
+
+            const formData = new FormData();
+            const filename = imageUri.split('/').pop() || 'profile.png';
+            const match = /\.(\w+)$/.exec(filename ?? '');
+            const type = match ? `image/${match[1]}` : `image`;
+
+            formData.append('file', blob, filename);
+
+            const response = await fetch(`${API_URL}/api/pictures/uploads`, {
+                method: 'POST',
+                headers,
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to upload image');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get a user picture
+     * 
+     * @returns The user picture
+     */
+    public async getPicture(): Promise<Blob> {
+        try {
+          const headers = await this.getAuthHeaders();
+          const response = await fetch(`${API_URL}/api/pictures/me`, {
+            method: 'GET',
+            headers,
+          });
+      
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch profile picture');
+          }
+      
+          return await response.blob();
+        } catch (error) {
+          console.error('Error fetching profile picture:', error);
+          throw error;
+        }
+      }
+      
+    /**
      * Submit a user application
      * 
      * @param applicationData - The application data to submit
