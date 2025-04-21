@@ -5,7 +5,7 @@ from extensions.cognito import require_auth
 from flask_app.api.users.routes import get_user_from_token
 
 picture_bp = Blueprint('picture_bp', __name__, url_prefix='/pictures')
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'flask_app', 'uploads', 'pictures')
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'flask_app', 'uploads')
 
 @picture_bp.route('/uploads', methods=['POST'])
 @require_auth
