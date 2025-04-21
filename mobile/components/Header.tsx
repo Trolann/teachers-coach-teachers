@@ -1,30 +1,63 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Modal, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import BackendManager from '../app/auth/BackendManager';
 
 export function Header(props: { subtitle: string }) {
   const [showNav, setShowNav] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState<string | null>(null);
   const router = useRouter();
+  const backendManager = BackendManager.getInstance();
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch credits
+        const availableCredits = await backendManager.getAvailableCredits();
+        setCredits(availableCredits);
+        
+        // Fetch user name
+        const application = await backendManager.getApplication();
+        const name = await backendManager.getUserName();
+        setUserName(name || 'User');
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setCredits(0); // Default to 0 on error
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
 
   return (
     <>
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.greeting}>
-            Hi, Jessica <Text style={styles.wave}>👋</Text>
+            Hi, {userName || backendManager.getCachedUserName()} <Text style={styles.wave}>👋</Text>
           </Text>
           <Text style={styles.subtitle}>{props.subtitle}</Text>
         </View>
 
         <TouchableOpacity style={styles.profileSection} onPress={() => setShowNav(true)}>
           <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
-          <Text style={styles.tokenText}>12 🪙</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#666" style={styles.tokenLoader} />
+          ) : (
+            <Text style={styles.tokenText}>{credits ?? 0} 🪙</Text>
+          )}
         </TouchableOpacity>
       </View>
 
       {/* Modal for Nav Options */}
       <Modal
-        animationType="fade"
+        animationType="slide"
         transparent={true}
         visible={showNav}
         onRequestClose={() => setShowNav(false)}
@@ -44,8 +77,12 @@ export function Header(props: { subtitle: string }) {
             <TouchableOpacity onPress={() => { setShowNav(false); router.push('/settings'); }}>
               <Text style={styles.navItem}>⚙️  Settings</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => { setShowNav(false); router.push('/auth/login'); }}>
+            <TouchableOpacity onPress={() => { 
+              setShowNav(false); 
+              // Clear user cache on logout
+              backendManager.clearUserCache();
+              router.push('/auth/login'); 
+            }}>
               <Text style={[styles.navItem, styles.logoutItem]}>🚪  Logout</Text>
             </TouchableOpacity>
 
@@ -94,6 +131,10 @@ const styles = StyleSheet.create({
     color: '#333',
     marginTop: 4,
     textAlign: 'center',
+  },
+  tokenLoader: {
+    marginTop: 4,
+    height: 14, // Match the height of tokenText
   },
   modalOverlay: {
     flex: 1,
