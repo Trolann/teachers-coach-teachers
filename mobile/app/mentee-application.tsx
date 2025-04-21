@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import BackendManager from './auth/BackendManager';
 
 export default function MenteeApplicationScreen() {
   const router = useRouter();
@@ -25,8 +27,34 @@ export default function MenteeApplicationScreen() {
     }));
   };
 
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission denied", "Permission to access your media is required.");
+      return;
+    }
+  
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 1,
+    });
+  
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      setSelectedImage(asset);
+    }
+  };   
+
   const handleSubmit = async () => {
-    try {
+    try {      
+      const backendManager = BackendManager.getInstance();
+
+      // Upload image if selected
+      if (selectedImage) {
+        await backendManager.submitPicture(selectedImage.uri);
+      }
       Alert.alert(
         "Success",
         "Your mentee profile has been saved successfully!",
@@ -118,47 +146,29 @@ export default function MenteeApplicationScreen() {
               onChangeText={(text) => handleChange('schoolDistrict', text)}
             />
           </View>
+          {/* Image Picker */}
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <TouchableOpacity onPress={pickImage}>
+              {selectedImage ? (
+                <Image
+                  source={{ uri: selectedImage.uri }}
+                  style={{ width: 100, height: 100, borderRadius: 50 }}
+                />
+              ) : (
+                <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' }}>
+                  <ThemedText>Pick Image</ThemedText>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
 
-          <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Time Zone</ThemedText>
-            <TextInput 
-              style={styles.input}
-              value={formData.timeZone}
-              onChangeText={(text) => handleChange('timeZone', text)}
-            />
-          </View>
-        </View>
-
-        {/* Teaching Experience Section */}
-        <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>My Teaching Experience & Goals</ThemedText>
-          
-          <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Primary Subject Area(s) Taught</ThemedText>
-            <TextInput 
-              style={styles.input}
-              value={formData.teachingSubject}
-              onChangeText={(text) => handleChange('teachingSubject', text)}
-            />
-          </View>
-          
-          {/* Areas for Improvement Field */}
-          <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Areas I Want to Improve</ThemedText>
-            <ThemedText style={styles.inputDescription}>
-              Share specific skills, techniques, or knowledge areas where you would like guidance and support from a mentor.
-            </ThemedText>
-            <TextInput 
-              style={[styles.input, styles.multilineInput]}
-              value={formData.improvementAreas}
-              onChangeText={(text) => handleChange('improvementAreas', text)}
-              multiline={true}
-              numberOfLines={4}
-              textAlignVertical="top"
-              placeholder="Example: Student engagement strategies, differentiated instruction, effective assessment methods..."
-              placeholderTextColor="#888"
-            />
-          </View>
+          {/* Submit Button */}
+          <TouchableOpacity 
+            style={styles.submitButton}
+            onPress={handleSubmit}
+          >
+            <ThemedText style={styles.buttonText}>Submit</ThemedText>
+          </TouchableOpacity>
         </View>
 
         {/* Submit Button */}
