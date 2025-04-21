@@ -3,12 +3,14 @@ from models.user import User, UserType, ApplicationStatus
 from extensions.database import db
 from extensions.logging import get_logger
 from extensions.cognito import require_auth, parse_headers, CognitoTokenVerifier
+from extensions.embeddings import EmbeddingFactory
 from datetime import datetime
 from typing import Optional
 
 user_bp = Blueprint('users', __name__, url_prefix='/api/users')
 verifier = CognitoTokenVerifier()
 logger = get_logger(__name__)
+embedding_factory = EmbeddingFactory()
 
 def get_user_from_token(headers) -> Optional[User]:
     """
@@ -86,15 +88,18 @@ def submit_application():
         logger.debug(f'user_type == "ADMIN" {user_type == "ADMIN"}')
         return jsonify({'error': 'Invalid user type'}), 400
 
-    user.application_status = ApplicationStatus.PENDING
     # check if there's already a profile, error out if there is
     if user.profile or user.application_status != ApplicationStatus.PENDING:
         logger.info(f'User already has a profile or application status is not PENDING')
         return jsonify({'error': 'Application already submitted.'}), 403
 
+    user.application_status = ApplicationStatus.PENDING
+    if user.user_type == 'MENTEE':
+        user.application_status = ApplicationStatus.APPROVED
+        embedding_factory.store_embedding(user.cognito_sub, profile_data)
     user.profile = profile_data
     db.session.commit()
-    
+
     logger.info(f"Application submitted for user: {user.cognito_sub} with profile: {user.profile}")
 
     return jsonify({
@@ -126,7 +131,7 @@ def update_application():
     user.profile = {}
     db.session.commit() # Clear profile first
     user.profile = current_profile
-    user.application_status = ApplicationStatus.PENDING
+    user.application_status = ApplicationStatus.PENDING if user.user_type == 'MENTOR' else ApplicationStatus.APPROVED
     db.session.commit()
     
     logger.info(f"Application updated for user: {user.cognito_sub} with profile: {user.profile}")
@@ -145,17 +150,21 @@ def get_application():
     if not user:
         return jsonify({'error': 'User not found or invalid token'}), 401
 
-    if user.user_type != UserType.MENTOR:
-        return jsonify({'error': 'No application found'}), 404
-    
-    logger.debug(f"Application retrieved for user: {user.cognito_sub}")
+    # if user.user_type != UserType.MENTOR:
+    #     return jsonify({'error': 'No application found'}), 404
 
-    return jsonify({
+
+    return_dict = {
         'user_id': user.cognito_sub,
-        'status': user.application_status.value,
+        'user_name': user.email,
+        'status': user.application_status,
         'submitted_at': user.created_at.isoformat(),
         'profile_data': user.profile
-    })
+    }
+    logger.debug(f"Application retrieved for user: {user.cognito_sub}")
+    logger.error(f'Application data being returned: {return_dict=}')
+
+    return return_dict
 
 @user_bp.route('/get_application_status', methods=['GET'])
 @require_auth

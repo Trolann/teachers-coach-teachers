@@ -1,5 +1,8 @@
 import { API_URL } from '../../config/api';
 import TokenManager from './TokenManager';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 /**
  * BackendManager handles all API calls to the backend,
@@ -10,9 +13,68 @@ import TokenManager from './TokenManager';
 class BackendManager {
     private static instance: BackendManager;
     private tokenManager: TokenManager;
+    private cachedUserName: string = "User";
+    private cachedUserData: any = null;
+    private readonly USER_NAME_KEY = 'cached_user_name';
 
     private constructor() {
         this.tokenManager = TokenManager.getInstance();
+        // Load cached name from storage when instance is created
+        this.loadCachedName();
+    }
+
+    /**
+     * Get username (synchronous version for immediate UI display)
+     */
+    public getCachedUserName(): string {
+        return this.cachedUserName;
+    }
+
+    /**
+     * Load cached user name from secure storage
+     */
+    private async loadCachedName(): Promise<void> {
+        try {
+            const storedName = await this.getStorageItem(this.USER_NAME_KEY);
+            if (storedName) {
+                this.cachedUserName = storedName;
+            }
+        } catch (error) {
+            console.error('Error loading cached name:', error);
+        }
+    }
+
+    /**
+     * Store item in secure storage based on platform
+     */
+    private async setStorageItem(key: string, value: string): Promise<void> {
+        if (Platform.OS === 'web') {
+            await AsyncStorage.setItem(key, value);
+        } else {
+            await SecureStore.setItemAsync(key, value);
+        }
+    }
+
+    /**
+     * Get item from secure storage based on platform
+     */
+    private async getStorageItem(key: string): Promise<string | null> {
+        if (Platform.OS === 'web') {
+            return await AsyncStorage.getItem(key);
+        } else {
+            return await SecureStore.getItemAsync(key);
+        }
+    }
+
+    /**
+     * Remove item from secure storage based on platform
+     */
+    private async removeStorageItem(key: string): Promise<void> {
+        if (Platform.OS === 'web') {
+            await AsyncStorage.removeItem(key);
+        } else {
+            await SecureStore.deleteItemAsync(key);
+        }
     }
 
     /**
@@ -212,14 +274,30 @@ class BackendManager {
      */
     public async getApplication(): Promise<any> {
         try {
-            const response = await this.sendRequest('/api/users/get_application', 'GET');
+            // Return cached data if available
+            if (this.cachedUserData) {
+                return this.cachedUserData;
+            }
             
+            const response = await this.sendRequest('/api/users/get_application', 'GET');
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to get application');
             }
             
-            return await response.json();
+            const data = await response.json();
+            // Cache the user data
+            this.cachedUserData = data;
+            
+            // Cache the user name if available
+            if (data && data.profile_data && data.profile_data.firstName) {
+                this.cachedUserName = data.profile_data.firstName;
+                // Store in persistent storage
+                await this.setStorageItem(this.USER_NAME_KEY, data.profile_data.firstName);
+            }
+            
+            return data;
         } catch (error) {
             console.error('Error getting application:', error);
             throw error;
@@ -244,6 +322,285 @@ class BackendManager {
         } catch (error) {
             console.error('Error getting application status:', error);
             throw error;
+        }
+    }
+
+    /**
+     * List credit pools owned by a specific user
+     * 
+     * @param userEmail - Optional email to filter pools by owner
+     * @returns List of credit pools
+     */
+    public async listCreditPools(userEmail?: string): Promise<any> {
+        try {
+            const url = userEmail 
+                ? `/api/credits/pools?user_email=${encodeURIComponent(userEmail)}`
+                : '/api/credits/pools';
+                
+            const response = await this.sendRequest(url, 'GET');
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to list credit pools');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error listing credit pools:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Create a new credit pool
+     * 
+     * @param name - Name of the credit pool
+     * @param initialCredits - Optional initial credits amount
+     * @returns The created pool data
+     */
+    public async createCreditPool(name: string, initialCredits?: number): Promise<any> {
+        try {
+            const poolData = {
+                name: name,
+                initial_credits: initialCredits || 0
+            };
+            
+            const response = await this.sendRequest('/api/credits/pools', 'POST', poolData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create credit pool');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error creating credit pool:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update a credit pool
+     * 
+     * @param poolId - ID of the pool to update
+     * @param updateData - Data to update (name, is_active)
+     * @returns The updated pool data
+     */
+    public async updateCreditPool(poolId: string, updateData: {name?: string, is_active?: boolean}): Promise<any> {
+        try {
+            const response = await this.sendRequest(`/api/credits/pools/${poolId}`, 'PUT', updateData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to update credit pool');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating credit pool:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Add a user access to a credit pool by pool code
+     * 
+     * @param userEmail - Email of the user to add
+     * @param poolCode - Code of the pool to add the user to
+     * @returns The response from the API
+     */
+    public async addPoolAccess(userEmail: string, poolCode: string): Promise<any> {
+        try {
+            const accessData = {
+                user_email: userEmail,
+                pool_code: poolCode
+            };
+            
+            const response = await this.sendRequest('/api/credits/pools/access', 'POST', accessData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to add user to pool');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error adding user to pool:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Generate credit codes
+     * 
+     * @param numCodes - Number of codes to generate
+     * @param creditsPerCode - Credits per code
+     * @returns The generated codes
+     */
+    public async generateCredits(numCodes: number, creditsPerCode: number): Promise<any> {
+        try {
+            const generateData = {
+                num_codes: numCodes,
+                credits_per_code: creditsPerCode
+            };
+            
+            const response = await this.sendRequest('/api/credits/generate', 'POST', generateData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate credits');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error generating credits:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Redeem a credit code to a credit pool
+     * 
+     * @param code - The credit code to redeem
+     * @param poolId - ID of the pool to redeem to
+     * @returns The response from the API
+     */
+    public async redeemCredit(code: string, poolId: string): Promise<any> {
+        try {
+            const redeemData = {
+                code: code,
+                pool_id: poolId
+            };
+            
+            const response = await this.sendRequest('/api/credits/redeem', 'POST', redeemData);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to redeem credit');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error redeeming credit:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Remove a user from a credit pool
+     * 
+     * @param poolId - ID of the pool
+     * @param userId - ID of the user to remove
+     * @returns The response from the API
+     */
+    public async removeUserFromPool(poolId: number, userId: number): Promise<any> {
+        try {
+            const response = await this.sendRequest(`/api/credits/pools/${poolId}/users/${userId}`, 'DELETE');
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to remove user from pool');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error removing user from pool:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Find matches for the current user based on provided criteria
+     * 
+     * @param searchCriteria - Object with keys as criteria and values as text to match
+     * @param limit - Maximum number of results to return (optional)
+     * @returns The matched users sorted by relevance
+     */
+    public async findMatches(searchCriteria: Record<string, string>, limit?: number): Promise<any> {
+        try {
+            let url = '/matching/find_matches';
+            if (limit) {
+                url += `?limit=${limit}`;
+            }
+            
+            const response = await this.sendRequest(url, 'POST', searchCriteria);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to find matches');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error finding matches:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get the total number of credits available to the current user
+     * 
+     * @returns The total number of credits available across all pools
+     */
+    public async getAvailableCredits(): Promise<number> {
+        try {
+            const response = await this.sendRequest('/api/credits/available', 'GET');
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get available credits');
+            }
+            
+            const data = await response.json();
+            return data.total_credits_available;
+        } catch (error) {
+            console.error('Error getting available credits:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get the user's full name from application data
+     * 
+     * @returns The user's first name (cached or from backend)
+     */
+    public async getUserName(): Promise<string> {
+        try {
+            // Return cached name immediately
+            const currentCachedName = this.cachedUserName;
+            
+            // Try to get the latest name from application data in the background
+            this.getApplication().then(applicationData => {
+                if (applicationData && applicationData.profile_data && applicationData.profile_data.firstName) {
+                    this.cachedUserName = applicationData.profile_data.firstName;
+                    // Store in persistent storage
+                    this.setStorageItem(this.USER_NAME_KEY, applicationData.profile_data.firstName)
+                        .catch(err => console.error('Error storing name:', err));
+                }
+            }).catch(error => {
+                console.error('Error updating user name in background:', error);
+            });
+            
+            // Return the cached name while the update happens in background
+            return currentCachedName;
+        } catch (error) {
+            console.error('Error getting user name:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Clear cached user data (useful after logout)
+     */
+    public async clearUserCache(): Promise<void> {
+        this.cachedUserName = "User";
+        this.cachedUserData = null;
+        
+        // Clear from persistent storage
+        try {
+            await this.removeStorageItem(this.USER_NAME_KEY);
+        } catch (error) {
+            console.error('Error clearing cached name:', error);
         }
     }
 

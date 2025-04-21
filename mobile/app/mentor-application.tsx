@@ -17,7 +17,7 @@ export default function MentorApplicationScreen() {
     schoolDistrict: '',
     timeZone: '',
     primarySubject: '',
-    mentorSkills: ''
+    mentorSkills: '',
   });
 
   const handleChange = (field, value) => {
@@ -56,16 +56,10 @@ export default function MentorApplicationScreen() {
       if (selectedImage) {
         await backendManager.submitPicture(selectedImage.uri);
       }
-
       Alert.alert(
         "Success",
         "Your mentor profile has been saved successfully!",
-        [
-          {
-            text: "Continue",
-            onPress: () => router.replace('/(tabs)')
-          }
-        ]
+        [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
       );
     } catch (error) {
       console.error('Profile submission failed:', error);
@@ -76,21 +70,25 @@ export default function MentorApplicationScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.card}>
-            {/* Logo/Icon placeholder */}
-            <View style={styles.logoContainer}>
-              <View style={styles.logo} />
-            </View>
+          
+          {/* Logo/Icon */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logo} />
+          </View>
+
           {/* Header */}
           <View style={styles.headerContainer}>
             <ThemedText style={styles.headerText}>
-              We'd like to learn more about you.
+              Become a Mentor
+            </ThemedText>
+            <ThemedText style={styles.subHeaderText}>
+              Share your expertise and guide the next generation of educators.
             </ThemedText>
           </View>
 
           {/* Personal Information Section */}
           <View style={styles.sectionContainer}>
-            <ThemedText style={styles.sectionTitle}>My Information</ThemedText>
+            <ThemedText style={styles.sectionTitle}>Personal Information</ThemedText>
             
             <View style={styles.rowContainer}>
               <View style={styles.halfInputContainer}>
@@ -161,10 +159,10 @@ export default function MentorApplicationScreen() {
 
           {/* Teaching Experience Section */}
           <View style={styles.sectionContainer}>
-            <ThemedText style={styles.sectionTitle}>My Teaching Experience</ThemedText>
+            <ThemedText style={styles.sectionTitle}>Teaching Experience</ThemedText>
             
             <View style={styles.inputContainer}>
-              <ThemedText style={styles.inputLabel}>Primary Subject Area(s) Taught</ThemedText>
+              <ThemedText style={styles.inputLabel}>Primary Subject(s) Taught</ThemedText>
               <TextInput 
                 style={styles.input}
                 value={formData.primarySubject}
@@ -172,12 +170,8 @@ export default function MentorApplicationScreen() {
               />
             </View>
             
-            {/* New Skills Field */}
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Areas of Expertise</ThemedText>
-              <ThemedText style={styles.inputDescription}>
-                Share the specific skills, techniques, or knowledge areas where you can provide valuable guidance to mentees.
-              </ThemedText>
               <TextInput 
                 style={[styles.input, styles.multilineInput]}
                 value={formData.mentorSkills}
@@ -214,7 +208,6 @@ export default function MentorApplicationScreen() {
           >
             <ThemedText style={styles.buttonText}>Submit</ThemedText>
           </TouchableOpacity>
-        </View>
       </ScrollView>
     </ThemedView>
   );
@@ -223,31 +216,34 @@ export default function MentorApplicationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    padding: 20,
+    paddingTop: 50,
+    backgroundColor: 'white',
   },
   scrollContainer: {
     flexGrow: 1,
     paddingVertical: 20,
-  },
-  card: {
-    backgroundColor: 'white',
-    margin: 20,
-    borderRadius: 30,
-    padding: 20,
-    flex: 1,
+    paddingHorizontal: 15,
   },
   headerContainer: {
     alignItems: 'center',
     marginBottom: 30,
   },
   headerText: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '600',
-    color: '#333',
+    color: 'black',
     textAlign: 'center',
   },
   sectionContainer: {
     marginBottom: 30,
+  },
+  subHeaderText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 10,
   },
   sectionTitle: {
     fontSize: 22,
@@ -287,6 +283,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    borderBottomWidth: 0,  // Adding this line
   },
   multilineInput: {
     minHeight: 100,
