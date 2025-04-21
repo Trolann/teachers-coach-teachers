@@ -40,7 +40,7 @@ def find_matches():
         if not user_info or 'sub' not in user_info:
             return jsonify({"error": "Could not retrieve user information"}), 401
         
-        user_id = user_info['sub']
+        user_id = user_info['user_id']
         logger.info(f"Finding matches for user {user_id}")
         
         # Get the search criteria from the request body
@@ -63,6 +63,7 @@ def find_matches():
         formatted_matches = []
         for match in matches:
             # Extract only necessary information to return to the client
+            # TODO: Add additional data about the mentor (name, profile picture, etc.)
             formatted_matches.append({
                 "user_id": match["user_id"],
                 "score": match["score"],

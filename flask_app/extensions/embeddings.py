@@ -3,7 +3,7 @@ import openai
 from flask_app.extensions.logging import get_logger
 from flask_app.models.embedding import UserEmbedding
 from flask_app.extensions.database import db
-from flask_app.config import OpenAIConfig
+from flask_app.config import OpenAIConfig, EXCLUDED_EMBEDDING_FIELDS
 
 logger = get_logger(__name__)
 
@@ -49,6 +49,8 @@ class EmbeddingFactory:
         Takes in a dictionary of key value pairs, generates embeddings on each value and returns a dict
         with the same keys with 'embedding' appended to the key and the value being the embedding.
         
+        This method is thread-safe and can be called from multiple threads.
+        
         Args:
             user_id: The ID of the user - prevents abuse on the OpenAI end
             embedding_dict: Dictionary with keys as identifiers and values as text to embed
@@ -75,7 +77,7 @@ class EmbeddingFactory:
                 result_dict[key] = embedding
                 logger.debug(f"Generated embedding for key '{key}' with length {len(embedding)}")
             except Exception as e:
-                print(f"Error generating embedding for key '{key}': {str(e)}")
+                logger.error(f"Error generating embedding for key '{key}': {str(e)}")
 
         logger.info(f'generate_embeddings completed for user {user_id}, created {len(result_dict)} embeddings')
         return result_dict
@@ -100,6 +102,8 @@ class EmbeddingFactory:
         """
         Generate embeddings for a user without storing them in the database.
         
+        This method is deprecated. Use generate_embeddings directly instead.
+        
         Args:
             user_id: The ID of the user
             embedding_dict: Dictionary with text to generate embeddings for
@@ -107,17 +111,14 @@ class EmbeddingFactory:
         Returns:
             Dict[str, List[float]]: Dictionary with embedding types as keys and vector embeddings as values
         """
-        # Add entire profile embedding
-        processed_dict = embedding_dict.copy()
-        entire_profile = "\n\n".join([f"{key}: {value}" for key, value in embedding_dict.items()])
-        processed_dict["entire_profile"] = entire_profile
-
-        # Generate embeddings for the provided text
-        return self.generate_embeddings(user_id, processed_dict)
+        # Generate embeddings for each field individually
+        return self.generate_embeddings(user_id, embedding_dict)
     
     def store_embeddings_dict(self, user_id: str, embeddings_dict: Dict[str, List[float]]) -> None:
         """
         Store pre-generated embeddings in the database.
+        
+        This method should only be called from the main thread to avoid thread-related database errors.
         
         Args:
             user_id: The ID of the user
@@ -208,7 +209,7 @@ class TheAlgorithm:
         Only returns embeddings for active mentors (user_type = 'MENTOR' and is_active = True).
         
         Args:
-            embedding_type: The type of embedding to search for
+            embedding_type: The type of embedding to search for, or 'all' to search across all types
             vector: The vector to compare against
             limit: Maximum number of results to return
             
@@ -220,16 +221,28 @@ class TheAlgorithm:
             from flask_app.models.user import User, UserType, ApplicationStatus
             
             # Join with User model to filter by user_type and is_active
-            closest_embeddings = (
-                UserEmbedding.query
-                .join(User, UserEmbedding.user_id == User.cognito_sub)
-                .filter(UserEmbedding.embedding_type == embedding_type)
-                .filter(User.user_type == UserType.MENTOR)
-                .filter(User.is_active == True)
-                .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
-                .limit(limit)
-                .all()
-            )
+            if embedding_type != 'all':
+                closest_embeddings = (
+                    UserEmbedding.query
+                    .join(User, UserEmbedding.user_id == User.cognito_sub)
+                    .filter(UserEmbedding.embedding_type == embedding_type)
+                    .filter(User.user_type == UserType.MENTOR)
+                    .filter(User.is_active == True) # TODO: Update to use Sohini's is_active based on mentor availability
+                    .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
+                    .limit(limit)
+                    .all()
+                )
+            else:
+                logger.debug(f'Searching across all embedding types')
+                closest_embeddings = (
+                    UserEmbedding.query
+                    .join(User, UserEmbedding.user_id == User.cognito_sub)
+                    .filter(User.user_type == UserType.MENTOR)
+                    .filter(User.is_active == True) # TODO: Update to use Sohini's is_active based on mentor availability
+                    .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
+                    .limit(limit)
+                    .all()
+                )
             logger.debug(f"Found {len(closest_embeddings)} active mentor matches for embedding type '{embedding_type}'")
             return closest_embeddings
         except Exception as e:
@@ -275,14 +288,14 @@ class TheAlgorithm:
             List of embedding type strings
         """
         try:
-            embedding_types = (
-                db.session.query(UserEmbedding.embedding_type)
-                .filter_by(user_id=user_id)
-                .distinct()
-                .all()
-            )
+            embedding_types = UserEmbedding.query.filter_by(user_id=user_id).distinct(UserEmbedding.embedding_type).all()
+            logger.debug(f"Found {len(embedding_types)} embedding types for user {user_id}")
+            logger.debug(f'Embedding types: {embedding_types}')
+            return_types = []
+            for embedding_type in embedding_types:
+                return_types.append(embedding_type.embedding_type)
             # Extract column names from result
-            return [et[0] for et in embedding_types]
+            return return_types
         except Exception as e:
             logger.error(f"Error getting embedding types for user {user_id}: {str(e)}")
             return []
@@ -332,7 +345,8 @@ class TheAlgorithm:
         Helper method to process a single embedding search and update rankings.
         
         This method finds the closest embeddings for a given vector and
-        assigns points based on their rank.
+        assigns points based on their rank. It's used both for searching
+        specific embedding types and for fallback searches across all types.
         
         Args:
             embedding_type: The type of embedding to search for
@@ -354,61 +368,83 @@ class TheAlgorithm:
         # Assign points based on rank
         self._assign_points_for_embeddings(closest_embeddings, user_points, user_embeddings)
     
-    def get_closest_embeddings(self, user_id: str, embedding_to_search_for: Dict[str, str], limit: int = 10) -> List[Dict[str, Any]]:
+    def get_closest_embeddings(
+        self, 
+        user_id: str, 
+        embedding_to_search_for: Dict[str, str], 
+        limit: int = 10,
+        excluded_keys: List[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Find the closest embeddings to the given embedding dictionary.
         
-        This method implements a two-step approach:
-        1. First, query the DB to get all vector keys the current user has
-        2. For each key, perform searching and ranking
-        3. For each key in embedding_to_search_for, encode and search across the entire vector database
+        This method implements a targeted approach:
+        1. For each key in embedding_to_search_for, check if that key exists in the database
+        2. If the key exists, search only for that specific key
+        3. If the key doesn't exist, search across all embedding types
         4. Aggregate all rankings to produce a final sorted list
+        5. Exclude any keys specified in excluded_keys
         
         Args:
             user_id: The ID of the user making the search
             embedding_to_search_for: Dictionary with keys as identifiers and values as text to embed
             limit: Maximum number of results to return (default: 10)
+            excluded_keys: List of keys to exclude from the search (default: None)
             
         Returns:
             A list of closest embeddings, sorted by match score (best matches first)
         """
         
+        # Initialize excluded_keys if None
+        if excluded_keys is None:
+            excluded_keys = EXCLUDED_EMBEDDING_FIELDS
+
+        # Remove excluded keys from search, if there's no searches left after they're removed, error out
+        for key in excluded_keys:
+            if key in embedding_to_search_for:
+                embedding_to_search_for.pop(key)
+
+        if not embedding_to_search_for:
+            logger.error("None or no valid keys provided, unable to find any embeddings")
+            return []
+        
         # Generate embeddings for the search terms
         search_embeddings = self.embedding_factory.generate_embeddings(user_id, embedding_to_search_for)
-        
+        logger.error(f'Search embeddings keys: {search_embeddings.keys()}')
         # Dictionary to store points for each user_id
         user_points = {}
         # Dictionary to store user embeddings
         user_embeddings = {}
         
-        # Step 1: Get all embedding types for the current user
-        user_embedding_types = self._get_user_embedding_types(user_id)
-        logger.debug(f"Found {len(user_embedding_types)} embedding types for user {user_id}")
+        # Get all available embedding types in the database
+        _available_embedding_types = UserEmbedding.query.distinct(UserEmbedding.embedding_type).all()
+        available_embeddings = []
+        for embedding_type in _available_embedding_types:
+            available_embeddings.append(embedding_type.embedding_type)
+        logger.debug(f"Available embedding types in database: {available_embeddings}")
         
-        # Step 2: For each embedding type the user has, find closest matches
-        for embedding_type in user_embedding_types:
-            # Get the user's embedding for this type
-            user_embedding = UserEmbedding.query.filter_by(
-                user_id=user_id,
-                embedding_type=embedding_type
-            ).first()
-            
-            if user_embedding:
-                # Process this embedding search
+        # Process each key in the search request
+        for embedding_type, vector in search_embeddings.items():
+            # Skip excluded keys
+            if embedding_type in excluded_keys:
+                logger.debug(f"Skipping excluded key: {embedding_type}")
+                continue
+                
+            # Check if this embedding type exists in the database
+            if embedding_type in available_embeddings:
+                logger.debug(f"Searching for specific embedding type: {embedding_type}")
+                # Process this specific embedding search
                 self._process_embedding_search(
                     embedding_type,
-                    user_embedding.vector_embedding,
+                    vector,
                     user_points,
                     user_embeddings,
                     limit
                 )
-        
-        # Step 3: For each key in embedding_to_search_for, search across all vectors
-        if search_embeddings:
-            for embedding_type, vector in search_embeddings.items():
-                # Process this embedding search
+            else:
+                logger.debug(f"Embedding type {embedding_type} not found in database, searching across all types")
                 self._process_embedding_search(
-                    embedding_type,
+                    'all',
                     vector,
                     user_points,
                     user_embeddings,
@@ -422,6 +458,6 @@ class TheAlgorithm:
         return result
 
 # Create the singleton instances
-embedding_factory = EmbeddingFactory()
-the_algorithm = TheAlgorithm()
-logger.info(f'EmbeddingFactory initialized with model: {embedding_factory.embedding_model}')
+#embedding_factory = EmbeddingFactory()
+#the_algorithm = TheAlgorithm()
+#logger.info(f'EmbeddingFactory initialized with model: {embedding_factory.embedding_model}')

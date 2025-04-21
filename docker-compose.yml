@@ -56,7 +56,7 @@ services:
     volumes:
       - ./mobile:/app
       - /app/node_modules
-    command: npx expo start
+    command: npx expo start --tunnel
     user: "${UID}:${GID}"
     environment:
       - NODE_ENV=development

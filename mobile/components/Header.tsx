@@ -77,7 +77,6 @@ export function Header(props: { subtitle: string }) {
             <TouchableOpacity onPress={() => { setShowNav(false); router.push('/settings'); }}>
               <Text style={styles.navItem}>⚙️  Settings</Text>
             </TouchableOpacity>
-
             <TouchableOpacity onPress={() => { 
               setShowNav(false); 
               // Clear user cache on logout
