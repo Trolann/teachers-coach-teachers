@@ -16,6 +16,7 @@ import time
 from openai import OpenAI
 from faker import Faker
 import glob
+import queue
 
 logger = get_logger(__name__)
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
