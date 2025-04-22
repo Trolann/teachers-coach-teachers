@@ -32,7 +32,7 @@ def fake_mentors_page():
     logger.info(f'Current mentor count: {mentor_count}')
 
     return render_template(
-        'admin/dashboard/fake_mentors.html',
+        'dashboard/fake_mentors.html',
         mentor_count=mentor_count
     )
 
