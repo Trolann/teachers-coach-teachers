@@ -60,46 +60,29 @@
                 </div>
             </div>
             
-            <!-- Test Matching -->
+            <!-- Generate Fake Mentors -->
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                        <h5>Test Matching Algorithm</h5>
+                        <h5>Generate Fake Mentors</h5>
                     </div>
                     <div class="card-body">
-                        <form id="matchingForm">
+                        <form id="generateForm">
                             <div class="mb-3">
-                                <label for="userId" class="form-label">Requester User ID (optional)</label>
-                                <input type="text" class="form-control" id="userId" name="user_id" placeholder="Leave blank to generate a temporary ID">
-                                <div class="form-text">The user ID to use as the requester for matching</div>
+                                <label for="genNumProfiles" class="form-label">Number of Profiles to Generate</label>
+                                <input type="number" class="form-control" id="genNumProfiles" name="numProfiles" min="1" max="100" value="10">
                             </div>
-                            <div class="mb-3">
-                                <label for="searchCriteria" class="form-label">Search Criteria (JSON)</label>
-                                <textarea class="form-control" id="searchCriteria" name="search_criteria" rows="5" placeholder='{"bio": "I need help with educational leadership", "expertise": "curriculum development"}'></textarea>
-                                <div class="form-text">Enter a JSON object with search criteria</div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="limit" class="form-label">Result Limit</label>
-                                <input type="number" class="form-control" id="limit" name="limit" min="1" max="50" value="10">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Test Matching</button>
+                            <button type="submit" class="btn btn-primary" id="generateButton">Generate Mentors</button>
                         </form>
+                        <div id="generateProgress" class="progress mt-3 d-none">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="generateResult" class="mt-3"></div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Matching Results -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5>Matching Results</h5>
-            </div>
-            <div class="card-body">
-                <div id="matchingResults">
-                    <p class="text-muted">Run a matching test to see results here</p>
-                </div>
-            </div>
-        </div>
         
         <!-- Export Mentors -->
         <div class="card mt-3">
@@ -219,71 +202,69 @@
             updateMentorCount();
         });
         
-        // Test Matching Form
-        document.getElementById('matchingForm').addEventListener('submit', function(e) {
+        // Generate Mentors Form
+        document.getElementById('generateForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
+            const generateButton = document.getElementById('generateButton');
+            const progressBar = document.getElementById('generateProgress');
+            const progressBarInner = progressBar.querySelector('.progress-bar');
+            const resultDiv = document.getElementById('generateResult');
             
-            fetch('/admin/fake-mentors/test-matching', {
+            // Disable button and show progress bar
+            generateButton.disabled = true;
+            progressBar.classList.remove('d-none');
+            progressBarInner.style.width = '0%';
+            resultDiv.innerHTML = '<div class="alert alert-info">Starting generation...</div>';
+            
+            // Start the generation
+            fetch('/admin/fake-mentors/generate', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
-                let resultHtml = '';
                 if (data.success) {
-                    resultHtml = `
-                        <div class="alert alert-success">Found ${data.total} matches for requester ID: ${data.requester_id}</div>
-                        <h6>Search Criteria:</h6>
-                        <pre>${syntaxHighlight(data.criteria)}</pre>
-                        <h6>Matches:</h6>
-                    `;
-                    
-                    if (data.matches.length > 0) {
-                        data.matches.forEach((match, index) => {
-                            resultHtml += `
-                                <div class="card mb-3">
-                                    <div class="card-header">
-                                        <strong>Match #${index + 1}</strong> - Score: ${match.score.toFixed(2)}
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Name:</strong> ${match.profile.formattedName || `${match.profile.firstName} ${match.profile.lastName}`}</p>
-                                                <p><strong>Email:</strong> ${match.email}</p>
-                                                <p><strong>Location:</strong> ${match.profile.stateProvince || ''}, ${match.profile.country || ''}</p>
-                                                <p><strong>School District:</strong> ${match.profile.schoolDistrict || 'N/A'}</p>
-                                                <p><strong>Primary Subject:</strong> ${match.profile.primarySubject || 'N/A'}</p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>User ID:</strong> ${match.user_id}</p>
-                                                <p><strong>Matched on:</strong> ${match.matched_on.join(', ')}</p>
-                                                <p><strong>Phone:</strong> ${match.profile.phoneNumber || 'N/A'}</p>
-                                                <p><strong>Time Zone:</strong> ${match.profile.timeZone || 'N/A'}</p>
-                                            </div>
-                                        </div>
-                                        <div class="mt-3">
-                                            <h6>Mentor Skills:</h6>
-                                            <p>${match.profile.mentorSkills || 'No skills information available'}</p>
-                                        </div>
-                                        <div class="mt-3">
-                                            <h6>Full Profile:</h6>
-                                            <pre>${syntaxHighlight(match.profile)}</pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                    } else {
-                        resultHtml += '<div class="alert alert-warning">No matches found</div>';
-                    }
+                    // Poll for progress
+                    const pollInterval = setInterval(() => {
+                        fetch('/admin/fake-mentors/progress')
+                            .then(response => response.json())
+                            .then(progressData => {
+                                if (progressData.success) {
+                                    const percent = (progressData.current / progressData.total) * 100;
+                                    progressBarInner.style.width = `${percent}%`;
+                                    
+                                    if (!progressData.in_progress) {
+                                        clearInterval(pollInterval);
+                                        progressBar.classList.add('d-none');
+                                        generateButton.disabled = false;
+                                        
+                                        if (progressData.error) {
+                                            resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${progressData.error}</div>`;
+                                        } else {
+                                            resultDiv.innerHTML = `<div class="alert alert-success">Successfully generated ${progressData.total} mentor profiles</div>`;
+                                            updateMentorCount();
+                                        }
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                clearInterval(pollInterval);
+                                progressBar.classList.add('d-none');
+                                generateButton.disabled = false;
+                                resultDiv.innerHTML = `<div class="alert alert-danger">Error checking progress: ${error.message}</div>`;
+                            });
+                    }, 1000);
                 } else {
-                    resultHtml = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                    progressBar.classList.add('d-none');
+                    generateButton.disabled = false;
+                    resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
                 }
-                document.getElementById('matchingResults').innerHTML = resultHtml;
             })
             .catch(error => {
-                document.getElementById('matchingResults').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                progressBar.classList.add('d-none');
+                generateButton.disabled = false;
+                resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
             });
         });
 

@@ -29,10 +29,10 @@
                             <a class="nav-link {% if request.endpoint == 'admin.fake_mentors.fake_mentors_page' %}active{% endif %}"
                                href="{{ url_for('admin.fake_mentors.fake_mentors_page') }}">Fake Mentor Generator</a>
                         </li>
-{#                        <li class="nav-item">#}
-{#                            <a class="nav-link {% if request.endpoint == 'admin.admin_dashboard.test_mentors' %}active{% endif %}"#}
-{#                               href="{{ url_for('admin.admin_dashboard.test_mentors') }}">Mentors Test</a>#}
-{#                        </li>#}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'admin.test_matching.test_matching' %}active{% endif %}"
+                               href="{{ url_for('admin.test_matching.test_matching') }}">Test Matching</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'admin.admin_credits.index' %}active{% endif %}"
                                href="{{ url_for('admin.admin_credits.index') }}">Credits</a>
