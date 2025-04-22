@@ -1,0 +1,60 @@
+{
+  "system_prompt": "You generate realistic JSON data for education professionals and academic experts.",
+  "user_prompt": "Generate realistic education-specific details for a teacher/mentor with the following information:\n\nPersonal Details:\n- Name: {first_name} {last_name}\n- Phone: {phone_number}\n- Location: {state_province}, {country}\n\nThis person should be an education expert from one of these backgrounds (choose one):\n{job_types}\n\nGenerate a JSON object with these fields:\n{fields}\n\nMake it diverse and realistic for an accomplished education professional who would be a good mentor for junior teachers. Return ONLY the JSON with no explanations.",
+  "job_types": [
+    {
+      "name": "University faculty (professor, department chair, etc.)",
+      "weight": 30
+    },
+    {
+      "name": "School district administrator or curriculum specialist",
+      "weight": 20
+    },
+    {
+      "name": "Education department/district administrator, curriculum specialist, etc.",
+      "weight": 15
+    },
+    {
+      "name": "K-12 Public School Teacher - must be an expert with bio including multiple years/types of experience.",
+      "weight": 25
+    },
+    {
+      "name": "Any of the above and being retired or semi-retired.",
+      "weight": 10
+    }
+  ],
+  "fields": [
+    {
+      "name": "schoolDistrict",
+      "description": "a realistic school district name, university, or organization for {state_province}, {country}"
+    },
+    {
+      "name": "timeZone",
+      "description": "appropriate time zone for {state_province}, {country}"
+    },
+    {
+      "name": "primarySubject",
+      "description": "the main subject area or specialty this person focuses on"
+    },
+    {
+      "name": "mentorSkills",
+      "description": "3-5 sentences written in FIRST PERSON describing your areas of expertise, teaching techniques, and specific skills you can offer as a mentor. Start with \"I specialize in...\" or similar first-person phrasing"
+    }
+  ],
+  "query_system_prompt": "You generate realistic JSON data for education professionals seeking mentorship.",
+  "query_user_prompt": "Based on this mentor profile:\n{profile}\n\nGenerate a search query for a junior teacher named {mentee_first_name} {mentee_last_name} from {mentee_state}, {mentee_country} who would be looking for this specific mentor.\n\nThe query should be a JSON object with these fields:\n{query_fields}\n\nReturn ONLY the JSON with no explanations.",
+  "query_fields": [
+    {
+      "name": "primarySubject",
+      "description": "subject area the mentee teaches, should be related to the mentor's subject"
+    },
+    {
+      "name": "lookingFor",
+      "description": "2-3 sentences about what specific guidance they're seeking from this mentor"
+    },
+    {
+      "name": "yearsTeaching",
+      "description": "between 1-5 years"
+    }
+  ]
+}
