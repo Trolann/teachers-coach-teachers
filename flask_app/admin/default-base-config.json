@@ -38,10 +38,6 @@
       "name": "Any of the above and being retired or semi-retired.",
       "weight": 10
     },
-    {
-      "name": "Principal",
-      "weight": 5
-    }
   ],
   "query_fields": [
     {

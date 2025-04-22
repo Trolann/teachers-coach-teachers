@@ -660,9 +660,9 @@ def generate_mentor_profile(client: OpenAI, faker: Faker, index: int, count: int
             # Format job type for the prompt - just the selected job
             job_types_text = f"Job Type: {selected_job}\n"
         else:
-            job_types_text = "No job types defined\n"
+            job_types_text = "No job types defined\nChoose an experienced, distinguished educator role\n"
     else:
-        job_types_text = "No job types defined\n"
+        job_types_text = "No job types defined\nChoose an experienced, distinguished educator role\n"
     
     # Format fields for the prompt
     fields_text = ""
