@@ -34,7 +34,7 @@
     "@stream-io/video-react-native-sdk": "^1.11.2",
     "babel-plugin-module-resolver": "^5.0.2",
     "env": "^0.0.2",
-    "expo": "^52.0.41",
+    "expo": "^52.0.46",
     "expo-auth-session": "~6.0.3",
     "expo-blur": "~14.0.1",
     "expo-camera": "^16.0.18",
