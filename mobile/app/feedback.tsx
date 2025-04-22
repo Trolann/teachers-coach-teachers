@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Header from '@/components/Header';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,9 @@ export default function FeedbackScreen() {
   
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
+  const [skillsImproved, setSkillsImproved] = useState('');
+  const [skillsToImprove, setSkillsToImprove] = useState('');
+  const [appImprovements, setAppImprovements] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   const handleRating = (selectedRating) => {
@@ -19,7 +22,14 @@ export default function FeedbackScreen() {
 
   const handleSubmit = () => {
     // Here you would typically send the feedback to your backend
-    console.log('Submitting feedback:', { mentorId: mentor?.id, rating, feedback });
+    console.log('Submitting feedback:', { 
+      mentorId: mentor?.id, 
+      rating, 
+      feedback,
+      skillsImproved,
+      skillsToImprove,
+      appImprovements
+    });
     
     // For now, just mark as submitted
     setSubmitted(true);
@@ -28,6 +38,16 @@ export default function FeedbackScreen() {
   const handleFinish = () => {
     // Navigate back to mentee matching or dashboard
     router.push('/mentee-matching');
+  };
+
+  const handleAddToFavorites = () => {
+    // Implementation for adding to favorites
+    console.log('Added to favorites:', mentor?.name);
+  };
+
+  const handleNotInterested = () => {
+    // Implementation for not interested
+    console.log('Not interested in:', mentor?.name);
   };
 
   if (submitted) {
@@ -51,12 +71,27 @@ export default function FeedbackScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.headerContainer}>
-          <Header subtitle="Session Feedback" />
+          <Text style={styles.headerTitle}>Session Feedback</Text>
+          <Text style={styles.rateSessionText}>Rate your session with {mentor?.name || 'your mentor'}</Text>
         </View>
         
-        <View style={styles.mentorInfoContainer}>
-          <Text style={styles.mentorTitle}>How was your session with</Text>
-          <Text style={styles.mentorName}>{mentor?.name || 'your mentor'}?</Text>
+        {/* Mentor Card */}
+        <View style={styles.mentorCardContainer}>
+          {mentor?.image && (
+            <View style={styles.mentorCard}>
+              <Image 
+                source={typeof mentor.image === 'string' ? { uri: mentor.image } : mentor.image} 
+                style={styles.mentorImage} 
+              />
+              <View style={styles.mentorCardOverlay}>
+                <Text style={styles.mentorName}>{mentor?.name || 'Mentor Name'}</Text>
+                <View style={styles.locationContainer}>
+                  <Ionicons name="location-outline" size={14} color="#ffffff" />
+                  <Text style={styles.mentorLocation}>{mentor?.location || 'Location'}</Text>
+                </View>
+              </View>
+            </View>
+          )}
         </View>
         
         {/* Rating Stars */}
@@ -69,24 +104,83 @@ export default function FeedbackScreen() {
             >
               <Ionicons 
                 name={rating >= star ? "star" : "star-outline"} 
-                size={40} 
-                color={rating >= star ? "#FFD700" : "#BBBBBB"} 
+                size={30} 
+                color={rating >= star ? "#FFD700" : "#CCCCCC"} 
               />
             </TouchableOpacity>
           ))}
         </View>
+        <Text style={styles.selectRatingText}>Select a rating</Text>
         
         {/* Feedback Text Area */}
         <View style={styles.feedbackContainer}>
-          <Text style={styles.feedbackLabel}>Additional Comments (Optional)</Text>
+          <Text style={styles.feedbackLabel}>Share your experience (optional)</Text>
           <TextInput
             style={styles.feedbackInput}
             multiline
             numberOfLines={5}
-            placeholder="Tell us more about your experience..."
+            placeholder="What went well? What could be improved?"
             value={feedback}
             onChangeText={setFeedback}
           />
+        </View>
+        
+        {/* Skills Improved Text Area */}
+        <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackLabel}>What skills did you improve on in this call?</Text>
+          <TextInput
+            style={styles.feedbackInput}
+            multiline
+            numberOfLines={3}
+            placeholder="e.g. Communication, Leadership, Technical skills"
+            value={skillsImproved}
+            onChangeText={setSkillsImproved}
+          />
+        </View>
+        
+        {/* Skills To Improve Text Area */}
+        <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackLabel}>What skills do you want to improve on in your next call?</Text>
+          <TextInput
+            style={styles.feedbackInput}
+            multiline
+            numberOfLines={3}
+            placeholder="e.g. Public speaking, Time management, Technical skills"
+            value={skillsToImprove}
+            onChangeText={setSkillsToImprove}
+          />
+        </View>
+        
+        {/* App Improvements Text Area */}
+        <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackLabel}>Any suggestions to improve our app?</Text>
+          <TextInput
+            style={styles.feedbackInput}
+            multiline
+            numberOfLines={3}
+            placeholder="Share your ideas to make our app better"
+            value={appImprovements}
+            onChangeText={setAppImprovements}
+          />
+        </View>
+        
+        {/* Favorite/Not Interested Buttons */}
+        <View style={styles.actionButtonsContainer}>
+          <TouchableOpacity 
+            style={styles.favoriteButton} 
+            onPress={handleAddToFavorites}
+          >
+            <Ionicons name="heart" size={16} color="#FF4D4F" />
+            <Text style={styles.favoriteButtonText}>Add to Favorites</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.notInterestedButton} 
+            onPress={handleNotInterested}
+          >
+            <Ionicons name="close-circle" size={16} color="#666" />
+            <Text style={styles.notInterestedButtonText}>Not Interested</Text>
+          </TouchableOpacity>
         </View>
         
         {/* Submit Button */}
@@ -98,7 +192,7 @@ export default function FeedbackScreen() {
           <Text style={styles.buttonText}>Submit Feedback</Text>
         </TouchableOpacity>
         
-        {/* Skip Button */}
+        {/* Skip Button - Now Centered */}
         <TouchableOpacity 
           style={styles.skipButton}
           onPress={handleFinish}
@@ -106,6 +200,22 @@ export default function FeedbackScreen() {
           <Text style={styles.skipButtonText}>Skip</Text>
         </TouchableOpacity>
       </ScrollView>
+      
+      {/* Bottom Navigation Bar */}
+      <View style={styles.bottomNavbar}>
+        <TouchableOpacity style={styles.navbarItem}>
+          <Ionicons name="home" size={24} color="#000" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navbarItem}>
+          <Ionicons name="time" size={24} color="#666" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navbarItem}>
+          <Ionicons name="heart" size={24} color="#666" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navbarItem}>
+          <Ionicons name="person" size={24} color="#666" />
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -113,11 +223,11 @@ export default function FeedbackScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: '#ffffff',
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 30,
+    paddingBottom: 80,
   },
   container: {
     flex: 1,
@@ -127,37 +237,80 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     paddingHorizontal: 20,
-    paddingTop: 65,
-  },
-  mentorInfoContainer: {
+    paddingTop: 20,
     alignItems: 'center',
-    marginTop: 30,
-    marginBottom: 20,
   },
-  mentorTitle: {
-    fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
-  },
-  mentorName: {
+  headerTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#333',
     textAlign: 'center',
-    marginTop: 5,
+    marginBottom: 10,
+  },
+  rateSessionText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  mentorCardContainer: {
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  mentorCard: {
+    width: '100%',
+    height: 320,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+  },
+  mentorImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  mentorCardOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 16,
+  },
+  mentorName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 5,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mentorLocation: {
+    fontSize: 14,
+    color: '#ffffff',
+    marginLeft: 4,
   },
   ratingContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginVertical: 30,
+    marginVertical: 10,
   },
   starButton: {
-    marginHorizontal: 8,
+    marginHorizontal: 5,
+  },
+  selectRatingText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   feedbackContainer: {
     width: '100%',
     paddingHorizontal: 20,
-    marginBottom: 30,
+    marginBottom: 20,
   },
   feedbackLabel: {
     fontSize: 16,
@@ -173,33 +326,72 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     fontSize: 16,
-    minHeight: 120,
+    minHeight: 100,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  favoriteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    flex: 1,
+    marginRight: 10,
+  },
+  favoriteButtonText: {
+    marginLeft: 8,
+    color: '#333',
+    fontSize: 14,
+  },
+  notInterestedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    flex: 1,
+    marginLeft: 10,
+  },
+  notInterestedButtonText: {
+    marginLeft: 8,
+    color: '#333',
+    fontSize: 14,
   },
   submitButton: {
-    backgroundColor: '#00c851',
+    backgroundColor: '#3498db',
     paddingVertical: 14,
     paddingHorizontal: 30,
-    borderRadius: 10,
-    alignSelf: 'center',
+    borderRadius: 25,
+    marginHorizontal: 20,
     marginBottom: 15,
-    width: '80%',
   },
   disabledButton: {
-    backgroundColor: '#aaaaaa',
+    backgroundColor: '#a0a0a0',
   },
   buttonText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
   },
   skipButton: {
     paddingVertical: 10,
     alignSelf: 'center',
+    marginBottom: 20,
   },
   skipButtonText: {
     color: '#666',
     fontSize: 16,
+    textAlign: 'center',
   },
   thankYouTitle: {
     fontSize: 28,
@@ -217,10 +409,28 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   finishButton: {
-    backgroundColor: '#00c851',
+    backgroundColor: '#3498db',
     paddingVertical: 14,
     paddingHorizontal: 30,
-    borderRadius: 10,
+    borderRadius: 25,
     width: '80%',
+  },
+  bottomNavbar: {
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  navbarItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
