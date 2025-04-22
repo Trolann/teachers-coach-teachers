@@ -319,8 +319,18 @@ def generate_fake_mentors():
         # Get the locale for Faker
         locale = request.form.get('locale', 'en_US')
         
-        # Get the save option
-        save_option = request.form.get('saveOption', 'none')
+        # Get the auto-save options
+        auto_save_file = request.form.get('autoSaveFile') == 'true'
+        auto_save_db = request.form.get('autoSaveDB') == 'true'
+        
+        # Determine save option based on auto-save checkboxes
+        save_option = 'none'
+        if auto_save_file and auto_save_db:
+            save_option = 'both'
+        elif auto_save_file:
+            save_option = 'file'
+        elif auto_save_db:
+            save_option = 'db'
         
         logger.info(f'Generating {num_profiles} fake mentor profiles with locale {locale}')
         
@@ -613,10 +623,46 @@ def generate_mentor_profile(client: OpenAI, faker: Faker, index: int, count: int
             country = faker.country()
             state_province = faker.state()
     
-    # Format job types with weights for the prompt
-    job_types_text = ""
-    for i, job in enumerate(config.get('job_types', [])):
-        job_types_text += f"{i+1}. {job['name']} ({job['weight']}%)\n"
+    # Assign a specific job type based on weights
+    job_types = config.get('job_types', [])
+    if job_types:
+        # Calculate total weight
+        total_weight = sum(job.get('weight', 0) for job in job_types)
+        
+        if total_weight > 0:
+            # Calculate how many profiles of each type to generate based on weights
+            job_distributions = []
+            remaining_count = count
+            
+            for job in job_types[:-1]:  # Process all but the last job type
+                job_count = int((job.get('weight', 0) / total_weight) * count)
+                job_distributions.append((job['name'], job_count))
+                remaining_count -= job_count
+            
+            # Assign the remaining count to the last job type
+            if job_types:
+                job_distributions.append((job_types[-1]['name'], remaining_count))
+            
+            # Determine which job type this profile should be
+            current_index = 0
+            selected_job = None
+            
+            for job_name, job_count in job_distributions:
+                if index >= current_index and index < current_index + job_count:
+                    selected_job = job_name
+                    break
+                current_index += job_count
+            
+            # If we somehow didn't assign a job (shouldn't happen), use the first one
+            if selected_job is None and job_types:
+                selected_job = job_types[0]['name']
+                
+            # Format job type for the prompt - just the selected job
+            job_types_text = f"Job Type: {selected_job}\n"
+        else:
+            job_types_text = "No job types defined\n"
+    else:
+        job_types_text = "No job types defined\n"
     
     # Format fields for the prompt
     fields_text = ""
@@ -912,6 +958,180 @@ def load_json_file():
         return jsonify({'success': True, 'data': data})
     except Exception as e:
         logger.error(f'Error loading JSON file: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@fake_mentors_bp.route('/fake-mentors/save-to-file', methods=['POST'])
+def save_results_to_file():
+    """Save generated results to a file"""
+    logger.debug('Received request to save results to file')
+    try:
+        # Get the data and filename from the request
+        data = request.json.get('data')
+        filename = request.json.get('filename')
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        if not filename:
+            # Generate a filename with timestamp if not provided
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            filename = f"fake-mentors-{timestamp}.json"
+        
+        # Ensure directory exists
+        os.makedirs(GENERATE_MENTORS_DIR, exist_ok=True)
+        
+        # Save the file
+        file_path = os.path.join(GENERATE_MENTORS_DIR, filename)
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        
+        logger.info(f"Successfully saved results to {file_path}")
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'path': file_path
+        })
+    except Exception as e:
+        logger.error(f'Error saving results to file: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@fake_mentors_bp.route('/fake-mentors/load-to-db', methods=['POST'])
+def load_results_to_db():
+    """Load generated results into the database"""
+    logger.debug('Received request to load results into database')
+    try:
+        # Get the data from the request
+        data = request.json.get('data')
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        # Extract profiles from the data
+        profiles = data.get('mentors', [])
+        
+        if not profiles:
+            return jsonify({'success': False, 'error': 'No mentor profiles found in data'}), 400
+        
+        # Process all profiles
+        users_to_add = []
+        embedding_tasks = []
+        
+        for profile in profiles:
+            try:
+                # Validate the profile has required fields
+                if not all(key in profile for key in ['firstName', 'lastName']):
+                    logger.warning(f'Skipping profile missing required fields: {profile}')
+                    continue
+                
+                # Create a user with mentor profile data
+                # Generate a fake email if not present
+                email = profile.get('email', f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
+                cognito_sub = profile.get('id', str(uuid4()))  # Use existing ID or generate new one
+                
+                # Check if a user with this email already exists
+                existing_user = User.query.filter_by(email=email).first()
+                if existing_user:
+                    logger.warning(f'User with email {email} already exists, skipping')
+                    continue
+                
+                user = User(
+                    email=email,
+                    user_type="MENTOR",
+                    cognito_sub=cognito_sub,
+                    profile=profile,
+                    application_status="APPROVED"  # Set as approved to ensure they appear in matching
+                )
+                users_to_add.append(user)
+                
+                # Prepare embedding data from profile
+                embedding_data = {}
+                
+                # Add fields as embedding data
+                for field_name, field_value in profile.items():
+                    if field_name in EXCLUDED_EMBEDDING_FIELDS:
+                        continue
+                    if isinstance(field_value, list):
+                        embedding_data[field_name] = ', '.join(field_value)
+                    else:
+                        embedding_data[field_name] = str(field_value)
+                
+                # Store the embedding data for later processing
+                if embedding_data:
+                    embedding_tasks.append((cognito_sub, embedding_data))
+                
+                logger.debug(f'Prepared imported mentor user with cognito_sub: {cognito_sub}')
+            except Exception as e:
+                logger.error(f'Error preparing profile: {str(e)}')
+                logger.exception(e)
+        
+        # Add all users to the database
+        for user in users_to_add:
+            db.session.add(user)
+        
+        # Flush to get IDs
+        db.session.flush()
+        
+        # Now use thread pool to generate embeddings in parallel (only the OpenAI calls)
+        # Map futures to cognito_sub for easier tracking
+        future_to_sub = {}
+        for cognito_sub, embedding_data in embedding_tasks:
+            future = openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data)
+            future_to_sub[future] = cognito_sub
+        
+        # Process results as they complete
+        successful_embeddings = 0
+        embeddings_to_store = []  # Collect all embeddings to store in main thread
+        
+        for future in concurrent.futures.as_completed(future_to_sub.keys()):
+            cognito_sub = future_to_sub[future]
+            embeddings_dict = future.result()
+            
+            if embeddings_dict:
+                # Collect the embeddings to store later in the main thread
+                embeddings_to_store.append((cognito_sub, embeddings_dict))
+        
+        # Store all embeddings in the database (in the main thread)
+        for cognito_sub, embeddings_dict in embeddings_to_store:
+            try:
+                # Store each embedding in the database directly
+                for embedding_type, vector_embedding in embeddings_dict.items():
+                    # Check if an embedding of this type already exists for this user
+                    existing_embedding = UserEmbedding.query.filter_by(
+                        user_id=cognito_sub,
+                        embedding_type=embedding_type
+                    ).first()
+                    
+                    if existing_embedding:
+                        # Update existing embedding
+                        logger.info(f"Updating existing {embedding_type} embedding for user {cognito_sub}")
+                        existing_embedding.vector_embedding = vector_embedding
+                    else:
+                        # Create new embedding
+                        new_embedding = UserEmbedding(
+                            user_id=cognito_sub,
+                            embedding_type=embedding_type,
+                            vector_embedding=vector_embedding
+                        )
+                        db.session.add(new_embedding)
+                
+                successful_embeddings += 1
+            except Exception as e:
+                logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
+        
+        # Commit all changes
+        db.session.commit()
+        
+        logger.info(f'Successfully loaded {len(users_to_add)} mentor profiles with {successful_embeddings} embeddings into database')
+        return jsonify({
+            'success': True,
+            'count': len(users_to_add),
+            'embeddings': successful_embeddings
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'Error loading results into database: {str(e)}')
         logger.exception(e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
