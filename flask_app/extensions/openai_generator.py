@@ -12,6 +12,8 @@ from extensions.logging import get_logger
 
 logger = get_logger(__name__)
 
+MODEL = 'o4-mini'
+
 # Check for OpenAI API key
 api_key = os.environ.get("OPENAI_API_KEY")
 if not api_key:
@@ -134,7 +136,7 @@ def generate_mentor_profile(faker: Faker, index: int, count: int, config: Dict[s
 
     # Use OpenAI to generate the education-specific details with tool calling
     profile_response = openai_client.responses.create(
-        model="gpt-3.5-turbo",
+        model=MODEL,
         input=[
             {
                 "role": "system",
@@ -147,7 +149,6 @@ def generate_mentor_profile(faker: Faker, index: int, count: int, config: Dict[s
         ],
         tools=profile_tools,
         tool_choice={"type": "function", "name": "create_mentor_profile"},
-        temperature=0.8,
     )
     
     # Extract the structured data from the tool call
@@ -248,7 +249,7 @@ def generate_matching_query(profile: Dict[str, Any], faker: Faker, index: int, c
     
     # Use OpenAI to generate the matching query with tool calling
     query_response = openai_client.responses.create(
-        model="gpt-3.5-turbo",
+        model=MODEL,
         input=[
             {
                 "role": "system",
@@ -261,7 +262,6 @@ def generate_matching_query(profile: Dict[str, Any], faker: Faker, index: int, c
         ],
         tools=query_tools,
         tool_choice={"type": "function", "name": "create_matching_query"},
-        temperature=0.7,
     )
     
     # Extract the structured data from the tool call
