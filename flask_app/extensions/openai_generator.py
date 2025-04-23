@@ -12,11 +12,20 @@ from extensions.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Check for OpenAI API key
+api_key = os.environ.get("OPENAI_API_KEY")
+if not api_key:
+    logger.error("OPENAI_API_KEY environment variable is not set")
+    raise ValueError("OPENAI_API_KEY environment variable is not set")
+
+# Create a global OpenAI client
+openai_client = OpenAI(api_key=api_key)
+
 # Thread pool for parallel processing of OpenAI API calls
 openai_thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=20)
 
 
-def generate_mentor_profile(client: OpenAI, faker: Faker, index: int, count: int, config: Dict[str, Any]) -> Dict[
+def generate_mentor_profile(faker: Faker, index: int, count: int, config: Dict[str, Any]) -> Dict[
     str, Any]:
     """
     Generate a mentor profile using Faker for personal information and OpenAI for education-specific details.
@@ -124,7 +133,7 @@ def generate_mentor_profile(client: OpenAI, faker: Faker, index: int, count: int
 
 
     # Use OpenAI to generate the education-specific details with tool calling
-    profile_response = client.responses.create(
+    profile_response = openai_client.responses.create(
         model="gpt-3.5-turbo",
         input=[
             {
@@ -171,7 +180,7 @@ def generate_mentor_profile(client: OpenAI, faker: Faker, index: int, count: int
     return complete_profile
 
 
-def generate_matching_query(client: OpenAI, profile: Dict[str, Any], faker: Faker, index: int, count: int,
+def generate_matching_query(profile: Dict[str, Any], faker: Faker, index: int, count: int,
                             config: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate a matching query for a mentor profile using the OpenAI API.
@@ -238,7 +247,7 @@ def generate_matching_query(client: OpenAI, profile: Dict[str, Any], faker: Fake
         query_tools[0]["parameters"]["required"].append(field_name)
     
     # Use OpenAI to generate the matching query with tool calling
-    query_response = client.responses.create(
+    query_response = openai_client.responses.create(
         model="gpt-3.5-turbo",
         input=[
             {
@@ -281,17 +290,17 @@ def generate_matching_query(client: OpenAI, profile: Dict[str, Any], faker: Fake
     return complete_query
 
 
-def worker(client: OpenAI, faker: Faker, index: int, count: int, config: Dict[str, Any],
+def worker(faker: Faker, index: int, count: int, config: Dict[str, Any],
            result_queue: queue.Queue) -> None:
     """
     Worker thread function that generates a mentor profile and matching query.
     """
     try:
         # Generate mentor profile
-        profile = generate_mentor_profile(client, faker, index, count, config)
+        profile = generate_mentor_profile(faker, index, count, config)
 
         # Generate matching query for this profile
-        query = generate_matching_query(client, profile, faker, index, count, config)
+        query = generate_matching_query(profile, faker, index, count, config)
 
         # Put results in queue
         result_queue.put((index, profile, query))
@@ -321,14 +330,7 @@ def generate_mentor_profiles(num_profiles: int, config: Dict[str, Any], locale: 
         List of tuples containing (profile, query) pairs
     """
     try:
-        # Check for OpenAI API key
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            logger.error("OPENAI_API_KEY environment variable is not set")
-            raise ValueError("OPENAI_API_KEY environment variable is not set")
-
-        # Initialize OpenAI client and Faker
-        client = OpenAI(api_key=api_key)
+        # Initialize Faker with the specified locale
         faker = Faker(locale)
 
         # Set seed for reproducibility
@@ -347,7 +349,7 @@ def generate_mentor_profiles(num_profiles: int, config: Dict[str, Any], locale: 
             # Create a new thread for each item
             thread = threading.Thread(
                 target=worker,
-                args=(client, faker, i, num_profiles, config, result_queue)
+                args=(faker, i, num_profiles, config, result_queue)
             )
             threads.append(thread)
             thread.start()
