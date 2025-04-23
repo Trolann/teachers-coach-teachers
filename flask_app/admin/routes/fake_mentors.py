@@ -320,8 +320,8 @@ def generate_fake_mentors():
         locale = request.form.get('locale', 'en_US')
         
         # Get the auto-save options
-        auto_save_file = request.form.get('autoSaveFile') == 'true'
-        auto_save_db = request.form.get('autoSaveDB') == 'true'
+        auto_save_file = request.form.get('autoSaveFile', 'false').lower() == 'true'
+        auto_save_db = request.form.get('autoSaveDB', 'false').lower() == 'true'
         
         # Determine save option based on auto-save checkboxes
         save_option = 'none'
@@ -331,6 +331,8 @@ def generate_fake_mentors():
             save_option = 'file'
         elif auto_save_db:
             save_option = 'db'
+        
+        logger.info(f'Auto-save options: file={auto_save_file}, db={auto_save_db}, save_option={save_option}')
         
         logger.info(f'Generating {num_profiles} fake mentor profiles with locale {locale}')
         
@@ -448,27 +450,33 @@ def _process_openai_profile_generation(num_profiles: int, config: Dict[str, Any]
         
         # Save to file if requested
         if save_option in ['file', 'both']:
-            timestamp = time.strftime("%Y%m%d-%H%M%S")
-            mentors_file = os.path.join(GENERATE_MENTORS_DIR, f"fake-mentors-{timestamp}.json")
-            queries_file = os.path.join(GENERATE_MENTORS_DIR, f"queries-{timestamp}.json")
-            test_data_file = os.path.join(GENERATE_MENTORS_DIR, f"matching-test-data-{timestamp}.json")
-            
-            # Ensure directory exists
-            os.makedirs(GENERATE_MENTORS_DIR, exist_ok=True)
-            
-            with open(mentors_file, "w") as profile_file, open(queries_file, "w") as query_file, open(test_data_file, "w") as test_file:
-                json.dump(profiles, profile_file, indent=2)
-                json.dump(queries, query_file, indent=2)
-                json.dump(test_data, test_file, indent=2)
-            
-            logger.info(f"Successfully generated profiles saved to {mentors_file}")
-            logger.info(f"Successfully generated matching queries saved to {queries_file}")
-            logger.info(f"Successfully generated test data saved to {test_data_file}")
+            try:
+                timestamp = time.strftime("%Y%m%d-%H%M%S")
+                mentors_file = os.path.join(GENERATE_MENTORS_DIR, f"fake-mentors-{timestamp}.json")
+                queries_file = os.path.join(GENERATE_MENTORS_DIR, f"queries-{timestamp}.json")
+                test_data_file = os.path.join(GENERATE_MENTORS_DIR, f"matching-test-data-{timestamp}.json")
+                
+                # Ensure directory exists
+                os.makedirs(GENERATE_MENTORS_DIR, exist_ok=True)
+                
+                with open(mentors_file, "w") as profile_file, open(queries_file, "w") as query_file, open(test_data_file, "w") as test_file:
+                    json.dump(profiles, profile_file, indent=2)
+                    json.dump(queries, query_file, indent=2)
+                    json.dump(test_data, test_file, indent=2)
+                
+                logger.info(f"Successfully generated profiles saved to {mentors_file}")
+                logger.info(f"Successfully generated matching queries saved to {queries_file}")
+                logger.info(f"Successfully generated test data saved to {test_data_file}")
+            except Exception as e:
+                logger.error(f"Error saving files: {str(e)}")
+                logger.exception(e)
         
         # Save to database if requested
         if save_option in ['db', 'both']:
-            users = []
-            embedding_tasks = []
+            try:
+                logger.info(f"Auto-saving {len(profiles)} profiles to database")
+                users = []
+                embedding_tasks = []
             
             for profile in profiles:
                 try:
@@ -575,6 +583,7 @@ def _process_openai_profile_generation(num_profiles: int, config: Dict[str, Any]
         with progress_lock:
             generation_progress['in_progress'] = False
             logger.info(f'Successfully generated {len(profiles)} fake mentor profiles with {len(queries)} matching queries')
+            logger.info(f'Save option was: {save_option}')
     except Exception as e:
         if save_option in ['db', 'both']:
             db.session.rollback()
