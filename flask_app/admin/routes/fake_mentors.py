@@ -477,8 +477,8 @@ def _process_openai_profile_generation(num_profiles: int, config: Dict[str, Any]
                 logger.info(f"Auto-saving {len(profiles)} profiles to database")
                 users = []
                 embedding_tasks = []
-            
-            for profile in profiles:
+                
+                for profile in profiles:
                 try:
                     # Generate a unique email
                     email = profile.get('email', f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
