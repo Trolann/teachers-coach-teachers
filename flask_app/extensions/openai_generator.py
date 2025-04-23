@@ -290,10 +290,13 @@ def generate_matching_query(profile: Dict[str, Any], faker: Faker, index: int, c
     return complete_query
 
 
-def worker(faker: Faker, index: int, count: int, config: Dict[str, Any],
-           result_queue: queue.Queue) -> None:
+def worker_task(faker: Faker, index: int, count: int, config: Dict[str, Any]) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
     """
-    Worker thread function that generates a mentor profile and matching query.
+    Worker function that generates a mentor profile and matching query.
+    This function is designed to be executed by the thread pool.
+    
+    Returns:
+        Tuple containing (index, profile, query)
     """
     try:
         # Generate mentor profile
@@ -302,16 +305,18 @@ def worker(faker: Faker, index: int, count: int, config: Dict[str, Any],
         # Generate matching query for this profile
         query = generate_matching_query(profile, faker, index, count, config)
 
-        # Put results in queue
-        result_queue.put((index, profile, query))
+        return (index, profile, query)
 
     except json.JSONDecodeError as e:
         logger.error(f"Error parsing JSON for item {index + 1}: {str(e)}")
+        raise
     except AttributeError as e:
         logger.error(f"Error with tool calling response for item {index + 1}: {str(e)}")
+        raise
     except Exception as e:
         logger.error(f"Error processing item {index + 1}: {str(e)}")
         logger.exception(e)
+        raise
 
 
 def generate_mentor_profiles(num_profiles: int, config: Dict[str, Any], locale: str,
@@ -336,45 +341,37 @@ def generate_mentor_profiles(num_profiles: int, config: Dict[str, Any], locale: 
         # Set seed for reproducibility
         Faker.seed(42)
 
-        # Create a queue to collect results from threads
-        result_queue = queue.Queue()
-
-        # Create and start worker threads
-        threads: List[threading.Thread] = []
-        max_threads = min(20, num_profiles)  # Don't create more threads than items
-
-        logger.info(f"Starting generation with {max_threads} threads for {num_profiles} education expert profiles...")
-
+        logger.info(f"Starting generation with thread pool for {num_profiles} education expert profiles...")
+        
+        # Submit all tasks to the thread pool
+        future_to_index = {}
         for i in range(num_profiles):
-            # Create a new thread for each item
-            thread = threading.Thread(
-                target=worker,
-                args=(faker, i, num_profiles, config, result_queue)
-            )
-            threads.append(thread)
-            thread.start()
-
+            future = openai_thread_pool.submit(worker_task, faker, i, num_profiles, config)
+            future_to_index[future] = i
+            
+            # Add a small delay between submissions to avoid rate limiting
+            time.sleep(0.5)
+            
             # Update progress if callback provided
             if progress_update_callback:
                 progress_update_callback(i + 1, num_profiles)
-
-            # Limit the number of concurrent threads
-            if len(threads) >= max_threads:
-                # Wait for a thread to complete before starting a new one
-                threads[0].join()
-                threads.pop(0)
-
-            # Add a small delay between thread starts to avoid rate limiting
-            time.sleep(0.5)
-
-        # Wait for all remaining threads to complete
-        for thread in threads:
-            thread.join()
-
-        # Collect all results from the queue
+        
+        # Collect results as they complete
         results = []
-        while not result_queue.empty():
-            results.append(result_queue.get())
+        for future in concurrent.futures.as_completed(future_to_index):
+            try:
+                result = future.result()
+                results.append(result)
+                
+                # Update progress again when a task completes
+                if progress_update_callback:
+                    index = future_to_index[future]
+                    progress_update_callback(index + 1, num_profiles)
+                    
+            except Exception as exc:
+                index = future_to_index[future]
+                logger.error(f"Task {index} generated an exception: {exc}")
+                logger.exception(exc)
 
         # Sort results by index to maintain order
         results.sort(key=lambda x: x[0])
