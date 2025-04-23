@@ -577,7 +577,7 @@ def _process_openai_profile_generation(num_profiles: int, config: Dict[str, Any]
             # Commit all changes
             db.session.commit()
             
-            logger.info(f'Successfully imported {len(users)} mentor profiles with {successful_embeddings} embeddings')
+            logger.info(f'Successfully auto-saved {len(users)} mentor profiles with {successful_embeddings} embeddings into database')
         
         # All profiles generated
         with progress_lock:
