@@ -96,10 +96,36 @@ def generate_mentor_profile(client: OpenAI, faker: Faker, index: int, count: int
         fields=fields_text
     )
 
-    # Use OpenAI to generate the education-specific details
-    profile_response = client.chat.completions.create(
+    # Define the tool for structured profile data
+    profile_tools = [
+        {
+            "type": "function",
+            "name": "create_mentor_profile",
+            "description": "Create a structured mentor profile with education-specific details",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": False
+            },
+            "strict": True
+        }
+    ]
+    
+    # Add all expected fields to the tool parameters
+    for field in config.get('fields', []):
+        field_name = field['name']
+        field_desc = field['description']
+        profile_tools[0]["parameters"]["properties"][field_name] = {
+            "type": ["string", "null"],
+            "description": field_desc
+        }
+        profile_tools[0]["parameters"]["required"].append(field_name)
+    
+    # Use OpenAI to generate the education-specific details with tool calling
+    profile_response = client.responses.create(
         model="gpt-3.5-turbo",
-        messages=[
+        input=[
             {
                 "role": "system",
                 "content": config.get('system_prompt', ''),
@@ -109,18 +135,18 @@ def generate_mentor_profile(client: OpenAI, faker: Faker, index: int, count: int
                 "content": user_prompt,
             },
         ],
+        tools=profile_tools,
+        tool_choice={"type": "function", "name": "create_mentor_profile"},
         temperature=0.8,
     )
-
-    profile_text = profile_response.choices[0].message.content.strip()
-    # Handle possible markdown code blocks in the response
-    if profile_text.startswith("```json"):
-        profile_text = profile_text[7:].strip()
-    if profile_text.endswith("```"):
-        profile_text = profile_text[:-3].strip()
-
-    # Parse the OpenAI response
-    profile_data = json.loads(profile_text)
+    
+    # Extract the structured data from the tool call
+    profile_data = {}
+    if profile_response.output and len(profile_response.output) > 0:
+        for output_item in profile_response.output:
+            if output_item.type == "function_call" and output_item.name == "create_mentor_profile":
+                profile_data = json.loads(output_item.arguments)
+                break
 
     # Generate a unique ID for the mentor
     mentor_id = str(uuid.uuid4())
@@ -184,9 +210,36 @@ def generate_matching_query(client: OpenAI, profile: Dict[str, Any], faker: Fake
         query_fields=query_fields_text
     )
 
-    query_response = client.chat.completions.create(
+    # Define the tool for structured query data
+    query_tools = [
+        {
+            "type": "function",
+            "name": "create_matching_query",
+            "description": "Create a structured matching query for a mentor profile",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": False
+            },
+            "strict": True
+        }
+    ]
+    
+    # Add all expected fields to the tool parameters
+    for field in config.get('query_fields', []):
+        field_name = field['name']
+        field_desc = field['description']
+        query_tools[0]["parameters"]["properties"][field_name] = {
+            "type": ["string", "null"],
+            "description": field_desc
+        }
+        query_tools[0]["parameters"]["required"].append(field_name)
+    
+    # Use OpenAI to generate the matching query with tool calling
+    query_response = client.responses.create(
         model="gpt-3.5-turbo",
-        messages=[
+        input=[
             {
                 "role": "system",
                 "content": config.get('query_system_prompt', ''),
@@ -196,18 +249,18 @@ def generate_matching_query(client: OpenAI, profile: Dict[str, Any], faker: Fake
                 "content": query_user_prompt,
             },
         ],
+        tools=query_tools,
+        tool_choice={"type": "function", "name": "create_matching_query"},
         temperature=0.7,
     )
-
-    query_text = query_response.choices[0].message.content.strip()
-    # Handle possible markdown code blocks in the response
-    if query_text.startswith("```json"):
-        query_text = query_text[7:].strip()
-    if query_text.endswith("```"):
-        query_text = query_text[:-3].strip()
-
-    # Parse the OpenAI response
-    query_data = json.loads(query_text)
+    
+    # Extract the structured data from the tool call
+    query_data = {}
+    if query_response.output and len(query_response.output) > 0:
+        for output_item in query_response.output:
+            if output_item.type == "function_call" and output_item.name == "create_matching_query":
+                query_data = json.loads(output_item.arguments)
+                break
 
     # Combine Faker data with OpenAI data
     complete_query = {
@@ -244,6 +297,8 @@ def worker(client: OpenAI, faker: Faker, index: int, count: int, config: Dict[st
 
     except json.JSONDecodeError as e:
         logger.error(f"Error parsing JSON for item {index + 1}: {str(e)}")
+    except AttributeError as e:
+        logger.error(f"Error with tool calling response for item {index + 1}: {str(e)}")
     except Exception as e:
         logger.error(f"Error processing item {index + 1}: {str(e)}")
         logger.exception(e)
