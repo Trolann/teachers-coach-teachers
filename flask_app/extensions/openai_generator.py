@@ -121,7 +121,8 @@ def generate_mentor_profile(client: OpenAI, faker: Faker, index: int, count: int
             "description": field_desc
         }
         profile_tools[0]["parameters"]["required"].append(field_name)
-    
+
+
     # Use OpenAI to generate the education-specific details with tool calling
     profile_response = client.responses.create(
         model="gpt-3.5-turbo",
