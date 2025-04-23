@@ -2,13 +2,12 @@ import concurrent.futures
 import os
 import time
 import json
-import threading
-import queue
 import uuid
 from typing import Dict, Any, List, Optional, Tuple, Callable
 from openai import OpenAI
 from faker import Faker
 from extensions.logging import get_logger
+from re import match
 
 logger = get_logger(__name__)
 
@@ -27,16 +26,26 @@ openai_client = OpenAI(api_key=api_key)
 openai_thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=20)
 
 
+
 def generate_mentor_profile(faker: Faker, index: int, count: int, config: Dict[str, Any]) -> Dict[
     str, Any]:
     """
     Generate a mentor profile using Faker for personal information and OpenAI for education-specific details.
     """
     logger.debug(f"Generating profile {index + 1}/{count}...")
+    def get_latin_name() -> tuple[str, str]:
+        while True:
+            first_name = faker.first_name()
+            last_name = faker.last_name()
 
-    # Generate personal information using Faker
-    first_name = faker.first_name()
-    last_name = faker.last_name()
+            # Pattern to match only Latin alphabet characters, spaces, hyphens and apostrophes
+            pattern = r'^[A-Za-z\s\'\-]+$'
+
+            # Check if both names contain only Latin characters
+            if match(pattern, first_name) and match(pattern, last_name):
+                return first_name, last_name
+
+    first_name, last_name = get_latin_name()
     phone_number = faker.phone_number()
 
     # Get location information based on locale

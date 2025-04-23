@@ -148,7 +148,8 @@
                                     <div class="mb-3">
                                         <label for="locale" class="form-label">Locale for Names/Locations</label>
                                         <select class="form-control" id="locale" name="locale">
-                                            <option value="en_US" selected>English (US)</option>
+                                            <option value="diverse" selected>United States (Diverse)</option>
+                                            <option value="en_US">English (US)</option>
                                             <option value="en_GB">English (UK)</option>
                                             <option value="es_ES">Spanish (Spain)</option>
                                             <option value="fr_FR">French</option>
@@ -159,18 +160,6 @@
                                 <div class="col-md-6">
                                     <div class="save-options">
                                         <label class="form-label">Save Options:</label>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="autoSaveFile" id="autoSaveFile">
-                                            <label class="form-check-label" for="autoSaveFile">
-                                                Auto-save to file (server side)
-                                            </label>
-                                        </div>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="autoSaveDB" id="autoSaveDB">
-                                            <label class="form-check-label" for="autoSaveDB">
-                                                Auto-load into database
-                                            </label>
-                                        </div>
                                         <div class="mt-3">
                                             <button type="button" id="saveToFileBtn" class="btn btn-outline-primary mb-2 w-100">
                                                 <i class="fas fa-file-download"></i> Save to File
@@ -199,9 +188,9 @@
                             <button type="submit" class="btn btn-primary" id="generateButton">Generate Mentors</button>
                         </form>
                         
-                        <div id="generateProgress" class="progress mt-3 d-none">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                        </div>
+{#                        <div id="generateProgress" class="progress mt-3 d-none">#}
+{#                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>#}
+{#                        </div>#}
                         <div id="generateResult" class="mt-3"></div>
                         
                         <!-- Results Container -->
@@ -879,14 +868,10 @@
             const progressBarInner = progressBar.querySelector('.progress-bar');
             const resultDiv = document.getElementById('generateResult');
             const resultsContainer = document.getElementById('resultsContainer');
-            
+
             // Add the current configuration to the form data
             formData.append('config', JSON.stringify(currentConfig));
-            
-            // Add auto-save options
-            formData.append('autoSaveFile', document.getElementById('autoSaveFile').checked);
-            formData.append('autoSaveDB', document.getElementById('autoSaveDB').checked);
-            
+
             // Disable buttons and show progress bar
             generateButton.disabled = true;
             document.getElementById('saveToFileBtn').disabled = true;
@@ -895,7 +880,7 @@
             progressBarInner.style.width = '0%';
             resultDiv.innerHTML = '<div class="alert alert-info">Starting generation...</div>';
             resultsContainer.classList.add('d-none');
-            
+
             // Start the generation
             fetch('/admin/fake-mentors/generate', {
                 method: 'POST',
@@ -910,20 +895,26 @@
                             .then(response => response.json())
                             .then(progressData => {
                                 if (progressData.success) {
-                                    const percent = (progressData.current / progressData.total) * 100;
-                                    progressBarInner.style.width = `${percent}%`;
-                                    
+                                    // Only update progress bar if actual generation has started
+                                    if (progressData.current > 0 || progressData.generation_started) {
+                                        const percent = (progressData.current / progressData.total) * 100;
+                                        progressBarInner.style.width = `${percent}%`;
+                                    } else {
+                                        // Keep progress bar at 0% until real progress begins
+                                        progressBarInner.style.width = '0%';
+                                    }
+
                                     if (!progressData.in_progress) {
                                         clearInterval(pollInterval);
                                         progressBar.classList.add('d-none');
                                         generateButton.disabled = false;
-                                        
+
                                         if (progressData.error) {
                                             resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${progressData.error}</div>`;
                                         } else {
                                             resultDiv.innerHTML = `<div class="alert alert-success">Successfully generated ${progressData.total} mentor profiles</div>`;
                                             updateMentorCount();
-                                            
+
                                             // Display the results
                                             if (progressData.results) {
                                                 displayResults(progressData.results);
