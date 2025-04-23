@@ -473,23 +473,26 @@ def _process_openai_profile_generation(num_profiles: int, config: Dict[str, Any]
         
         # Save to database if requested
         if save_option in ['db', 'both']:
+            users = []
+            embedding_tasks = []
             try:
                 logger.info(f"Auto-saving {len(profiles)} profiles to database")
-                users = []
-                embedding_tasks = []
-                
+
                 for profile in profiles:
                     try:
                         # Generate a unique email
-                    email = profile.get('email', f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
-                    cognito_sub = profile.get('id', str(uuid4()))  # Use existing ID or generate new one
-                    
-                    # Check if a user with this email already exists
-                    existing_user = User.query.filter_by(email=email).first()
-                    if existing_user:
-                        logger.warning(f'User with email {email} already exists, skipping')
+                        email = profile.get('email', f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
+                        cognito_sub = profile.get('id', str(uuid4()))  # Use existing ID or generate new one
+
+                        # Check if a user with this email already exists
+                        existing_user = User.query.filter_by(email=email).first()
+                        if existing_user:
+                            logger.warning(f'User with email {email} already exists, skipping')
+                            continue
+                    except Exception as e:
+                        logger.error(f"Error saving user: {str(e)}")
                         continue
-                    
+
                     user = User(
                         email=email,
                         user_type="MENTOR",
@@ -498,10 +501,10 @@ def _process_openai_profile_generation(num_profiles: int, config: Dict[str, Any]
                         application_status="APPROVED"  # Set as approved to ensure they appear in matching
                     )
                     users.append(user)
-                    
+
                     # Prepare embedding data from profile
                     embedding_data = {}
-                    
+
                     # Add fields as embedding data
                     for field_name, field_value in profile.items():
                         if field_name in EXCLUDED_EMBEDDING_FIELDS:
@@ -510,42 +513,42 @@ def _process_openai_profile_generation(num_profiles: int, config: Dict[str, Any]
                             embedding_data[field_name] = ', '.join(field_value)
                         else:
                             embedding_data[field_name] = str(field_value)
-                    
+
                     # Store the embedding data for later processing
                     if embedding_data:
                         embedding_tasks.append((cognito_sub, embedding_data))
-                    
+
                     logger.debug(f'Prepared imported mentor user with cognito_sub: {cognito_sub}')
-                except Exception as e:
-                    logger.error(f'Error preparing profile: {str(e)}')
-                    logger.exception(e)
-            
+            except Exception as e:
+                logger.error(f'Error preparing profile: {str(e)}')
+                logger.exception(e)
+
             # Add all users to the database
             for user in users:
                 db.session.add(user)
-            
+
             # Flush to get IDs
             db.session.flush()
-            
+
             # Now use thread pool to generate embeddings in parallel (only the OpenAI calls)
             # Map futures to cognito_sub for easier tracking
             future_to_sub = {}
             for cognito_sub, embedding_data in embedding_tasks:
                 future = openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data)
                 future_to_sub[future] = cognito_sub
-            
+
             # Process results as they complete
             successful_embeddings = 0
             embeddings_to_store = []  # Collect all embeddings to store in main thread
-            
+
             for future in concurrent.futures.as_completed(future_to_sub.keys()):
                 cognito_sub = future_to_sub[future]
                 embeddings_dict = future.result()
-                
+
                 if embeddings_dict:
                     # Collect the embeddings to store later in the main thread
                     embeddings_to_store.append((cognito_sub, embeddings_dict))
-            
+
             # Store all embeddings in the database (in the main thread)
             for cognito_sub, embeddings_dict in embeddings_to_store:
                 try:
@@ -569,14 +572,14 @@ def _process_openai_profile_generation(num_profiles: int, config: Dict[str, Any]
                                 vector_embedding=vector_embedding
                             )
                             db.session.add(new_embedding)
-                    
+
                     successful_embeddings += 1
                 except Exception as e:
                     logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
-            
+
             # Commit all changes
             db.session.commit()
-            
+
             logger.info(f'Successfully auto-saved {len(users)} mentor profiles with {successful_embeddings} embeddings into database')
         
         # All profiles generated
