@@ -195,7 +195,7 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
         Tuple[Dict[str, Any], Optional[str]]: (results, result_file_path)
     """
     # Import the test module functions
-    from flask_app.tests.ai_matching import prepare_mentor_data, prepare_query_data
+    from flask_app.tests.ai_matching import prepare_mentor_data
     
     # Prepare mentor data
     mentors = test_data.get('mentors', [])
@@ -277,13 +277,13 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
     for i, query in enumerate(queries):
         logger.debug(f"Testing query {i+1}/{total}...")
         
-        # Prepare query data
-        prepared_query = prepare_query_data(query)
+        # Extract the query data, removing the targetMentorId field
+        search_query = {k: v for k, v in query.items() if k != 'targetMentorId'}
         
         # Get matches using the algorithm
         matches = the_algorithm.get_closest_embeddings(
             "test-user-id",  # Use a dummy user ID for testing
-            prepared_query,
+            search_query,
             limit=10  # Get more than 3 to see where the target mentor ranks
         )
         
