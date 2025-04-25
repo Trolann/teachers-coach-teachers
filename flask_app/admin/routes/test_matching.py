@@ -53,7 +53,12 @@ def validate_test_data(test_data: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
     
     # Check if it has mentors and queries keys
     if 'mentors' not in test_data or 'queries' not in test_data:
-        return False, "Test data must contain 'mentors' and 'queries' arrays"
+        # Special case for fake_mentors.py format
+        if 'mentors' in test_data and 'test_queries' in test_data:
+            # Rename test_queries to queries for compatibility
+            test_data['queries'] = test_data.pop('test_queries')
+        else:
+            return False, "Test data must contain 'mentors' and 'queries' arrays"
     
     # Check if mentors and queries are lists
     if not isinstance(test_data['mentors'], list) or not isinstance(test_data['queries'], list):
@@ -64,12 +69,21 @@ def validate_test_data(test_data: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
         if not isinstance(query, dict):
             return False, f"Query at index {i} must be an object"
         
-        if 'targetMentorId' not in query:
-            return False, f"Query at index {i} is missing required 'targetMentorId' field"
+        # Check for targetMentorId or target_mentor_id (support both formats)
+        has_target_id = False
+        if 'targetMentorId' in query:
+            has_target_id = True
+        elif 'target_mentor_id' in query:
+            # Rename to standardized format
+            query['targetMentorId'] = query.pop('target_mentor_id')
+            has_target_id = True
+            
+        if not has_target_id:
+            return False, f"Query at index {i} is missing required target mentor ID field"
         
         # Check if query has at least one more key besides targetMentorId
         if len(query.keys()) < 2:
-            return False, f"Query at index {i} must have at least one additional field besides 'targetMentorId'"
+            return False, f"Query at index {i} must have at least one additional field besides target mentor ID"
     
     return True, None
 
@@ -281,11 +295,18 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
         # Get top 3 matches for audit
         top_matches = []
         for rank, match in enumerate(matches[:3], 1):
+            # Get mentor name - try different ID field formats
+            mentor_name = "Unknown"
+            for m in mentors:
+                if m.get("id") == match["user_id"] or m.get("cognito_sub") == match["user_id"]:
+                    mentor_name = f"{m.get('firstName', '')} {m.get('lastName', '')}"
+                    break
+            
             top_matches.append({
                 "rank": rank,
                 "mentor_id": match["user_id"],
                 "score": match["score"],
-                "mentor_name": next((f"{m['firstName']} {m['lastName']}" for m in mentors if m.get("id") == match["user_id"]), "Unknown")
+                "mentor_name": mentor_name
             })
             
             if match["user_id"] == target_mentor_id:
@@ -299,12 +320,19 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
                     target_rank = rank
                     break
         
+        # Find target mentor name
+        target_mentor_name = "Unknown"
+        for m in mentors:
+            if m.get("id") == target_mentor_id or m.get("cognito_sub") == target_mentor_id:
+                target_mentor_name = f"{m.get('firstName', '')} {m.get('lastName', '')}"
+                break
+        
         # Record the result for display
         result = {
             "query_index": i,
             "query_name": f"{query.get('firstName', '')} {query.get('lastName', '')}",
             "target_mentor_id": target_mentor_id,
-            "target_mentor_name": next((f"{m['firstName']} {m['lastName']}" for m in mentors if m.get("id") == target_mentor_id), "Unknown"),
+            "target_mentor_name": target_mentor_name,
             "target_in_top3": target_in_top3,
             "target_rank": target_rank,
             "passed": target_in_top3
@@ -315,7 +343,7 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
         test_result = {
             "query": query,
             "target_mentor_id": target_mentor_id,
-            "target_mentor_name": next((f"{m['firstName']} {m['lastName']}" for m in mentors if m.get("id") == target_mentor_id), "Unknown"),
+            "target_mentor_name": target_mentor_name,
             "target_rank": target_rank,
             "passed": target_in_top3,
             "top_matches": top_matches
