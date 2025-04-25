@@ -29,42 +29,91 @@
         .json-null {
             color: #95a5a6;
         }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        .tab-content {
+            padding-top: 10px;
+        }
     </style>
 
     <div class="container-fluid">
         <h1>AI Matching Test Panel</h1>
         
-        <div class="row">
-            <!-- Test Matching -->
-            <div class="col-md-6">
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs" id="matchingTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button" role="tab" aria-controls="results" aria-selected="true">Results</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="test-matching-tab" data-bs-toggle="tab" data-bs-target="#test-matching" type="button" role="tab" aria-controls="test-matching" aria-selected="false">Test Matching</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="run-tests-tab" data-bs-toggle="tab" data-bs-target="#run-tests" type="button" role="tab" aria-controls="run-tests" aria-selected="false">Run Matching Tests</button>
+            </li>
+        </ul>
+        
+        <!-- Tab Content -->
+        <div class="tab-content" id="matchingTabsContent">
+            <!-- Results Tab (Default) -->
+            <div class="tab-pane fade show active" id="results" role="tabpanel" aria-labelledby="results-tab">
                 <div class="card">
                     <div class="card-header">
-                        <h5>Test Matching Algorithm</h5>
+                        <h5>Matching Analysis Results</h5>
                     </div>
                     <div class="card-body">
-                        <form id="matchingForm">
-                            <div class="mb-3">
-                                <label for="userId" class="form-label">Requester User ID (optional)</label>
-                                <input type="text" class="form-control" id="userId" name="user_id" placeholder="Leave blank to generate a temporary ID">
-                                <div class="form-text">The user ID to use as the requester for matching</div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="searchCriteria" class="form-label">Search Criteria (JSON)</label>
-                                <textarea class="form-control" id="searchCriteria" name="search_criteria" rows="5" placeholder='{"bio": "I need help with educational leadership", "expertise": "curriculum development"}'></textarea>
-                                <div class="form-text">Enter a JSON object with search criteria</div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="limit" class="form-label">Result Limit</label>
-                                <input type="number" class="form-control" id="limit" name="limit" min="1" max="50" value="10">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Test Matching</button>
-                        </form>
+                        <p class="text-muted">Analysis data will be displayed here in future updates.</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Run Matching Tests -->
-            <div class="col-md-6">
+            <!-- Test Matching Tab -->
+            <div class="tab-pane fade" id="test-matching" role="tabpanel" aria-labelledby="test-matching-tab">
+                <div class="row">
+                    <!-- Test Matching -->
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Test Matching Algorithm</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="matchingForm">
+                                    <div class="mb-3">
+                                        <label for="userId" class="form-label">Requester User ID (optional)</label>
+                                        <input type="text" class="form-control" id="userId" name="user_id" placeholder="Leave blank to generate a temporary ID">
+                                        <div class="form-text">The user ID to use as the requester for matching</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="searchCriteria" class="form-label">Search Criteria (JSON)</label>
+                                        <textarea class="form-control" id="searchCriteria" name="search_criteria" rows="5" placeholder='{"bio": "I need help with educational leadership", "expertise": "curriculum development"}'></textarea>
+                                        <div class="form-text">Enter a JSON object with search criteria</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="limit" class="form-label">Result Limit</label>
+                                        <input type="number" class="form-control" id="limit" name="limit" min="1" max="50" value="10">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Test Matching</button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Matching Results -->
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5>Matching Results</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="matchingResults">
+                                    <p class="text-muted">Run a matching test to see results here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Run Matching Tests Tab -->
+            <div class="tab-pane fade" id="run-tests" role="tabpanel" aria-labelledby="run-tests-tab">
                 <div class="card">
                     <div class="card-header">
                         <h5>Run Matching Tests</h5>
@@ -80,18 +129,6 @@
                         </form>
                         <div id="testResults" class="mt-3"></div>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Matching Results -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5>Matching Results</h5>
-            </div>
-            <div class="card-body">
-                <div id="matchingResults">
-                    <p class="text-muted">Run a matching test to see results here</p>
                 </div>
             </div>
         </div>
@@ -119,6 +156,15 @@
                 }
                 return '<span class="' + cls + '">' + match + '</span>';
             });
+        }
+
+        // Switch to specific tab when needed
+        function switchToTab(tabId) {
+            const tab = document.getElementById(tabId);
+            if (tab) {
+                const tabTrigger = new bootstrap.Tab(tab);
+                tabTrigger.show();
+            }
         }
 
         // Test Matching Form
@@ -256,5 +302,32 @@
                 testResultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
             });
         });
+
+        // Handle tab navigation via URL hash
+        function handleTabNavigation() {
+            const hash = window.location.hash;
+            if (hash) {
+                const tabId = hash.replace('#', '') + '-tab';
+                switchToTab(tabId);
+            }
+        }
+
+        // Initialize tabs and handle navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up tab change event listeners
+            const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
+            tabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(event) {
+                    const targetId = event.target.getAttribute('data-bs-target').replace('#', '');
+                    window.location.hash = targetId;
+                });
+            });
+
+            // Handle initial tab navigation
+            handleTabNavigation();
+        });
+
+        // Handle back/forward browser navigation
+        window.addEventListener('hashchange', handleTabNavigation);
     </script>
 {% endblock %}

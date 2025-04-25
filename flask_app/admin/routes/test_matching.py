@@ -19,7 +19,7 @@ the_algorithm = TheAlgorithm()
 @require_auth
 def test_matching():
     """
-    Render the test matching page.
+    Render the test matching page with the Results tab as default.
     """
     logger.info("Rendering test matching page")
     return render_template('dashboard/test_matching.html')
