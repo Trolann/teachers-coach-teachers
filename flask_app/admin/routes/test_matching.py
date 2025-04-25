@@ -75,13 +75,20 @@ def validate_test_data(test_data: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
             # Rename to standardized format
             query['targetMentorId'] = query.pop('target_mentor_id')
             has_target_id = True
+        
+        # Also check for id field that might be the target mentor ID
+        if not has_target_id and 'id' in query:
+            # If there's an id field but no explicit target, assume it's the target
+            query['targetMentorId'] = query['id']
+            has_target_id = True
             
         if not has_target_id:
             return False, f"Query at index {i} is missing required target mentor ID field"
         
         # Check if query has at least one more key besides targetMentorId
-        if len(query.keys()) < 2:
-            return False, f"Query at index {i} must have at least one additional field besides target mentor ID"
+        query_fields = [k for k in query.keys() if k not in ('targetMentorId', 'id')]
+        if len(query_fields) < 1:
+            return False, f"Query at index {i} must have at least one field to use for matching"
     
     return True, None
 
@@ -197,9 +204,12 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
         # Extract the query data, removing the targetMentorId field
         search_query = {k: v for k, v in query.items() if k != 'targetMentorId'}
         
+        # Generate a unique test user ID for this query
+        test_user_id = f"test-user-{uuid4()}"
+        
         # Get matches using the algorithm
         matches = the_algorithm.get_closest_embeddings(
-            "test-user-id",  # Use a dummy user ID for testing
+            test_user_id,  # Use a unique user ID for each test
             search_query,
             limit=10  # Get more than 3 to see where the target mentor ranks
         )
@@ -379,6 +389,14 @@ def run_server_file_test():
                 test_data = json.load(f)
             except json.JSONDecodeError as e:
                 return jsonify({'success': False, 'error': f'Invalid JSON format in {filename}: {str(e)}'}), 400
+        
+        # Check if we have mentors in the database
+        mentor_count = User.query.filter_by(user_type=UserType.MENTOR).count()
+        if mentor_count == 0:
+            return jsonify({
+                'success': False, 
+                'error': 'No mentors found in the database. Please import mentors first.'
+            }), 400
                 
         # Validate test data structure
         is_valid, error_message = validate_test_data(test_data)
