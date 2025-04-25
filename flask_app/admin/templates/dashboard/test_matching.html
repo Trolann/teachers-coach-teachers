@@ -480,13 +480,7 @@
                 
                 // Initialize an empty query editor
                 const queryEditor = document.getElementById('queryEditor');
-                createJsonEditor(queryEditor, {
-                    "bio": "",
-                    "expertise": "",
-                    "yearsTeaching": 0,
-                    "gradeLevel": "",
-                    "subject": ""
-                });
+                queryEditor.innerHTML = '<div class="alert alert-info">Select a mentee to load query fields</div>';
             });
         });
         
