@@ -522,14 +522,14 @@ def save_results_to_file():
             return jsonify({'success': False, 'error': 'No data provided'}), 400
 
         if not filename:
-            # Generate a filename with timestamp if not provided
-            timestamp = time.strftime("%Y%m%d-%H%M%S")
-            filename = f"fake-mentors-{timestamp}.json"
+            # Generate a filename with ISO timestamp if not provided
+            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S")
+            filename = f"matching-test-data-{timestamp}.json"
 
         # Ensure directory exists
         os.makedirs(GENERATE_MENTORS_DIR, exist_ok=True)
 
-        # Save the file
+        # Save the file in the same format as matching-test-data2.json
         file_path = os.path.join(GENERATE_MENTORS_DIR, filename)
         with open(file_path, 'w') as f:
             json.dump(data, f, indent=2)
