@@ -4,12 +4,10 @@ from flask_app.models.embedding import UserEmbedding
 from extensions.embeddings import EmbeddingFactory, TheAlgorithm
 from extensions.cognito import require_auth
 from extensions.logging import get_logger
-from extensions.openai_generator import openai_thread_pool
 import json
 import os
 import glob
 import datetime
-import concurrent.futures
 from uuid import uuid4
 from typing import Dict, List, Any, Tuple, Optional
 
@@ -170,19 +168,6 @@ def test_matching_algorithm():
         logger.exception(e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-def generate_embeddings(cognito_sub: str, embedding_data: Dict[str, str]) -> Optional[Dict[str, List[float]]]:
-    """
-    Generate embeddings for a user - this is the function that will be threaded
-    """
-    try:
-        # Only call the OpenAI API part, not the database operations
-        embeddings_dict = embedding_factory.generate_embedding_dict(cognito_sub, embedding_data)
-        logger.debug(f'Generated embeddings for user {cognito_sub}')
-        return embeddings_dict
-    except Exception as e:
-        logger.error(f'Error generating embeddings for user {cognito_sub}: {str(e)}')
-        logger.exception(e)
-        return None
 
 def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Optional[str]]:
     """
@@ -194,76 +179,8 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
     Returns:
         Tuple[Dict[str, Any], Optional[str]]: (results, result_file_path)
     """
-    # Import the test module functions
-    from flask_app.tests.ai_matching import prepare_mentor_data
-    
-    # Prepare mentor data
-    mentors_from_test_data = test_data.get('mentors_from_test_data', [])
-    prepared_mentors = prepare_mentor_data(mentors_from_test_data)
-    
-    # Prepare embedding tasks for threading
-    embedding_tasks = []
-    for mentor in prepared_mentors:
-        # Generate embedding data from mentor profile
-        embedding_data = {
-            "firstName": mentor["profile"]["firstName"],
-            "lastName": mentor["profile"]["lastName"],
-            "primarySubject": mentor["profile"].get("primarySubject", ""),
-            "mentorSkills": mentor["profile"].get("mentorSkills", "")
-        }
-        
-        # Store the embedding task for later processing
-        embedding_tasks.append((mentor["cognito_sub"], embedding_data))
-    
-    # Use thread pool to generate embeddings in parallel (only the OpenAI calls)
-    future_to_sub = {}
-    for cognito_sub, embedding_data in embedding_tasks:
-        future = openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data)
-        future_to_sub[future] = cognito_sub
-    
-    # Process results as they complete
-    embeddings_to_store = []  # Collect all embeddings to store in main thread
-    
-    for future in concurrent.futures.as_completed(future_to_sub.keys()):
-        cognito_sub = future_to_sub[future]
-        embeddings_dict = future.result()
-        
-        if embeddings_dict:
-            # Collect the embeddings to store later in the main thread
-            embeddings_to_store.append((cognito_sub, embeddings_dict))
-    
-    # Store all embeddings in the database (in the main thread)
-    for cognito_sub, embeddings_dict in embeddings_to_store:
-        try:
-            # Store each embedding in the database directly
-            for embedding_type, vector_embedding in embeddings_dict.items():
-                # Check if an embedding of this type already exists for this user
-                existing_embedding = UserEmbedding.query.filter_by(
-                    user_id=cognito_sub,
-                    embedding_type=embedding_type
-                ).first()
-                
-                if existing_embedding:
-                    # Update existing embedding
-                    logger.info(f"Updating existing {embedding_type} embedding for user {cognito_sub}")
-                    existing_embedding.vector_embedding = vector_embedding
-                else:
-                    # Create new embedding
-                    new_embedding = UserEmbedding(
-                        user_id=cognito_sub,
-                        embedding_type=embedding_type,
-                        vector_embedding=vector_embedding
-                    )
-                    from extensions.database import db
-                    db.session.add(new_embedding)
-            
-            # Commit after each user's embeddings are stored
-            from extensions.database import db
-            db.session.commit()
-        except Exception as e:
-            logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
-            from extensions.database import db
-            db.session.rollback()
+    # Get the mentors from the test data (for reference only, not for embedding)
+    mentors = test_data.get('mentors', [])
     
     # Run tests for each query
     queries = test_data.get('queries', [])
@@ -295,14 +212,12 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
         # Get top 3 matches for audit
         top_matches = []
         for rank, match in enumerate(matches[:3], 1):
-            # Get mentor name - try different ID field formats
-            logger.error(f'Match: {match=}')
+            # Get mentor name from database
             mentor_name = "Unknown"
-            for m in mentors_from_test_data:
-                logger.error(f'Mentor: {m=}')
-                if m.get("id") == match["user_id"] or m.get("cognito_sub") == match["user_id"]:
-                    mentor_name = f"{m.get('firstName', '')} {m.get('lastName', '')}"
-                    break
+            mentor_user = User.query.filter_by(cognito_sub=match["user_id"]).first()
+            if mentor_user and mentor_user.profile:
+                profile = mentor_user.profile
+                mentor_name = f"{profile.get('firstName', '')} {profile.get('lastName', '')}"
             
             top_matches.append({
                 "rank": rank,
@@ -324,10 +239,17 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
         
         # Find target mentor name
         target_mentor_name = "Unknown"
-        for m in mentors_from_test_data:
-            if m.get("id") == target_mentor_id or m.get("cognito_sub") == target_mentor_id:
-                target_mentor_name = f"{m.get('firstName', '')} {m.get('lastName', '')}"
-                break
+        # First try to find in database
+        target_mentor = User.query.filter_by(cognito_sub=target_mentor_id).first()
+        if target_mentor and target_mentor.profile:
+            profile = target_mentor.profile
+            target_mentor_name = f"{profile.get('firstName', '')} {profile.get('lastName', '')}"
+        # If not found in database, try to find in test data
+        else:
+            for m in mentors:
+                if m.get("id") == target_mentor_id or m.get("cognito_sub") == target_mentor_id:
+                    target_mentor_name = f"{m.get('firstName', '')} {m.get('lastName', '')}"
+                    break
         
         # Record the result for display
         result = {
