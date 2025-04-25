@@ -198,8 +198,8 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
     from flask_app.tests.ai_matching import prepare_mentor_data
     
     # Prepare mentor data
-    mentors = test_data.get('mentors', [])
-    prepared_mentors = prepare_mentor_data(mentors)
+    mentors_from_test_data = test_data.get('mentors_from_test_data', [])
+    prepared_mentors = prepare_mentor_data(mentors_from_test_data)
     
     # Prepare embedding tasks for threading
     embedding_tasks = []
@@ -296,8 +296,10 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
         top_matches = []
         for rank, match in enumerate(matches[:3], 1):
             # Get mentor name - try different ID field formats
+            logger.error(f'Match: {match=}')
             mentor_name = "Unknown"
-            for m in mentors:
+            for m in mentors_from_test_data:
+                logger.error(f'Mentor: {m=}')
                 if m.get("id") == match["user_id"] or m.get("cognito_sub") == match["user_id"]:
                     mentor_name = f"{m.get('firstName', '')} {m.get('lastName', '')}"
                     break
@@ -322,7 +324,7 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
         
         # Find target mentor name
         target_mentor_name = "Unknown"
-        for m in mentors:
+        for m in mentors_from_test_data:
             if m.get("id") == target_mentor_id or m.get("cognito_sub") == target_mentor_id:
                 target_mentor_name = f"{m.get('firstName', '')} {m.get('lastName', '')}"
                 break
