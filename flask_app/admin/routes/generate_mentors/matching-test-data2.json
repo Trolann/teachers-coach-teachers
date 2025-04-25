@@ -1,0 +1,50 @@
+{
+  "mentors": [
+    {
+      "id": "baf44b5a-c799-40f5-8625-6fd55793a46c",
+      "firstName": "Danielle",
+      "lastName": "Johnson",
+      "phoneNumber": "533-521-8196x001",
+      "country": "United States",
+      "stateProvince": "North Carolina",
+      "schoolDistrict": "Charlotte-Mecklenburg Schools",
+      "timeZone": "Eastern Time Zone",
+      "primarySubject": "English Language Arts",
+      "mentorSkills": "I specialize in curriculum development, differentiated instruction, and integrating technology in the classroom. With over 15 years of experience teaching English Language Arts in diverse K-12 settings, I have a deep understanding of literacy strategies and fostering critical thinking skills. I can offer expertise in creating engaging lesson plans, supporting struggling learners, and professional development for educators seeking to enhance their teaching practices."
+    },
+    {
+      "id": "dac9c68e-fa16-4a7f-b567-5756facd5de6",
+      "firstName": "Carolyn",
+      "lastName": "Hoffman",
+      "phoneNumber": "001-486-537-9402x654",
+      "country": "United States",
+      "stateProvince": "Wisconsin",
+      "schoolDistrict": "Madison Metropolitan School District",
+      "timeZone": "Central Standard Time (CST)",
+      "primarySubject": "Science Education",
+      "mentorSkills": "I specialize in science education, particularly biology. With over 15 years of experience teaching in K-12 public schools, I have developed innovative teaching techniques that engage students and promote critical thinking. My expertise includes designing hands-on experiments, integrating technology into the curriculum, and fostering a collaborative learning environment. As a mentor, I can offer guidance on lesson planning, assessment strategies, and classroom management to help junior teachers excel in their profession."
+    }
+  ],
+  "queries": [
+    {
+      "firstName": "Lydia",
+      "lastName": "Trujillo",
+      "country": "United States",
+      "stateProvince": "North Carolina",
+      "primarySubject": "English Language Arts",
+      "lookingFor": "I am a junior teacher in North Carolina looking for guidance on curriculum development, differentiated instruction, and integrating technology in the classroom. I am seeking support in creating engaging lesson plans, supporting struggling learners, and enhancing my teaching practices.",
+      "yearsTeaching": 3,
+      "targetMentorId": "baf44b5a-c799-40f5-8625-6fd55793a46c"
+    },
+    {
+      "firstName": "Joseph",
+      "lastName": "Clark",
+      "country": "United States",
+      "stateProvince": "Virginia",
+      "primarySubject": "Biology",
+      "lookingFor": "I am a junior teacher with 3 years of experience teaching high school biology in Virginia. I am looking for guidance on designing engaging hands-on experiments, integrating technology into my lessons, and fostering a collaborative learning environment to enhance student learning outcomes.",
+      "yearsTeaching": 3,
+      "targetMentorId": "dac9c68e-fa16-4a7f-b567-5756facd5de6"
+    }
+  ]
+}
