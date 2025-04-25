@@ -517,28 +517,56 @@ def save_results_to_file():
         # Get the data and filename from the request
         data = request.json.get('data')
         filename = request.json.get('filename')
+        file_format = request.json.get('format', 'both')  # Default to both formats
 
         if not data:
             return jsonify({'success': False, 'error': 'No data provided'}), 400
 
-        if not filename:
-            # Generate a filename with ISO timestamp if not provided
-            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S")
-            filename = f"matching-test-data-{timestamp}.json"
-
         # Ensure directory exists
         os.makedirs(GENERATE_MENTORS_DIR, exist_ok=True)
+        
+        saved_files = []
+        
+        # Save in original format if requested
+        if file_format in ['original', 'both']:
+            if not filename:
+                # Generate a filename with timestamp
+                timestamp = time.strftime("%Y%m%d-%H%M%S")
+                original_filename = f"fake-mentors-{timestamp}.json"
+            else:
+                original_filename = filename
+                
+            original_file_path = os.path.join(GENERATE_MENTORS_DIR, original_filename)
+            with open(original_file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+            saved_files.append({
+                'format': 'original',
+                'filename': original_filename,
+                'path': original_file_path
+            })
+            logger.info(f"Successfully saved results to {original_file_path}")
+            
+        # Save in matching-test-data format if requested
+        if file_format in ['matching', 'both']:
+            # Generate a filename with ISO timestamp
+            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S")
+            matching_filename = f"matching-test-data-{timestamp}.json"
+            
+            matching_file_path = os.path.join(GENERATE_MENTORS_DIR, matching_filename)
+            with open(matching_file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+            saved_files.append({
+                'format': 'matching',
+                'filename': matching_filename,
+                'path': matching_file_path
+            })
+            logger.info(f"Successfully saved results to {matching_file_path}")
 
-        # Save the file in the same format as matching-test-data2.json
-        file_path = os.path.join(GENERATE_MENTORS_DIR, filename)
-        with open(file_path, 'w') as f:
-            json.dump(data, f, indent=2)
-
-        logger.info(f"Successfully saved results to {file_path}")
         return jsonify({
             'success': True,
-            'filename': filename,
-            'path': file_path
+            'files': saved_files
         })
     except Exception as e:
         logger.error(f'Error saving results to file: {str(e)}')
