@@ -422,52 +422,72 @@
             });
         });
 
-        // Load server-side JSON files
-        function loadServerFiles() {
-            const serverFileSelect = document.getElementById('serverFileSelect');
-            const runServerFileTestBtn = document.getElementById('runServerFileTest');
+        // This function has been moved and improved above
+        
+        // Function to load server files for a specific select element
+        function loadServerFiles(selectElementId = 'serverFileSelect') {
+            const selectElement = document.getElementById(selectElementId);
+            if (!selectElement) return;
             
             fetch('/admin/test-matching/get-json-files')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        serverFileSelect.innerHTML = '';
+                        selectElement.innerHTML = '';
                         
                         if (data.files.length === 0) {
-                            serverFileSelect.innerHTML = '<option value="">No files available</option>';
-                            runServerFileTestBtn.disabled = true;
+                            selectElement.innerHTML = '<option value="">No files available</option>';
+                            if (selectElementId === 'serverFileSelect') {
+                                document.getElementById('runServerFileTest').disabled = true;
+                            }
                         } else {
-                            serverFileSelect.innerHTML = '<option value="">Select a file</option>';
+                            selectElement.innerHTML = '<option value="">Select a file</option>';
                             data.files.forEach(file => {
                                 const option = document.createElement('option');
                                 option.value = file;
                                 option.textContent = file;
-                                serverFileSelect.appendChild(option);
+                                selectElement.appendChild(option);
                             });
                             
-                            // Enable button when a file is selected
-                            serverFileSelect.addEventListener('change', function() {
-                                runServerFileTestBtn.disabled = !this.value;
-                            });
+                            // Enable button when a file is selected (for server file test tab)
+                            if (selectElementId === 'serverFileSelect') {
+                                selectElement.addEventListener('change', function() {
+                                    document.getElementById('runServerFileTest').disabled = !this.value;
+                                });
+                            }
+                            
+                            // Add event listener for query file select to load queries
+                            if (selectElementId === 'queryFileSelect') {
+                                selectElement.addEventListener('change', function() {
+                                    if (this.value) {
+                                        loadQueries(this.value);
+                                    } else {
+                                        // Hide JSON mentee wrapper if no file selected
+                                        document.getElementById('jsonMenteeWrapper').style.display = 'none';
+                                    }
+                                });
+                            }
                         }
                     } else {
-                        serverFileSelect.innerHTML = '<option value="">Error loading files</option>';
+                        selectElement.innerHTML = '<option value="">Error loading files</option>';
                         console.error('Error loading server files:', data.error);
                     }
                 })
                 .catch(error => {
-                    serverFileSelect.innerHTML = '<option value="">Error loading files</option>';
+                    selectElement.innerHTML = '<option value="">Error loading files</option>';
                     console.error('Error loading server files:', error);
                 });
         }
         
         // Load server files when the Run Automated Tests tab is shown
-        document.getElementById('run-tests-tab').addEventListener('shown.bs.tab', loadServerFiles);
+        document.getElementById('run-tests-tab').addEventListener('shown.bs.tab', function() {
+            loadServerFiles('serverFileSelect');
+        });
         
         // Also load server files on page load if we're on the Run Automated Tests tab
         document.addEventListener('DOMContentLoaded', function() {
             if (window.location.hash === '#run-tests') {
-                loadServerFiles();
+                loadServerFiles('serverFileSelect');
             }
             
             // Load human test results on page load
@@ -482,6 +502,12 @@
                 const queryEditor = document.getElementById('queryEditor');
                 queryEditor.innerHTML = '<div class="alert alert-info">Select a mentee to load query fields</div>';
             });
+            
+            // Also load files for Human Testing tab if that's the active tab on page load
+            if (window.location.hash === '#human-testing') {
+                loadMentees();
+                loadServerFiles('queryFileSelect');
+            }
         });
 
         
