@@ -135,6 +135,38 @@
     </div>
 
     <script>
+        // Check if Bootstrap is available
+        if (typeof bootstrap === 'undefined') {
+            console.error("Bootstrap JavaScript is not loaded. Tab functionality may not work properly.");
+            // Add a simple fallback for tab switching
+            document.addEventListener('DOMContentLoaded', function() {
+                const tabButtons = document.querySelectorAll('.nav-tabs button');
+                const tabPanes = document.querySelectorAll('.tab-pane');
+                
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        // Remove active class from all buttons and panes
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        tabPanes.forEach(pane => {
+                            pane.classList.remove('active');
+                            pane.classList.remove('show');
+                        });
+                        
+                        // Add active class to clicked button
+                        this.classList.add('active');
+                        
+                        // Get target pane and activate it
+                        const target = this.getAttribute('data-bs-target');
+                        const targetPane = document.querySelector(target);
+                        if (targetPane) {
+                            targetPane.classList.add('active');
+                            targetPane.classList.add('show');
+                        }
+                    });
+                });
+            });
+        }
+        
         // Format JSON with syntax highlighting
         function syntaxHighlight(json) {
             if (typeof json !== 'string') {
@@ -162,8 +194,14 @@
         function switchToTab(tabId) {
             const tab = document.getElementById(tabId);
             if (tab) {
-                const tabTrigger = new bootstrap.Tab(tab);
-                tabTrigger.show();
+                try {
+                    const tabTrigger = new bootstrap.Tab(tab);
+                    tabTrigger.show();
+                } catch (error) {
+                    console.error("Error switching tabs:", error);
+                    // Fallback method if bootstrap.Tab fails
+                    tab.click();
+                }
             }
         }
 
@@ -314,10 +352,12 @@
 
         // Initialize tabs and handle navigation
         document.addEventListener('DOMContentLoaded', function() {
-            // Set up tab change event listeners
-            const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
-            tabs.forEach(tab => {
-                tab.addEventListener('shown.bs.tab', function(event) {
+            // Initialize Bootstrap tabs
+            const tabElements = document.querySelectorAll('button[data-bs-toggle="tab"]');
+            tabElements.forEach(tabEl => {
+                new bootstrap.Tab(tabEl);
+                
+                tabEl.addEventListener('shown.bs.tab', function(event) {
                     const targetId = event.target.getAttribute('data-bs-target').replace('#', '');
                     window.location.hash = targetId;
                 });
