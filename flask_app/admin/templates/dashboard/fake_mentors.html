@@ -882,7 +882,7 @@
             resultsContainer.classList.add('d-none');
 
             // Start the generation
-            fetch('/admin/fake-mentors/generate', {
+            fetch('`/admin/fake-mentors/generate', { // http://localhost:50001/admin/fake-mentors/generate doesn't work either
                 method: 'POST',
                 body: formData
             })
