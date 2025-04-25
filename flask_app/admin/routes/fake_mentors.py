@@ -301,7 +301,19 @@ def generate_fake_mentors():
 
     try:
         # Get the number of profiles to generate
-        num_profiles = int(request.form.get('numProfiles', 0))
+        # Handle both form data and JSON data
+        if request.is_json:
+            data = request.json
+            num_profiles = int(data.get('numProfiles', 0))
+            config_data = data.get('config')
+            locale = data.get('locale', 'en_US')
+        else:
+            num_profiles = int(request.form.get('numProfiles', 0))
+            config_data = request.form.get('config')
+            locale = request.form.get('locale', 'en_US')
+            
+        logger.debug(f'Request data: numProfiles={num_profiles}, locale={locale}')
+            
         if num_profiles <= 0:
             return jsonify({'success': False, 'error': 'Number of profiles must be greater than 0'}), 400
 
@@ -309,18 +321,15 @@ def generate_fake_mentors():
             return jsonify({'success': False, 'error': 'Maximum 100 profiles can be generated at once'}), 400
 
         # Get the configuration
-        config_data = request.form.get('config')
         if config_data:
             try:
-                config = json.loads(config_data)
+                config = json.loads(config_data) if isinstance(config_data, str) else config_data
             except json.JSONDecodeError:
                 return jsonify({'success': False, 'error': 'Invalid configuration JSON'}), 400
         else:
             config = load_config()
 
-        # Get the locale for Faker
-        locale = request.form.get('locale', 'en_US')
-
+        # Handle diverse locale
         if locale == 'diverse':
             locale = ['en_US', 'es_MX', 'fr_CA', 'it_IT', 'de_DE', 'ja_JP', 'zh_CN', 'ru_RU', 'hi_IN', 'ko_KR', 'vi_VN',
                  'tl_PH', 'ar_SA', 'fa_IR']
@@ -374,6 +383,8 @@ def _process_generation(num_profiles: int, config: Dict[str, Any], locale: str) 
     global generation_progress
 
     try:
+        logger.info(f'Starting generation of {num_profiles} profiles with config: {config}')
+        
         # Use the generate_mentors module to generate profiles
         profiles_and_queries = generate_mentor_profiles(
             num_profiles=num_profiles,
