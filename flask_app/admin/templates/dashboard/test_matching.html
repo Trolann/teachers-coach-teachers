@@ -356,9 +356,10 @@
                             <td>${result.target_mentor_name}</td>
                             <td>${result.target_rank || 'Not found'}</td>
                             <td>
-                                <span class="badge bg-${result.passed ? 'success' : 'danger'}">
-                                    ${result.passed ? 'PASS' : 'FAIL'}
+                                <span class="badge bg-${result.passed ? 'success' : (result.error ? 'warning' : 'danger')}">
+                                    ${result.passed ? 'PASS' : (result.error ? 'ERROR' : 'FAIL')}
                                 </span>
+                                ${result.error ? `<div class="small text-danger mt-1">${result.error}</div>` : ''}
                             </td>
                         </tr>
                     `;

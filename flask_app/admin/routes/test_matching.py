@@ -141,8 +141,25 @@ def test_matching_algorithm():
 
         logger.info(f'Testing matching with user_id: {user_id}, criteria: {criteria}, limit: {limit}')
         
-        # Use the algorithm to find matches
-        matches = the_algorithm.get_closest_embeddings(user_id, criteria, limit)
+        # Sanitize the criteria to ensure all values are strings
+        sanitized_criteria = {}
+        for key, value in criteria.items():
+            if value is None:
+                continue
+            if isinstance(value, (list, dict)):
+                sanitized_criteria[key] = json.dumps(value)
+            else:
+                sanitized_criteria[key] = str(value)
+        
+        try:
+            # Use the algorithm to find matches
+            matches = the_algorithm.get_closest_embeddings(user_id, sanitized_criteria, limit)
+        except Exception as e:
+            logger.error(f"Error getting matches: {str(e)}")
+            return jsonify({
+                'success': False, 
+                'error': f'Error generating embeddings: {str(e)}'
+            }), 500
 
         # Format the response
         formatted_matches = []
@@ -207,12 +224,27 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
         # Generate a unique test user ID for this query
         test_user_id = f"test-user-{uuid4()}"
         
-        # Get matches using the algorithm
-        matches = the_algorithm.get_closest_embeddings(
-            test_user_id,  # Use a unique user ID for each test
-            search_query,
-            limit=10  # Get more than 3 to see where the target mentor ranks
-        )
+        # Sanitize the search query to ensure all values are strings
+        sanitized_query = {}
+        for key, value in search_query.items():
+            if value is None:
+                continue
+            if isinstance(value, (list, dict)):
+                sanitized_query[key] = json.dumps(value)
+            else:
+                sanitized_query[key] = str(value)
+        
+        try:
+            # Get matches using the algorithm
+            matches = the_algorithm.get_closest_embeddings(
+                test_user_id,  # Use a unique user ID for each test
+                sanitized_query,
+                limit=10  # Get more than 3 to see where the target mentor ranks
+            )
+        except Exception as e:
+            logger.error(f"Error getting matches for query {i+1}: {str(e)}")
+            # Return empty matches if there's an error
+            matches = []
         
         # Check if the target mentor is in the top 3 matches
         target_mentor_id = query["targetMentorId"]
@@ -261,15 +293,21 @@ def run_tests_with_data(test_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Opti
                     target_mentor_name = f"{m.get('firstName', '')} {m.get('lastName', '')}"
                     break
         
+        # Determine query name
+        query_name = f"{query.get('firstName', '')} {query.get('lastName', '')}"
+        if not query_name.strip():
+            query_name = f"Query {i+1}"
+        
         # Record the result for display
         result = {
             "query_index": i,
-            "query_name": f"{query.get('firstName', '')} {query.get('lastName', '')}",
+            "query_name": query_name,
             "target_mentor_id": target_mentor_id,
             "target_mentor_name": target_mentor_name,
             "target_in_top3": target_in_top3,
             "target_rank": target_rank,
-            "passed": target_in_top3
+            "passed": target_in_top3,
+            "error": None if matches else "Failed to generate embeddings"
         }
         detailed_results.append(result)
         
