@@ -21,6 +21,7 @@ the_algorithm = TheAlgorithm()
 # Paths for files
 GENERATE_MENTORS_DIR = os.path.join(os.path.dirname(__file__), 'generate_mentors')
 MATCHING_TEST_RESULTS_DIR = os.path.join(os.path.dirname(__file__), 'matching_test_results')
+HUMAN_TEST_RESULTS_FILE = os.path.join(MATCHING_TEST_RESULTS_DIR, 'human-test-results.json')
 
 # Ensure directories exist
 os.makedirs(GENERATE_MENTORS_DIR, exist_ok=True)
@@ -109,6 +110,190 @@ def get_json_files_route():
         return jsonify({'success': True, 'files': json_files})
     except Exception as e:
         logger.error(f'Error getting JSON files: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@test_matching_bp.route('/test-matching/get-mentees', methods=['GET'])
+def get_mentees():
+    """Get a list of mentees from the database"""
+    try:
+        mentees = User.query.filter_by(user_type=UserType.MENTEE).all()
+        mentee_list = []
+        
+        for mentee in mentees:
+            if mentee.profile:
+                name = f"{mentee.profile.get('firstName', '')} {mentee.profile.get('lastName', '')}"
+                mentee_list.append({
+                    "id": mentee.cognito_sub,
+                    "name": name.strip() or "Unknown",
+                    "email": mentee.email,
+                    "profile": mentee.profile  # Include the full profile
+                })
+        
+        return jsonify({'success': True, 'mentees': mentee_list})
+    except Exception as e:
+        logger.error(f'Error getting mentees: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@test_matching_bp.route('/test-matching/get-queries', methods=['POST'])
+def get_queries():
+    """Get queries from a server-side file"""
+    try:
+        data = request.json
+        if not data or 'filename' not in data:
+            return jsonify({'success': False, 'error': 'No filename provided'}), 400
+            
+        filename = data['filename']
+        file_path = os.path.join(GENERATE_MENTORS_DIR, filename)
+        
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'error': f'File {filename} not found'}), 404
+            
+        with open(file_path, 'r') as f:
+            try:
+                test_data = json.load(f)
+            except json.JSONDecodeError as e:
+                return jsonify({'success': False, 'error': f'Invalid JSON format in {filename}: {str(e)}'}), 400
+        
+        # Extract queries from the file
+        queries = test_data.get('queries', [])
+        if not queries:
+            # Try alternate key
+            queries = test_data.get('test_queries', [])
+            
+        if not queries:
+            return jsonify({'success': False, 'error': 'No queries found in the file'}), 400
+            
+        # Format queries for display
+        formatted_queries = []
+        for i, query in enumerate(queries):
+            # Extract a name if available
+            name = ""
+            if 'firstName' in query and 'lastName' in query:
+                name = f"{query['firstName']} {query['lastName']}"
+            
+            formatted_queries.append({
+                "id": i,
+                "name": name.strip() or f"Query {i+1}",
+                "data": query
+            })
+            
+        return jsonify({'success': True, 'queries': formatted_queries})
+    except Exception as e:
+        logger.error(f'Error getting queries: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@test_matching_bp.route('/test-matching/save-feedback', methods=['POST'])
+def save_feedback():
+    """Save human feedback on match quality"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+            
+        required_fields = ['menteeId', 'menteeName', 'mentorId', 'mentorName', 'feedback', 'query']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+        
+        # Load existing results or create new file
+        results = []
+        if os.path.exists(HUMAN_TEST_RESULTS_FILE):
+            try:
+                with open(HUMAN_TEST_RESULTS_FILE, 'r') as f:
+                    results = json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError):
+                # If file is corrupted or doesn't exist, start with empty list
+                results = []
+        
+        # Add timestamp to the feedback
+        feedback_entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "menteeId": data['menteeId'],
+            "menteeName": data['menteeName'],
+            "mentorId": data['mentorId'],
+            "mentorName": data['mentorName'],
+            "feedback": data['feedback'],  # "good" or "bad"
+            "query": data['query']
+        }
+        
+        results.append(feedback_entry)
+        
+        # Save updated results
+        with open(HUMAN_TEST_RESULTS_FILE, 'w') as f:
+            json.dump(results, f, indent=2)
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f'Error saving feedback: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@test_matching_bp.route('/test-matching/get-feedback-results', methods=['GET'])
+def get_feedback_results():
+    """Get human feedback results"""
+    try:
+        if not os.path.exists(HUMAN_TEST_RESULTS_FILE):
+            return jsonify({'success': True, 'results': []})
+            
+        with open(HUMAN_TEST_RESULTS_FILE, 'r') as f:
+            try:
+                results = json.load(f)
+            except json.JSONDecodeError:
+                return jsonify({'success': False, 'error': 'Invalid JSON format in results file'}), 500
+        
+        # Calculate summary statistics
+        total = len(results)
+        good_matches = sum(1 for r in results if r.get('feedback') == 'good')
+        bad_matches = total - good_matches
+        
+        # Group by mentee
+        mentee_stats = {}
+        for result in results:
+            mentee_id = result.get('menteeId')
+            mentee_name = result.get('menteeName', 'Unknown')
+            
+            if mentee_id not in mentee_stats:
+                mentee_stats[mentee_id] = {
+                    'name': mentee_name,
+                    'total': 0,
+                    'good': 0,
+                    'bad': 0
+                }
+            
+            mentee_stats[mentee_id]['total'] += 1
+            if result.get('feedback') == 'good':
+                mentee_stats[mentee_id]['good'] += 1
+            else:
+                mentee_stats[mentee_id]['bad'] += 1
+        
+        # Format for display
+        mentee_summary = []
+        for mentee_id, stats in mentee_stats.items():
+            mentee_summary.append({
+                'id': mentee_id,
+                'name': stats['name'],
+                'total': stats['total'],
+                'good': stats['good'],
+                'bad': stats['bad'],
+                'goodPercentage': (stats['good'] / stats['total'] * 100) if stats['total'] > 0 else 0
+            })
+        
+        return jsonify({
+            'success': True, 
+            'results': results,
+            'summary': {
+                'total': total,
+                'good': good_matches,
+                'bad': bad_matches,
+                'goodPercentage': (good_matches / total * 100) if total > 0 else 0
+            },
+            'menteeStats': mentee_summary
+        })
+    except Exception as e:
+        logger.error(f'Error getting feedback results: {str(e)}')
         logger.exception(e)
         return jsonify({'success': False, 'error': str(e)}), 500
 

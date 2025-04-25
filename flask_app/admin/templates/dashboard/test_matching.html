@@ -49,6 +49,9 @@
                 <button class="nav-link" id="test-matching-tab" data-bs-toggle="tab" data-bs-target="#test-matching" type="button" role="tab" aria-controls="test-matching" aria-selected="false">Test Matching</button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="human-testing-tab" data-bs-toggle="tab" data-bs-target="#human-testing" type="button" role="tab" aria-controls="human-testing" aria-selected="false">Human Testing</button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="run-tests-tab" data-bs-toggle="tab" data-bs-target="#run-tests" type="button" role="tab" aria-controls="run-tests" aria-selected="false">Run Automated Tests</button>
             </li>
         </ul>
@@ -59,10 +62,12 @@
             <div class="tab-pane fade show active" id="results" role="tabpanel" aria-labelledby="results-tab">
                 <div class="card">
                     <div class="card-header">
-                        <h5>Matching Analysis Results</h5>
+                        <h5>Human Testing Results</h5>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted">Analysis data will be displayed here in future updates.</p>
+                        <div id="humanTestResults">
+                            <p class="text-muted">Loading human test results...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -112,6 +117,102 @@
                 </div>
             </div>
             
+            <!-- Human Testing Tab -->
+            <div class="tab-pane fade" id="human-testing" role="tabpanel" aria-labelledby="human-testing-tab">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Human Testing Interface</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="nav nav-tabs mb-3" id="menteeSourceTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="database-tab" data-bs-toggle="tab" data-bs-target="#database" type="button" role="tab" aria-controls="database" aria-selected="true">Database Mentee</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="json-tab" data-bs-toggle="tab" data-bs-target="#json" type="button" role="tab" aria-controls="json" aria-selected="false">JSON Query</button>
+                                    </li>
+                                </ul>
+                                
+                                <div class="tab-content mb-4" id="menteeSourceTabsContent">
+                                    <!-- Database Mentee Tab -->
+                                    <div class="tab-pane fade show active" id="database" role="tabpanel" aria-labelledby="database-tab">
+                                        <div class="mb-3">
+                                            <label for="menteeSelect" class="form-label">Select Mentee Profile</label>
+                                            <select class="form-select" id="menteeSelect">
+                                                <option value="">Loading mentees...</option>
+                                            </select>
+                                            <div class="form-text">Select a mentee profile to assume</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- JSON Query Tab -->
+                                    <div class="tab-pane fade" id="json" role="tabpanel" aria-labelledby="json-tab">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="mb-3">
+                                                    <label for="queryFileSelect" class="form-label">Select Query File</label>
+                                                    <select class="form-select" id="queryFileSelect">
+                                                        <option value="">Loading files...</option>
+                                                    </select>
+                                                    <div class="form-text">Select a JSON file containing queries</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12" id="querySelectWrapper" style="display: none;">
+                                                <div class="mb-3">
+                                                    <label for="querySelect" class="form-label">Select Query</label>
+                                                    <select class="form-select" id="querySelect">
+                                                        <option value="">Select a query</option>
+                                                    </select>
+                                                    <div class="form-text">Select a query to use for matching</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card mt-3">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Query Configuration</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="queryEditor" class="form-label">Edit Query</label>
+                                            <div id="queryEditor" class="border rounded p-2" style="min-height: 300px;"></div>
+                                            <div class="form-text">Edit the query parameters as needed</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="additionalQuery" class="form-label">Additional Query Text (Optional)</label>
+                                            <textarea class="form-control" id="additionalQuery" rows="3" placeholder="I'm looking for a mentor who..."></textarea>
+                                            <div class="form-text">Add additional context to your search</div>
+                                        </div>
+                                        
+                                        <button id="findMentorsBtn" class="btn btn-primary">Find Mentors</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Human Testing Results -->
+                        <div id="humanTestingResults" class="mt-4" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Mentor Matches</h5>
+                                    <p class="text-muted mb-0">Rate each match as "Good Match" or "Bad Match"</p>
+                                </div>
+                                <div class="card-body">
+                                    <div id="mentorMatches">
+                                        <!-- Mentor matches will be displayed here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Run Automated Tests Tab -->
             <div class="tab-pane fade" id="run-tests" role="tabpanel" aria-labelledby="run-tests-tab">
                 <div class="card">
@@ -136,6 +237,71 @@
     </div>
 
     <script>
+        // CSS for mentor cards in human testing
+        const mentorCardStyles = `
+            .mentor-card {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            .mentor-card-header {
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-bottom: 1px solid #ddd;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .mentor-card-body {
+                padding: 15px;
+            }
+            .mentor-card-footer {
+                padding: 15px;
+                background-color: #f8f9fa;
+                border-top: 1px solid #ddd;
+                display: flex;
+                justify-content: space-between;
+            }
+            .mentor-info {
+                margin-bottom: 15px;
+            }
+            .mentor-details-toggle {
+                cursor: pointer;
+                color: #0d6efd;
+                text-decoration: underline;
+            }
+            .mentor-details {
+                display: none;
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 1px dashed #ddd;
+            }
+            .feedback-btn {
+                flex: 1;
+                margin: 0 5px;
+            }
+            #queryEditor {
+                font-family: monospace;
+                overflow-y: auto;
+            }
+            .json-property {
+                margin-bottom: 8px;
+            }
+            .json-property-name {
+                font-weight: bold;
+                margin-right: 5px;
+            }
+            .json-property-value {
+                width: 100%;
+            }
+        `;
+        
+        // Add styles to head
+        const styleElement = document.createElement('style');
+        styleElement.textContent = mentorCardStyles;
+        document.head.appendChild(styleElement);
         // Check if Bootstrap is available
         if (typeof bootstrap === 'undefined') {
             console.error("Bootstrap JavaScript is not loaded. Tab functionality may not work properly.");
@@ -321,6 +487,25 @@
             if (window.location.hash === '#run-tests') {
                 loadServerFiles();
             }
+            
+            // Load human test results on page load
+            loadHumanTestResults();
+            
+            // Load mentees when the Human Testing tab is shown
+            document.getElementById('human-testing-tab').addEventListener('shown.bs.tab', function() {
+                loadMentees();
+                loadServerFiles('queryFileSelect');
+                
+                // Initialize an empty query editor
+                const queryEditor = document.getElementById('queryEditor');
+                createJsonEditor(queryEditor, {
+                    "bio": "",
+                    "expertise": "",
+                    "yearsTeaching": 0,
+                    "gradeLevel": "",
+                    "subject": ""
+                });
+            });
         });
         
         // Function to display test results
@@ -441,5 +626,596 @@
 
         // Handle back/forward browser navigation
         window.addEventListener('hashchange', handleTabNavigation);
+        
+        // Create editable JSON editor
+        function createJsonEditor(container, jsonData) {
+            container.innerHTML = '';
+            
+            // Create form elements for each property
+            Object.keys(jsonData).forEach(key => {
+                if (key === 'targetMentorId' || key === 'id') return; // Skip these fields
+                
+                const value = jsonData[key];
+                const propertyDiv = document.createElement('div');
+                propertyDiv.className = 'json-property';
+                
+                const label = document.createElement('label');
+                label.className = 'json-property-name';
+                label.textContent = key + ':';
+                propertyDiv.appendChild(label);
+                
+                let input;
+                
+                if (typeof value === 'boolean') {
+                    // Create a select for boolean values
+                    input = document.createElement('select');
+                    input.className = 'form-select json-property-value';
+                    
+                    const trueOption = document.createElement('option');
+                    trueOption.value = 'true';
+                    trueOption.textContent = 'true';
+                    trueOption.selected = value === true;
+                    
+                    const falseOption = document.createElement('option');
+                    falseOption.value = 'false';
+                    falseOption.textContent = 'false';
+                    falseOption.selected = value === false;
+                    
+                    input.appendChild(trueOption);
+                    input.appendChild(falseOption);
+                } else if (typeof value === 'number') {
+                    // Create a number input
+                    input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = 'form-control json-property-value';
+                    input.value = value;
+                } else if (Array.isArray(value)) {
+                    // Create a textarea for arrays
+                    input = document.createElement('textarea');
+                    input.className = 'form-control json-property-value';
+                    input.value = JSON.stringify(value);
+                    input.rows = 2;
+                } else if (typeof value === 'object' && value !== null) {
+                    // Create a textarea for objects
+                    input = document.createElement('textarea');
+                    input.className = 'form-control json-property-value';
+                    input.value = JSON.stringify(value, null, 2);
+                    input.rows = 3;
+                } else {
+                    // Create a text input for strings and other values
+                    input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'form-control json-property-value';
+                    input.value = value !== null ? value : '';
+                }
+                
+                input.setAttribute('data-key', key);
+                propertyDiv.appendChild(input);
+                container.appendChild(propertyDiv);
+            });
+            
+            // Add a button to add new properties
+            const addPropertyDiv = document.createElement('div');
+            addPropertyDiv.className = 'mt-3';
+            
+            const addPropertyBtn = document.createElement('button');
+            addPropertyBtn.type = 'button';
+            addPropertyBtn.className = 'btn btn-sm btn-outline-primary';
+            addPropertyBtn.textContent = 'Add Property';
+            addPropertyBtn.onclick = function() {
+                const key = prompt('Enter property name:');
+                if (key && key.trim()) {
+                    const propertyDiv = document.createElement('div');
+                    propertyDiv.className = 'json-property';
+                    
+                    const label = document.createElement('label');
+                    label.className = 'json-property-name';
+                    label.textContent = key.trim() + ':';
+                    propertyDiv.appendChild(label);
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'form-control json-property-value';
+                    input.setAttribute('data-key', key.trim());
+                    propertyDiv.appendChild(input);
+                    
+                    container.insertBefore(propertyDiv, addPropertyDiv);
+                }
+            };
+            
+            addPropertyDiv.appendChild(addPropertyBtn);
+            container.appendChild(addPropertyDiv);
+        }
+        
+        // Get JSON data from editor
+        function getJsonFromEditor(container) {
+            const result = {};
+            
+            // Get all inputs
+            const inputs = container.querySelectorAll('.json-property-value');
+            inputs.forEach(input => {
+                const key = input.getAttribute('data-key');
+                let value = input.value;
+                
+                // Try to parse the value
+                try {
+                    if (input.tagName === 'SELECT' && (value === 'true' || value === 'false')) {
+                        // Handle boolean values
+                        value = value === 'true';
+                    } else if (!isNaN(value) && value.trim() !== '') {
+                        // Handle numeric values
+                        value = Number(value);
+                    } else if (value.startsWith('[') || value.startsWith('{')) {
+                        // Handle arrays and objects
+                        value = JSON.parse(value);
+                    }
+                } catch (e) {
+                    // If parsing fails, keep as string
+                    console.warn(`Failed to parse value for ${key}:`, e);
+                }
+                
+                result[key] = value;
+            });
+            
+            return result;
+        }
+        
+        // Load mentees for human testing
+        function loadMentees() {
+            const menteeSelect = document.getElementById('menteeSelect');
+            
+            fetch('/admin/test-matching/get-mentees')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        menteeSelect.innerHTML = '';
+                        
+                        if (data.mentees.length === 0) {
+                            menteeSelect.innerHTML = '<option value="">No mentees available</option>';
+                        } else {
+                            menteeSelect.innerHTML = '<option value="">Select a mentee</option>';
+                            data.mentees.forEach(mentee => {
+                                const option = document.createElement('option');
+                                option.value = mentee.id;
+                                option.setAttribute('data-name', mentee.name);
+                                option.setAttribute('data-profile', JSON.stringify(mentee.profile));
+                                option.textContent = `${mentee.name} (${mentee.email})`;
+                                menteeSelect.appendChild(option);
+                            });
+                            
+                            // Add event listener to load profile into query editor
+                            menteeSelect.addEventListener('change', function() {
+                                if (this.value) {
+                                    const selectedOption = this.options[this.selectedIndex];
+                                    const profileData = JSON.parse(selectedOption.getAttribute('data-profile'));
+                                    
+                                    // Create a query object from the profile
+                                    const queryData = {
+                                        bio: profileData.bio || "",
+                                        expertise: profileData.expertise || "",
+                                        yearsTeaching: profileData.yearsTeaching || 0,
+                                        gradeLevel: profileData.gradeLevel || "",
+                                        subject: profileData.subject || "",
+                                        interests: profileData.interests || []
+                                    };
+                                    
+                                    // Load into editor
+                                    const queryEditor = document.getElementById('queryEditor');
+                                    createJsonEditor(queryEditor, queryData);
+                                }
+                            });
+                        }
+                    } else {
+                        menteeSelect.innerHTML = '<option value="">Error loading mentees</option>';
+                        console.error('Error loading mentees:', data.error);
+                    }
+                })
+                .catch(error => {
+                    menteeSelect.innerHTML = '<option value="">Error loading mentees</option>';
+                    console.error('Error loading mentees:', error);
+                });
+        }
+        
+        // Load queries from selected file
+        function loadQueries(filename) {
+            const querySelect = document.getElementById('querySelect');
+            const querySelectWrapper = document.getElementById('querySelectWrapper');
+            
+            fetch('/admin/test-matching/get-queries', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: filename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    querySelect.innerHTML = '';
+                    
+                    if (data.queries.length === 0) {
+                        querySelect.innerHTML = '<option value="">No queries available</option>';
+                        querySelectWrapper.style.display = 'none';
+                    } else {
+                        querySelect.innerHTML = '<option value="">Select a query</option>';
+                        data.queries.forEach(query => {
+                            const option = document.createElement('option');
+                            option.value = JSON.stringify(query.data);
+                            option.textContent = query.name;
+                            querySelect.appendChild(option);
+                        });
+                        
+                        // Show query selection container
+                        querySelectWrapper.style.display = 'block';
+                        
+                        // Load query into editor when selected
+                        querySelect.addEventListener('change', function() {
+                            if (this.value) {
+                                try {
+                                    const queryData = JSON.parse(this.value);
+                                    const queryEditor = document.getElementById('queryEditor');
+                                    createJsonEditor(queryEditor, queryData);
+                                } catch (e) {
+                                    console.error('Error parsing query data:', e);
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    querySelect.innerHTML = '<option value="">Error loading queries</option>';
+                    querySelectWrapper.style.display = 'none';
+                    console.error('Error loading queries:', data.error);
+                }
+            })
+            .catch(error => {
+                querySelect.innerHTML = '<option value="">Error loading queries</option>';
+                querySelectWrapper.style.display = 'none';
+                console.error('Error loading queries:', error);
+            });
+        }
+        
+        // Find mentors button click handler
+        document.getElementById('findMentorsBtn').addEventListener('click', function() {
+            const menteeSelect = document.getElementById('menteeSelect');
+            const querySelect = document.getElementById('querySelect');
+            const additionalQuery = document.getElementById('additionalQuery');
+            const mentorMatches = document.getElementById('mentorMatches');
+            const humanTestingResults = document.getElementById('humanTestingResults');
+            const queryEditor = document.getElementById('queryEditor');
+            
+            // Determine which tab is active
+            const databaseTabActive = document.getElementById('database-tab').classList.contains('active');
+            const jsonTabActive = document.getElementById('json-tab').classList.contains('active');
+            
+            let menteeId, menteeName, queryData;
+            
+            // Validate and get data based on active tab
+            if (databaseTabActive) {
+                if (!menteeSelect.value) {
+                    alert('Please select a mentee profile');
+                    return;
+                }
+                
+                menteeId = menteeSelect.value;
+                menteeName = menteeSelect.options[menteeSelect.selectedIndex].getAttribute('data-name');
+                
+                // Get query data from editor
+                try {
+                    queryData = getJsonFromEditor(queryEditor);
+                } catch (e) {
+                    alert('Error getting query data from editor: ' + e.message);
+                    return;
+                }
+            } else if (jsonTabActive) {
+                if (!querySelect.value) {
+                    alert('Please select a query');
+                    return;
+                }
+                
+                // For JSON queries, we'll use a temporary ID
+                menteeId = 'temp-' + Date.now();
+                
+                // Try to get a name from the query data
+                try {
+                    const selectedQueryData = JSON.parse(querySelect.value);
+                    menteeName = selectedQueryData.firstName && selectedQueryData.lastName ? 
+                        `${selectedQueryData.firstName} ${selectedQueryData.lastName}` : 
+                        'JSON Query User';
+                    
+                    // Get query data from editor
+                    queryData = getJsonFromEditor(queryEditor);
+                } catch (e) {
+                    alert('Error parsing query data: ' + e.message);
+                    return;
+                }
+            } else {
+                alert('Please select either a database mentee or a JSON query');
+                return;
+            }
+            
+            // Add additional query text if provided
+            if (additionalQuery.value.trim()) {
+                queryData.additionalQuery = additionalQuery.value.trim();
+            }
+            
+            // Show loading state
+            mentorMatches.innerHTML = '<div class="alert alert-info">Finding mentors, please wait...</div>';
+            humanTestingResults.style.display = 'block';
+            
+            // Call the matching API
+            const formData = new FormData();
+            formData.append('user_id', menteeId);
+            formData.append('search_criteria', JSON.stringify(queryData));
+            formData.append('limit', '10');
+            
+            fetch('/admin/test-matching/test', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.matches.length === 0) {
+                        mentorMatches.innerHTML = '<div class="alert alert-warning">No matches found</div>';
+                        return;
+                    }
+                    
+                    // Display mentor matches
+                    let matchesHtml = '';
+                    data.matches.forEach((match, index) => {
+                        const mentorName = match.profile.formattedName || `${match.profile.firstName} ${match.profile.lastName}`;
+                        
+                        matchesHtml += `
+                            <div class="mentor-card" data-mentor-id="${match.user_id}" data-mentor-name="${mentorName}">
+                                <div class="mentor-card-header">
+                                    <h5 class="mb-0">Match #${index + 1}: ${mentorName}</h5>
+                                    <span class="badge bg-primary">Score: ${match.score.toFixed(2)}</span>
+                                </div>
+                                <div class="mentor-card-body">
+                                    <div class="row mentor-info">
+                                        <div class="col-md-6">
+                                            <p><strong>Location:</strong> ${match.profile.stateProvince || ''}, ${match.profile.country || ''}</p>
+                                            <p><strong>School District:</strong> ${match.profile.schoolDistrict || 'N/A'}</p>
+                                            <p><strong>Primary Subject:</strong> ${match.profile.primarySubject || 'N/A'}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Email:</strong> ${match.email}</p>
+                                            <p><strong>Phone:</strong> ${match.profile.phoneNumber || 'N/A'}</p>
+                                            <p><strong>Time Zone:</strong> ${match.profile.timeZone || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <p><strong>Mentor Skills:</strong> ${match.profile.mentorSkills || 'No skills information available'}</p>
+                                    </div>
+                                    
+                                    <div class="mb-0">
+                                        <span class="mentor-details-toggle" onclick="toggleMentorDetails(this)">Show Full Profile</span>
+                                        <div class="mentor-details">
+                                            <pre>${syntaxHighlight(match.profile)}</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mentor-card-footer">
+                                    <button class="btn btn-success feedback-btn" onclick="saveFeedback('${menteeId}', '${menteeName}', '${match.user_id}', '${mentorName}', 'good', ${JSON.stringify(queryData).replace(/"/g, '&quot;')})">
+                                        <i class="fas fa-thumbs-up"></i> Good Match
+                                    </button>
+                                    <button class="btn btn-danger feedback-btn" onclick="saveFeedback('${menteeId}', '${menteeName}', '${match.user_id}', '${mentorName}', 'bad', ${JSON.stringify(queryData).replace(/"/g, '&quot;')})">
+                                        <i class="fas fa-thumbs-down"></i> Bad Match
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    mentorMatches.innerHTML = matchesHtml;
+                } else {
+                    mentorMatches.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                mentorMatches.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            });
+        });
+        
+        // Toggle mentor details
+        function toggleMentorDetails(element) {
+            const detailsDiv = element.nextElementSibling;
+            if (detailsDiv.style.display === 'block') {
+                detailsDiv.style.display = 'none';
+                element.textContent = 'Show Full Profile';
+            } else {
+                detailsDiv.style.display = 'block';
+                element.textContent = 'Hide Full Profile';
+            }
+        }
+        
+        // Save feedback
+        function saveFeedback(menteeId, menteeName, mentorId, mentorName, feedback, query) {
+            // Disable all feedback buttons for this mentor
+            const mentorCard = document.querySelector(`.mentor-card[data-mentor-id="${mentorId}"]`);
+            const feedbackButtons = mentorCard.querySelectorAll('.feedback-btn');
+            feedbackButtons.forEach(btn => btn.disabled = true);
+            
+            // Show loading state
+            mentorCard.querySelector('.mentor-card-footer').innerHTML += '<div class="mt-2 text-center w-100">Saving feedback...</div>';
+            
+            // Save feedback
+            fetch('/admin/test-matching/save-feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    menteeId: menteeId,
+                    menteeName: menteeName,
+                    mentorId: mentorId,
+                    mentorName: mentorName,
+                    feedback: feedback,
+                    query: query
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update UI to show feedback was saved
+                    mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+                        <div class="alert alert-success mb-0 w-100 text-center">
+                            Feedback saved: <strong>${feedback === 'good' ? 'Good Match' : 'Bad Match'}</strong>
+                        </div>
+                    `;
+                    
+                    // Add a class to the card to indicate feedback type
+                    mentorCard.classList.add(feedback === 'good' ? 'border-success' : 'border-danger');
+                } else {
+                    // Show error
+                    mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+                        <div class="alert alert-danger mb-0 w-100 text-center">
+                            Error saving feedback: ${data.error}
+                        </div>
+                    `;
+                    
+                    // Re-enable buttons
+                    setTimeout(() => {
+                        mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+                            <button class="btn btn-success feedback-btn" onclick="saveFeedback('${menteeId}', '${menteeName}', '${mentorId}', '${mentorName}', 'good', ${JSON.stringify(query).replace(/"/g, '&quot;')})">
+                                <i class="fas fa-thumbs-up"></i> Good Match
+                            </button>
+                            <button class="btn btn-danger feedback-btn" onclick="saveFeedback('${menteeId}', '${menteeName}', '${mentorId}', '${mentorName}', 'bad', ${JSON.stringify(query).replace(/"/g, '&quot;')})">
+                                <i class="fas fa-thumbs-down"></i> Bad Match
+                            </button>
+                        `;
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                // Show error
+                mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+                    <div class="alert alert-danger mb-0 w-100 text-center">
+                        Error: ${error.message}
+                    </div>
+                `;
+                
+                // Re-enable buttons after a delay
+                setTimeout(() => {
+                    mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+                        <button class="btn btn-success feedback-btn" onclick="saveFeedback('${menteeId}', '${menteeName}', '${mentorId}', '${mentorName}', 'good', ${JSON.stringify(query).replace(/"/g, '&quot;')})">
+                            <i class="fas fa-thumbs-up"></i> Good Match
+                        </button>
+                        <button class="btn btn-danger feedback-btn" onclick="saveFeedback('${menteeId}', '${menteeName}', '${mentorId}', '${mentorName}', 'bad', ${JSON.stringify(query).replace(/"/g, '&quot;')})">
+                            <i class="fas fa-thumbs-down"></i> Bad Match
+                        </button>
+                    `;
+                }, 3000);
+            });
+        }
+        
+        // Load human test results
+        function loadHumanTestResults() {
+            const resultsDiv = document.getElementById('humanTestResults');
+            
+            fetch('/admin/test-matching/get-feedback-results')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.results.length === 0) {
+                            resultsDiv.innerHTML = '<p class="text-muted">No human test results available yet.</p>';
+                            return;
+                        }
+                        
+                        const summary = data.summary;
+                        const menteeStats = data.menteeStats;
+                        
+                        let resultsHtml = `
+                            <div class="alert alert-${summary.goodPercentage >= 70 ? 'success' : 'warning'}">
+                                <h5 class="mb-0">Overall Results</h5>
+                                <p class="mb-0">Total matches rated: ${summary.total}</p>
+                                <p class="mb-0">Good matches: ${summary.good} (${summary.goodPercentage.toFixed(1)}%)</p>
+                                <p class="mb-0">Bad matches: ${summary.bad} (${(100 - summary.goodPercentage).toFixed(1)}%)</p>
+                            </div>
+                            
+                            <h5 class="mt-4">Results by Mentee</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Mentee</th>
+                                            <th>Total Ratings</th>
+                                            <th>Good Matches</th>
+                                            <th>Bad Matches</th>
+                                            <th>Good Match %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        menteeStats.forEach(mentee => {
+                            resultsHtml += `
+                                <tr>
+                                    <td>${mentee.name}</td>
+                                    <td>${mentee.total}</td>
+                                    <td>${mentee.good}</td>
+                                    <td>${mentee.bad}</td>
+                                    <td>${mentee.goodPercentage.toFixed(1)}%</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        resultsHtml += `
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <h5 class="mt-4">Recent Feedback</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>Mentee</th>
+                                            <th>Mentor</th>
+                                            <th>Feedback</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        // Show the 10 most recent results
+                        const recentResults = [...data.results].reverse().slice(0, 10);
+                        recentResults.forEach(result => {
+                            const timestamp = new Date(result.timestamp).toLocaleString();
+                            resultsHtml += `
+                                <tr>
+                                    <td>${timestamp}</td>
+                                    <td>${result.menteeName}</td>
+                                    <td>${result.mentorName}</td>
+                                    <td>
+                                        <span class="badge bg-${result.feedback === 'good' ? 'success' : 'danger'}">
+                                            ${result.feedback === 'good' ? 'Good Match' : 'Bad Match'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        
+                        resultsHtml += `
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <button class="btn btn-primary" onclick="loadHumanTestResults()">Refresh Results</button>
+                            </div>
+                        `;
+                        
+                        resultsDiv.innerHTML = resultsHtml;
+                    } else {
+                        resultsDiv.innerHTML = `<div class="alert alert-danger">Error loading results: ${data.error}</div>`;
+                    }
+                })
+                .catch(error => {
+                    resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                });
+        }
     </script>
 {% endblock %}
