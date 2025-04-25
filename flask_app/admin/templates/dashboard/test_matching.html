@@ -126,48 +126,30 @@
                                 <h5>Human Testing Interface</h5>
                             </div>
                             <div class="card-body">
-                                <ul class="nav nav-tabs mb-3" id="menteeSourceTabs" role="tablist">
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link active" id="database-tab" data-bs-toggle="tab" data-bs-target="#database" type="button" role="tab" aria-controls="database" aria-selected="true">Database Mentee</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="json-tab" data-bs-toggle="tab" data-bs-target="#json" type="button" role="tab" aria-controls="json" aria-selected="false">JSON Query</button>
-                                    </li>
-                                </ul>
-                                
-                                <div class="tab-content mb-4" id="menteeSourceTabsContent">
-                                    <!-- Database Mentee Tab -->
-                                    <div class="tab-pane fade show active" id="database" role="tabpanel" aria-labelledby="database-tab">
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="menteeSelect" class="form-label">Select Mentee Profile</label>
+                                            <label for="menteeSelect" class="form-label">Database Mentees</label>
                                             <select class="form-select" id="menteeSelect">
                                                 <option value="">Loading mentees...</option>
                                             </select>
-                                            <div class="form-text">Select a mentee profile to assume</div>
+                                            <div class="form-text">Select a mentee profile from the database</div>
                                         </div>
                                     </div>
-                                    
-                                    <!-- JSON Query Tab -->
-                                    <div class="tab-pane fade" id="json" role="tabpanel" aria-labelledby="json-tab">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="mb-3">
-                                                    <label for="queryFileSelect" class="form-label">Select Query File</label>
-                                                    <select class="form-select" id="queryFileSelect">
-                                                        <option value="">Loading files...</option>
-                                                    </select>
-                                                    <div class="form-text">Select a JSON file containing queries</div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-12" id="querySelectWrapper" style="display: none;">
-                                                <div class="mb-3">
-                                                    <label for="querySelect" class="form-label">Select Query</label>
-                                                    <select class="form-select" id="querySelect">
-                                                        <option value="">Select a query</option>
-                                                    </select>
-                                                    <div class="form-text">Select a query to use for matching</div>
-                                                </div>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="queryFileSelect" class="form-label">JSON File</label>
+                                            <select class="form-select" id="queryFileSelect">
+                                                <option value="">Loading files...</option>
+                                            </select>
+                                            <div class="form-text">Select a JSON file containing mentee queries</div>
+                                        </div>
+                                        <div class="mb-3" id="jsonMenteeWrapper" style="display: none;">
+                                            <label for="jsonMenteeSelect" class="form-label">JSON Mentees</label>
+                                            <select class="form-select" id="jsonMenteeSelect">
+                                                <option value="">Select a mentee from JSON</option>
+                                            </select>
+                                            <div class="form-text">Select a mentee profile from the JSON file</div>
                                         </div>
                                     </div>
                                 </div>
@@ -184,9 +166,9 @@
                                         </div>
                                         
                                         <div class="mb-3">
-                                            <label for="additionalQuery" class="form-label">Additional Query Text (Optional)</label>
-                                            <textarea class="form-control" id="additionalQuery" rows="3" placeholder="I'm looking for a mentor who..."></textarea>
-                                            <div class="form-text">Add additional context to your search</div>
+                                            <label for="goalQuery" class="form-label">Goal <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" id="goalQuery" rows="3" placeholder="I'm looking for a mentor who..." required></textarea>
+                                            <div class="form-text">Describe what you're looking for in a mentor (required)</div>
                                         </div>
                                         
                                         <button id="findMentorsBtn" class="btn btn-primary">Find Mentors</button>
@@ -627,13 +609,16 @@
         // Handle back/forward browser navigation
         window.addEventListener('hashchange', handleTabNavigation);
         
-        // Create editable JSON editor
+        // Create editable JSON editor dynamically based on the mentee profile
         function createJsonEditor(container, jsonData) {
             container.innerHTML = '';
             
+            // Skip these fields that shouldn't be editable
+            const skipFields = ['targetMentorId', 'id', 'userId', 'cognito_sub', 'email'];
+            
             // Create form elements for each property
             Object.keys(jsonData).forEach(key => {
-                if (key === 'targetMentorId' || key === 'id') return; // Skip these fields
+                if (skipFields.includes(key)) return;
                 
                 const value = jsonData[key];
                 const propertyDiv = document.createElement('div');
@@ -786,22 +771,18 @@
                             // Add event listener to load profile into query editor
                             menteeSelect.addEventListener('change', function() {
                                 if (this.value) {
+                                    // Clear the JSON mentee selection when a database mentee is selected
+                                    const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
+                                    if (jsonMenteeSelect) {
+                                        jsonMenteeSelect.value = '';
+                                    }
+                                    
                                     const selectedOption = this.options[this.selectedIndex];
                                     const profileData = JSON.parse(selectedOption.getAttribute('data-profile'));
                                     
-                                    // Create a query object from the profile
-                                    const queryData = {
-                                        bio: profileData.bio || "",
-                                        expertise: profileData.expertise || "",
-                                        yearsTeaching: profileData.yearsTeaching || 0,
-                                        gradeLevel: profileData.gradeLevel || "",
-                                        subject: profileData.subject || "",
-                                        interests: profileData.interests || []
-                                    };
-                                    
-                                    // Load into editor
+                                    // Load the actual profile data into the editor
                                     const queryEditor = document.getElementById('queryEditor');
-                                    createJsonEditor(queryEditor, queryData);
+                                    createJsonEditor(queryEditor, profileData);
                                 }
                             });
                         }
@@ -818,8 +799,8 @@
         
         // Load queries from selected file
         function loadQueries(filename) {
-            const querySelect = document.getElementById('querySelect');
-            const querySelectWrapper = document.getElementById('querySelectWrapper');
+            const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
+            const jsonMenteeWrapper = document.getElementById('jsonMenteeWrapper');
             
             fetch('/admin/test-matching/get-queries', {
                 method: 'POST',
@@ -831,26 +812,32 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    querySelect.innerHTML = '';
+                    jsonMenteeSelect.innerHTML = '';
                     
                     if (data.queries.length === 0) {
-                        querySelect.innerHTML = '<option value="">No queries available</option>';
-                        querySelectWrapper.style.display = 'none';
+                        jsonMenteeSelect.innerHTML = '<option value="">No mentees available in file</option>';
+                        jsonMenteeWrapper.style.display = 'none';
                     } else {
-                        querySelect.innerHTML = '<option value="">Select a query</option>';
+                        jsonMenteeSelect.innerHTML = '<option value="">Select a mentee from JSON</option>';
                         data.queries.forEach(query => {
                             const option = document.createElement('option');
                             option.value = JSON.stringify(query.data);
                             option.textContent = query.name;
-                            querySelect.appendChild(option);
+                            jsonMenteeSelect.appendChild(option);
                         });
                         
-                        // Show query selection container
-                        querySelectWrapper.style.display = 'block';
+                        // Show JSON mentee selection container
+                        jsonMenteeWrapper.style.display = 'block';
                         
                         // Load query into editor when selected
-                        querySelect.addEventListener('change', function() {
+                        jsonMenteeSelect.addEventListener('change', function() {
                             if (this.value) {
+                                // Clear the database mentee selection when a JSON mentee is selected
+                                const menteeSelect = document.getElementById('menteeSelect');
+                                if (menteeSelect) {
+                                    menteeSelect.value = '';
+                                }
+                                
                                 try {
                                     const queryData = JSON.parse(this.value);
                                     const queryEditor = document.getElementById('queryEditor');
@@ -862,14 +849,14 @@
                         });
                     }
                 } else {
-                    querySelect.innerHTML = '<option value="">Error loading queries</option>';
-                    querySelectWrapper.style.display = 'none';
+                    jsonMenteeSelect.innerHTML = '<option value="">Error loading mentees from file</option>';
+                    jsonMenteeWrapper.style.display = 'none';
                     console.error('Error loading queries:', data.error);
                 }
             })
             .catch(error => {
-                querySelect.innerHTML = '<option value="">Error loading queries</option>';
-                querySelectWrapper.style.display = 'none';
+                jsonMenteeSelect.innerHTML = '<option value="">Error loading mentees from file</option>';
+                jsonMenteeWrapper.style.display = 'none';
                 console.error('Error loading queries:', error);
             });
         }
@@ -877,25 +864,24 @@
         // Find mentors button click handler
         document.getElementById('findMentorsBtn').addEventListener('click', function() {
             const menteeSelect = document.getElementById('menteeSelect');
-            const querySelect = document.getElementById('querySelect');
-            const additionalQuery = document.getElementById('additionalQuery');
+            const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
+            const goalQuery = document.getElementById('goalQuery');
             const mentorMatches = document.getElementById('mentorMatches');
             const humanTestingResults = document.getElementById('humanTestingResults');
             const queryEditor = document.getElementById('queryEditor');
             
-            // Determine which tab is active
-            const databaseTabActive = document.getElementById('database-tab').classList.contains('active');
-            const jsonTabActive = document.getElementById('json-tab').classList.contains('active');
-            
             let menteeId, menteeName, queryData;
             
-            // Validate and get data based on active tab
-            if (databaseTabActive) {
-                if (!menteeSelect.value) {
-                    alert('Please select a mentee profile');
-                    return;
-                }
-                
+            // Check if goal is provided (required)
+            if (!goalQuery.value.trim()) {
+                alert('Please enter a goal for your mentor search');
+                goalQuery.focus();
+                return;
+            }
+            
+            // Determine which mentee is selected
+            if (menteeSelect.value) {
+                // Database mentee is selected
                 menteeId = menteeSelect.value;
                 menteeName = menteeSelect.options[menteeSelect.selectedIndex].getAttribute('data-name');
                 
@@ -906,18 +892,14 @@
                     alert('Error getting query data from editor: ' + e.message);
                     return;
                 }
-            } else if (jsonTabActive) {
-                if (!querySelect.value) {
-                    alert('Please select a query');
-                    return;
-                }
-                
+            } else if (jsonMenteeSelect.value) {
+                // JSON mentee is selected
                 // For JSON queries, we'll use a temporary ID
                 menteeId = 'temp-' + Date.now();
                 
                 // Try to get a name from the query data
                 try {
-                    const selectedQueryData = JSON.parse(querySelect.value);
+                    const selectedQueryData = JSON.parse(jsonMenteeSelect.value);
                     menteeName = selectedQueryData.firstName && selectedQueryData.lastName ? 
                         `${selectedQueryData.firstName} ${selectedQueryData.lastName}` : 
                         'JSON Query User';
@@ -929,14 +911,12 @@
                     return;
                 }
             } else {
-                alert('Please select either a database mentee or a JSON query');
+                alert('Please select a mentee from either the database or a JSON file');
                 return;
             }
             
-            // Add additional query text if provided
-            if (additionalQuery.value.trim()) {
-                queryData.additionalQuery = additionalQuery.value.trim();
-            }
+            // Add goal query (required)
+            queryData.goal = goalQuery.value.trim();
             
             // Show loading state
             mentorMatches.innerHTML = '<div class="alert alert-info">Finding mentors, please wait...</div>';
