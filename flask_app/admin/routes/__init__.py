@@ -25,6 +25,11 @@ def create_admin_blueprint():
         admin_bp.register_blueprint(fake_mentors_bp, url_prefix='')
         logger.info('Registered fake users routes at root prefix')
 
+        # Register test matching routes
+        from .test_matching import test_matching_bp
+        admin_bp.register_blueprint(test_matching_bp, url_prefix='')
+        logger.info('Registered test matching routes at root prefix')
+
         # Register credits routes
         from .credits import admin_credits_bp
         admin_bp.register_blueprint(admin_credits_bp, url_prefix='/credits')

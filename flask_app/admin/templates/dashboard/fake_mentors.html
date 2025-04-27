@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mentor Management</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+{% extends "base.html" %}
+
+{% block title %}Fake Mentor Generator{% endblock %}
+
+{% block content %}
     <style>
         .card {
             margin-bottom: 20px;
@@ -31,16 +29,196 @@
         .json-null {
             color: #95a5a6;
         }
+        .tab-content {
+            padding-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .job-type-item, .field-item {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .job-type-controls, .field-controls {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+        .job-type-controls button, .field-controls button {
+            margin-left: 5px;
+        }
+        .add-item-btn {
+            margin-top: 10px;
+        }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        .config-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .config-actions button {
+            margin-left: 10px;
+        }
+        .textarea-container {
+            position: relative;
+        }
+        .textarea-container .form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .textarea-container .placeholder-vars {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background-color: #f8f9fa;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+        .placeholder-vars-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 25px;
+            background-color: white;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 101;
+            width: 250px;
+        }
+        .placeholder-vars:hover .placeholder-vars-content {
+            display: block;
+        }
+        .results-container {
+            margin-top: 20px;
+        }
+        .results-tabs {
+            margin-bottom: 15px;
+        }
+        .save-options {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
     </style>
-</head>
-<body>
-    <div class="container mt-4">
-        <h1>Mentor Management</h1>
+
+    <div class="container-fluid">
+        <h1>Fake Mentor Generator</h1>
         <p>Current mentor count: <span id="mentorCount" class="badge bg-primary">{{ mentor_count }}</span></p>
         
-        <div class="row">
-            <!-- Import Mentors from JSON -->
-            <div class="col-md-6">
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab" aria-controls="generate" aria-selected="true">Generate Mentors</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="import-tab" data-bs-toggle="tab" data-bs-target="#import" type="button" role="tab" aria-controls="import" aria-selected="false">Import Mentors</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="export-tab" data-bs-toggle="tab" data-bs-target="#export" type="button" role="tab" aria-controls="export" aria-selected="false">Export Mentors</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button" role="tab" aria-controls="config" aria-selected="false">Configuration</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="mainTabsContent">
+            <!-- Generate Mentors Tab -->
+            <div class="tab-pane fade show active" id="generate" role="tabpanel" aria-labelledby="generate-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Generate Fake Mentors</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="generateForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="genNumProfiles" class="form-label">Number of Profiles to Generate</label>
+                                        <input type="number" class="form-control" id="genNumProfiles" name="numProfiles" min="1" max="100" value="10">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="locale" class="form-label">Locale for Names/Locations</label>
+                                        <select class="form-control" id="locale" name="locale">
+                                            <option value="diverse" selected>United States (Diverse)</option>
+                                            <option value="en_US">English (US)</option>
+                                            <option value="en_GB">English (UK)</option>
+                                            <option value="es_ES">Spanish (Spain)</option>
+                                            <option value="fr_FR">French</option>
+                                            <option value="de_DE">German</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="save-options">
+                                        <label class="form-label">Save Options:</label>
+                                        <div class="mt-3">
+                                            <button type="button" id="saveToFileBtn" class="btn btn-outline-primary mb-2 w-100">
+                                                <i class="fas fa-file-download"></i> Save to File
+                                            </button>
+                                            <button type="button" id="loadToDBBtn" class="btn btn-outline-success w-100">
+                                                <i class="fas fa-database"></i> Load Mentors into Database
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="existingFiles" class="form-label">Or Load Existing File:</label>
+                                <div class="input-group">
+                                    <select class="form-control" id="existingFiles">
+                                        <option value="">-- Select a file --</option>
+                                        {% for file in json_files %}
+                                        <option value="{{ file }}">{{ file }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn-outline-secondary" type="button" id="loadFileBtn">Load</button>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary" id="generateButton">Generate Mentors</button>
+                        </form>
+                        
+                        <div id="generateProgress" class="progress mt-3 d-none">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="generateResult" class="mt-3"></div>
+                        
+                        <!-- Results Container -->
+                        <div id="resultsContainer" class="results-container d-none">
+                            <h5>Generation Results</h5>
+                            <ul class="nav nav-tabs results-tabs" id="resultsTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="mentors-tab" data-bs-toggle="tab" data-bs-target="#mentors" type="button" role="tab" aria-controls="mentors" aria-selected="true">Mentors</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="queries-tab" data-bs-toggle="tab" data-bs-target="#queries" type="button" role="tab" aria-controls="queries" aria-selected="false">Queries</button>
+                                </li>
+                            </ul>
+                            <div class="tab-content" id="resultsTabsContent">
+                                <div class="tab-pane fade show active" id="mentors" role="tabpanel" aria-labelledby="mentors-tab">
+                                    <pre id="mentorsJson"></pre>
+                                </div>
+                                <div class="tab-pane fade" id="queries" role="tabpanel" aria-labelledby="queries-tab">
+                                    <pre id="queriesJson"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Import Mentors Tab -->
+            <div class="tab-pane fade" id="import" role="tabpanel" aria-labelledby="import-tab">
                 <div class="card">
                     <div class="card-header">
                         <h5>Import Mentors from JSON</h5>
@@ -63,61 +241,149 @@
                 </div>
             </div>
             
-            <!-- Test Matching -->
-            <div class="col-md-6">
+            <!-- Export Mentors Tab -->
+            <div class="tab-pane fade" id="export" role="tabpanel" aria-labelledby="export-tab">
                 <div class="card">
                     <div class="card-header">
-                        <h5>Test Matching Algorithm</h5>
+                        <h5>Export Mentors</h5>
                     </div>
                     <div class="card-body">
-                        <form id="matchingForm">
-                            <div class="mb-3">
-                                <label for="userId" class="form-label">Requester User ID (optional)</label>
-                                <input type="text" class="form-control" id="userId" name="user_id" placeholder="Leave blank to generate a temporary ID">
-                                <div class="form-text">The user ID to use as the requester for matching</div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="searchCriteria" class="form-label">Search Criteria (JSON)</label>
-                                <textarea class="form-control" id="searchCriteria" name="search_criteria" rows="5" placeholder='{"bio": "I need help with educational leadership", "expertise": "curriculum development"}'></textarea>
-                                <div class="form-text">Enter a JSON object with search criteria</div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="limit" class="form-label">Result Limit</label>
-                                <input type="number" class="form-control" id="limit" name="limit" min="1" max="50" value="10">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Test Matching</button>
-                        </form>
+                        <button id="exportBtn" class="btn btn-secondary">Export All Mentors as JSON</button>
+                        <div id="exportResult" class="mt-3"></div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Matching Results -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5>Matching Results</h5>
-            </div>
-            <div class="card-body">
-                <div id="matchingResults">
-                    <p class="text-muted">Run a matching test to see results here</p>
+            
+            <!-- Configuration Tab -->
+            <div class="tab-pane fade" id="config" role="tabpanel" aria-labelledby="config-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Generator Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="configTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="prompts-tab" data-bs-toggle="tab" data-bs-target="#prompts" type="button" role="tab" aria-controls="prompts" aria-selected="true">Prompts</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="job-types-tab" data-bs-toggle="tab" data-bs-target="#job-types" type="button" role="tab" aria-controls="job-types" aria-selected="false">Job Types</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="fields-tab" data-bs-toggle="tab" data-bs-target="#fields" type="button" role="tab" aria-controls="fields" aria-selected="false">Fields</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="query-tab" data-bs-toggle="tab" data-bs-target="#query" type="button" role="tab" aria-controls="query" aria-selected="false">Query Settings</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="configTabsContent">
+                            <!-- Prompts Tab -->
+                            <div class="tab-pane fade show active" id="prompts" role="tabpanel" aria-labelledby="prompts-tab">
+                                <div class="form-group">
+                                    <label for="systemPrompt">System Prompt</label>
+                                    <div class="textarea-container">
+                                        <textarea class="form-control" id="systemPrompt" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="userPrompt">User Prompt</label>
+                                    <div class="textarea-container">
+                                        <textarea class="form-control" id="userPrompt" rows="10"></textarea>
+                                        <div class="placeholder-vars">
+                                            <i class="fas fa-info-circle"></i> Variables
+                                            <div class="placeholder-vars-content">
+                                                <p>Available variables:</p>
+                                                <ul>
+                                                    <li>{first_name}</li>
+                                                    <li>{last_name}</li>
+                                                    <li>{phone_number}</li>
+                                                    <li>{state_province}</li>
+                                                    <li>{country}</li>
+                                                    <li>{job_types}</li>
+                                                    <li>{fields}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Job Types Tab -->
+                            <div class="tab-pane fade" id="job-types" role="tabpanel" aria-labelledby="job-types-tab">
+                                <div id="jobTypesContainer">
+                                    <!-- Job types will be added here dynamically -->
+                                </div>
+                                <button type="button" class="btn btn-outline-primary add-item-btn" id="addJobTypeBtn">
+                                    <i class="fas fa-plus"></i> Add Job Type
+                                </button>
+                            </div>
+                            
+                            <!-- Fields Tab -->
+                            <div class="tab-pane fade" id="fields" role="tabpanel" aria-labelledby="fields-tab">
+                                <div id="fieldsContainer">
+                                    <!-- Fields will be added here dynamically -->
+                                </div>
+                                <button type="button" class="btn btn-outline-primary add-item-btn" id="addFieldBtn">
+                                    <i class="fas fa-plus"></i> Add Field
+                                </button>
+                            </div>
+                            
+                            <!-- Query Settings Tab -->
+                            <div class="tab-pane fade" id="query" role="tabpanel" aria-labelledby="query-tab">
+                                <div class="form-group">
+                                    <label for="querySystemPrompt">Query System Prompt</label>
+                                    <div class="textarea-container">
+                                        <textarea class="form-control" id="querySystemPrompt" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="queryUserPrompt">Query User Prompt</label>
+                                    <div class="textarea-container">
+                                        <textarea class="form-control" id="queryUserPrompt" rows="8"></textarea>
+                                        <div class="placeholder-vars">
+                                            <i class="fas fa-info-circle"></i> Variables
+                                            <div class="placeholder-vars-content">
+                                                <p>Available variables:</p>
+                                                <ul>
+                                                    <li>{profile}</li>
+                                                    <li>{mentee_first_name}</li>
+                                                    <li>{mentee_last_name}</li>
+                                                    <li>{mentee_state}</li>
+                                                    <li>{mentee_country}</li>
+                                                    <li>{query_fields}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Query Fields</label>
+                                    <div id="queryFieldsContainer">
+                                        <!-- Query fields will be added here dynamically -->
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary add-item-btn" id="addQueryFieldBtn">
+                                        <i class="fas fa-plus"></i> Add Query Field
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="config-actions">
+                            <button type="button" class="btn btn-secondary" id="resetConfigBtn">Reset to Default</button>
+                            <button type="button" class="btn btn-primary" id="saveConfigBtn">Save Configuration</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Export Mentors -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5>Export Mentors</h5>
-            </div>
-            <div class="card-body">
-                <button id="exportBtn" class="btn btn-secondary">Export All Mentors as JSON</button>
-                <div id="exportResult" class="mt-3"></div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Global configuration object
+        let currentConfig = {{ config|tojson|safe }} || {};
+        // Global variable to store generated results
+        let generatedResults = null;
+        
         // Format JSON with syntax highlighting
         function syntaxHighlight(json) {
             if (typeof json !== 'string') {
@@ -151,6 +417,381 @@
                     }
                 })
                 .catch(error => console.error('Error updating mentor count:', error));
+        }
+        
+        // Function to load configuration
+        function loadConfig() {
+            fetch('/admin/fake-mentors/get-config')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentConfig = data.config;
+                        updateConfigUI();
+                    }
+                })
+                .catch(error => console.error('Error loading configuration:', error));
+        }
+        
+        // Function to save configuration
+        function saveConfig() {
+            fetch('/admin/fake-mentors/update-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(currentConfig)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Configuration saved successfully');
+                } else {
+                    alert('Error saving configuration: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving configuration:', error);
+                alert('Error saving configuration: ' + error.message);
+            });
+        }
+        
+        // Function to update the UI with the current configuration
+        function updateConfigUI() {
+            // Update prompts
+            document.getElementById('systemPrompt').value = currentConfig.system_prompt || '';
+            document.getElementById('userPrompt').value = currentConfig.user_prompt || '';
+            document.getElementById('querySystemPrompt').value = currentConfig.query_system_prompt || '';
+            document.getElementById('queryUserPrompt').value = currentConfig.query_user_prompt || '';
+            
+            // Update job types
+            const jobTypesContainer = document.getElementById('jobTypesContainer');
+            jobTypesContainer.innerHTML = '';
+            
+            if (currentConfig.job_types && currentConfig.job_types.length > 0) {
+                currentConfig.job_types.forEach((jobType, index) => {
+                    const jobTypeHtml = `
+                        <div class="job-type-item" data-index="${index}">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label>Job Type Name</label>
+                                        <input type="text" class="form-control job-type-name" value="${jobType.name || ''}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Weight (%)</label>
+                                        <input type="number" class="form-control job-type-weight" min="0" max="100" value="${jobType.weight || 0}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="job-type-controls">
+                                <button type="button" class="btn btn-sm btn-danger remove-job-type">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    jobTypesContainer.insertAdjacentHTML('beforeend', jobTypeHtml);
+                });
+                
+                // Add event listeners for remove buttons
+                document.querySelectorAll('.remove-job-type').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const jobTypeItem = this.closest('.job-type-item');
+                        const index = parseInt(jobTypeItem.dataset.index);
+                        currentConfig.job_types.splice(index, 1);
+                        updateConfigUI();
+                    });
+                });
+                
+                // Add event listeners for input changes
+                document.querySelectorAll('.job-type-name').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const jobTypeItem = this.closest('.job-type-item');
+                        const index = parseInt(jobTypeItem.dataset.index);
+                        currentConfig.job_types[index].name = this.value;
+                    });
+                });
+                
+                document.querySelectorAll('.job-type-weight').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const jobTypeItem = this.closest('.job-type-item');
+                        const index = parseInt(jobTypeItem.dataset.index);
+                        currentConfig.job_types[index].weight = parseInt(this.value);
+                    });
+                });
+            }
+            
+            // Update fields
+            const fieldsContainer = document.getElementById('fieldsContainer');
+            fieldsContainer.innerHTML = '';
+            
+            if (currentConfig.fields && currentConfig.fields.length > 0) {
+                currentConfig.fields.forEach((field, index) => {
+                    const fieldHtml = `
+                        <div class="field-item" data-index="${index}">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Field Name</label>
+                                        <input type="text" class="form-control field-name" value="${field.name || ''}">
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label>Description</label>
+                                        <input type="text" class="form-control field-description" value="${field.description || ''}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field-controls">
+                                <button type="button" class="btn btn-sm btn-danger remove-field">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    fieldsContainer.insertAdjacentHTML('beforeend', fieldHtml);
+                });
+                
+                // Add event listeners for remove buttons
+                document.querySelectorAll('.remove-field').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const fieldItem = this.closest('.field-item');
+                        const index = parseInt(fieldItem.dataset.index);
+                        currentConfig.fields.splice(index, 1);
+                        updateConfigUI();
+                    });
+                });
+                
+                // Add event listeners for input changes
+                document.querySelectorAll('.field-name').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const fieldItem = this.closest('.field-item');
+                        const index = parseInt(fieldItem.dataset.index);
+                        currentConfig.fields[index].name = this.value;
+                    });
+                });
+                
+                document.querySelectorAll('.field-description').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const fieldItem = this.closest('.field-item');
+                        const index = parseInt(fieldItem.dataset.index);
+                        currentConfig.fields[index].description = this.value;
+                    });
+                });
+            }
+            
+            // Update query fields
+            const queryFieldsContainer = document.getElementById('queryFieldsContainer');
+            queryFieldsContainer.innerHTML = '';
+            
+            if (currentConfig.query_fields && currentConfig.query_fields.length > 0) {
+                currentConfig.query_fields.forEach((field, index) => {
+                    const fieldHtml = `
+                        <div class="field-item" data-index="${index}">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Field Name</label>
+                                        <input type="text" class="form-control query-field-name" value="${field.name || ''}">
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label>Description</label>
+                                        <input type="text" class="form-control query-field-description" value="${field.description || ''}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field-controls">
+                                <button type="button" class="btn btn-sm btn-danger remove-query-field">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    queryFieldsContainer.insertAdjacentHTML('beforeend', fieldHtml);
+                });
+                
+                // Add event listeners for remove buttons
+                document.querySelectorAll('.remove-query-field').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const fieldItem = this.closest('.field-item');
+                        const index = parseInt(fieldItem.dataset.index);
+                        currentConfig.query_fields.splice(index, 1);
+                        updateConfigUI();
+                    });
+                });
+                
+                // Add event listeners for input changes
+                document.querySelectorAll('.query-field-name').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const fieldItem = this.closest('.field-item');
+                        const index = parseInt(fieldItem.dataset.index);
+                        currentConfig.query_fields[index].name = this.value;
+                    });
+                });
+                
+                document.querySelectorAll('.query-field-description').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const fieldItem = this.closest('.field-item');
+                        const index = parseInt(fieldItem.dataset.index);
+                        currentConfig.query_fields[index].description = this.value;
+                    });
+                });
+            }
+        }
+        
+        // Function to add a new job type
+        function addJobType() {
+            if (!currentConfig.job_types) {
+                currentConfig.job_types = [];
+            }
+            
+            currentConfig.job_types.push({
+                name: 'New Job Type',
+                weight: 10
+            });
+            
+            updateConfigUI();
+        }
+        
+        // Function to add a new field
+        function addField() {
+            if (!currentConfig.fields) {
+                currentConfig.fields = [];
+            }
+            
+            currentConfig.fields.push({
+                name: 'newField',
+                description: 'Description of the new field'
+            });
+            
+            updateConfigUI();
+        }
+        
+        // Function to add a new query field
+        function addQueryField() {
+            if (!currentConfig.query_fields) {
+                currentConfig.query_fields = [];
+            }
+            
+            currentConfig.query_fields.push({
+                name: 'newField',
+                description: 'Description of the new field'
+            });
+            
+            updateConfigUI();
+        }
+        
+        // Function to load a JSON file
+        function loadJsonFile(filename) {
+            fetch('/admin/fake-mentors/load-json-file', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display the results
+                    displayResults(data.data);
+                } else {
+                    alert('Error loading file: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading file:', error);
+                alert('Error loading file: ' + error.message);
+            });
+        }
+        
+        // Function to display results
+        function displayResults(data) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const mentorsJson = document.getElementById('mentorsJson');
+            const queriesJson = document.getElementById('queriesJson');
+            
+            resultsContainer.classList.remove('d-none');
+            
+            // Store the results globally for save/load operations
+            generatedResults = data;
+            
+            if (data.mentors) {
+                mentorsJson.innerHTML = syntaxHighlight(JSON.stringify(data.mentors, null, 2));
+                queriesJson.innerHTML = syntaxHighlight(JSON.stringify(data.queries, null, 2));
+            } else {
+                // If data is just an array, assume it's mentors
+                mentorsJson.innerHTML = syntaxHighlight(JSON.stringify(data, null, 2));
+                queriesJson.innerHTML = 'No query data available';
+            }
+            
+            // Enable the save/load buttons now that we have data
+            document.getElementById('saveToFileBtn').disabled = false;
+            document.getElementById('loadToDBBtn').disabled = false;
+        }
+        
+        // Function to save results to file
+        function saveResultsToFile() {
+            if (!generatedResults) {
+                alert('Please generate mentors first before saving.');
+                return;
+            }
+            
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `fake-mentors-${timestamp}.json`;
+            
+            fetch('/admin/fake-mentors/save-to-file', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    data: generatedResults,
+                    filename: filename
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully saved to file: ${data.filename}`);
+                } else {
+                    alert(`Error saving file: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving file:', error);
+                alert(`Error saving file: ${error.message}`);
+            });
+        }
+        
+        // Function to load results into database
+        function loadResultsIntoDB() {
+            if (!generatedResults) {
+                alert('Please generate mentors first before loading into database.');
+                return;
+            }
+            
+            fetch('/admin/fake-mentors/load-to-db', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    data: generatedResults
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully loaded ${data.count} mentors into database.`);
+                    updateMentorCount();
+                } else {
+                    alert(`Error loading into database: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading into database:', error);
+                alert(`Error loading into database: ${error.message}`);
+            });
         }
 
         // Import Mentors Form
@@ -218,76 +859,87 @@
                 });
         });
 
-        // Update mentor count when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            updateMentorCount();
-        });
-        
-        // Test Matching Form
-        document.getElementById('matchingForm').addEventListener('submit', function(e) {
+        // Generate Mentors Form
+        document.getElementById('generateForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            
-            fetch('/admin/fake-mentors/test-matching', {
+            const generateButton = document.getElementById('generateButton');
+            const progressBar = document.getElementById('generateProgress');
+            const progressBarInner = progressBar.querySelector('.progress-bar');
+            const resultDiv = document.getElementById('generateResult');
+            const resultsContainer = document.getElementById('resultsContainer');
+
+            // Add the current configuration to the form data
+            formData.append('config', JSON.stringify(currentConfig));
+
+            // Disable buttons and show progress bar
+            generateButton.disabled = true;
+            document.getElementById('saveToFileBtn').disabled = true;
+            document.getElementById('loadToDBBtn').disabled = true;
+            progressBar.classList.remove('d-none');
+            progressBarInner.style.width = '0%';
+            resultDiv.innerHTML = '<div class="alert alert-info">Starting generation...</div>';
+            resultsContainer.classList.add('d-none');
+
+            // Start the generation
+            fetch('/admin/fake-mentors/generate', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
-                let resultHtml = '';
                 if (data.success) {
-                    resultHtml = `
-                        <div class="alert alert-success">Found ${data.total} matches for requester ID: ${data.requester_id}</div>
-                        <h6>Search Criteria:</h6>
-                        <pre>${syntaxHighlight(data.criteria)}</pre>
-                        <h6>Matches:</h6>
-                    `;
-                    
-                    if (data.matches.length > 0) {
-                        data.matches.forEach((match, index) => {
-                            resultHtml += `
-                                <div class="card mb-3">
-                                    <div class="card-header">
-                                        <strong>Match #${index + 1}</strong> - Score: ${match.score.toFixed(2)}
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p><strong>Name:</strong> ${match.profile.formattedName || `${match.profile.firstName} ${match.profile.lastName}`}</p>
-                                                <p><strong>Email:</strong> ${match.email}</p>
-                                                <p><strong>Location:</strong> ${match.profile.stateProvince || ''}, ${match.profile.country || ''}</p>
-                                                <p><strong>School District:</strong> ${match.profile.schoolDistrict || 'N/A'}</p>
-                                                <p><strong>Primary Subject:</strong> ${match.profile.primarySubject || 'N/A'}</p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p><strong>User ID:</strong> ${match.user_id}</p>
-                                                <p><strong>Matched on:</strong> ${match.matched_on.join(', ')}</p>
-                                                <p><strong>Phone:</strong> ${match.profile.phoneNumber || 'N/A'}</p>
-                                                <p><strong>Time Zone:</strong> ${match.profile.timeZone || 'N/A'}</p>
-                                            </div>
-                                        </div>
-                                        <div class="mt-3">
-                                            <h6>Mentor Skills:</h6>
-                                            <p>${match.profile.mentorSkills || 'No skills information available'}</p>
-                                        </div>
-                                        <div class="mt-3">
-                                            <h6>Full Profile:</h6>
-                                            <pre>${syntaxHighlight(match.profile)}</pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                    } else {
-                        resultHtml += '<div class="alert alert-warning">No matches found</div>';
-                    }
+                    // Poll for progress
+                    const pollInterval = setInterval(() => {
+                        fetch('/admin/fake-mentors/progress?include_results=true')
+                            .then(response => response.json())
+                            .then(progressData => {
+                                if (progressData.success) {
+                                    // Only update progress bar if actual generation has started
+                                    if (progressData.current > 0 || progressData.generation_started) {
+                                        const percent = (progressData.current / progressData.total) * 100;
+                                        progressBarInner.style.width = `${percent}%`;
+                                    } else {
+                                        // Keep progress bar at 0% until real progress begins
+                                        progressBarInner.style.width = '0%';
+                                    }
+
+                                    if (!progressData.in_progress) {
+                                        clearInterval(pollInterval);
+                                        progressBar.classList.add('d-none');
+                                        generateButton.disabled = false;
+
+                                        if (progressData.error) {
+                                            resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${progressData.error}</div>`;
+                                        } else {
+                                            resultDiv.innerHTML = `<div class="alert alert-success">Successfully generated ${progressData.total} mentor profiles</div>`;
+                                            updateMentorCount();
+
+                                            // Display the results
+                                            if (progressData.results) {
+                                                displayResults(progressData.results);
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                clearInterval(pollInterval);
+                                progressBar.classList.add('d-none');
+                                generateButton.disabled = false;
+                                resultDiv.innerHTML = `<div class="alert alert-danger">Error checking progress: ${error.message}</div>`;
+                            });
+                    }, 1000);
                 } else {
-                    resultHtml = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                    progressBar.classList.add('d-none');
+                    generateButton.disabled = false;
+                    resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
                 }
-                document.getElementById('matchingResults').innerHTML = resultHtml;
             })
             .catch(error => {
-                document.getElementById('matchingResults').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                progressBar.classList.add('d-none');
+                generateButton.disabled = false;
+                resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
             });
         });
 
@@ -317,6 +969,62 @@
                 document.getElementById('exportResult').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
             });
         });
+        
+        // Load existing file button
+        document.getElementById('loadFileBtn').addEventListener('click', function() {
+            const select = document.getElementById('existingFiles');
+            const filename = select.value;
+            
+            if (!filename) {
+                alert('Please select a file to load');
+                return;
+            }
+            
+            loadJsonFile(filename);
+        });
+        
+        // Add event listeners for configuration changes
+        document.getElementById('systemPrompt').addEventListener('change', function() {
+            currentConfig.system_prompt = this.value;
+        });
+        
+        document.getElementById('userPrompt').addEventListener('change', function() {
+            currentConfig.user_prompt = this.value;
+        });
+        
+        document.getElementById('querySystemPrompt').addEventListener('change', function() {
+            currentConfig.query_system_prompt = this.value;
+        });
+        
+        document.getElementById('queryUserPrompt').addEventListener('change', function() {
+            currentConfig.query_user_prompt = this.value;
+        });
+        
+        // Add event listeners for buttons
+        document.getElementById('addJobTypeBtn').addEventListener('click', addJobType);
+        document.getElementById('addFieldBtn').addEventListener('click', addField);
+        document.getElementById('addQueryFieldBtn').addEventListener('click', addQueryField);
+        
+        document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
+        
+        document.getElementById('resetConfigBtn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to reset the configuration to default?')) {
+                loadConfig();
+            }
+        });
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMentorCount();
+            updateConfigUI();
+            
+            // Disable save/load buttons initially
+            document.getElementById('saveToFileBtn').disabled = true;
+            document.getElementById('loadToDBBtn').disabled = true;
+            
+            // Add event listeners for save/load buttons
+            document.getElementById('saveToFileBtn').addEventListener('click', saveResultsToFile);
+            document.getElementById('loadToDBBtn').addEventListener('click', loadResultsIntoDB);
+        });
     </script>
-</body>
-</html>
+{% endblock %}

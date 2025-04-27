@@ -1,0 +1,362 @@
+[
+  {
+    "timestamp": "2025-04-25T17:49:01.674457",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "29bb1c43-f19f-4d0e-b393-9f1247c90bb5",
+    "mentorName": "Jane Gollum",
+    "feedback": "good",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T17:49:03.235898",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "6eaa2ad3-841d-4d54-8871-af49f835abc3",
+    "mentorName": "John Lessard",
+    "feedback": "bad",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T17:49:04.285257",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "14f86dae-61e3-4688-a54b-131701c777a7",
+    "mentorName": "Jane Martin",
+    "feedback": "good",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T17:49:04.943715",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "e55ab976-93bb-4907-9f78-55bd9ce8d09e",
+    "mentorName": "Rosario Gollum",
+    "feedback": "bad",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T17:49:05.872721",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "4dcd66b1-bcc0-413c-8fa9-4176591f79be",
+    "mentorName": "Kaitlyn Cooke",
+    "feedback": "good",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T17:49:06.611362",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "f3a4fc91-647b-4fb0-8467-360c1d817998",
+    "mentorName": "Citlali Dufour",
+    "feedback": "good",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T17:49:07.611883",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "04b6f7f2-2765-4212-a937-9e8fbee1f831",
+    "mentorName": "Susana Perez",
+    "feedback": "bad",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T17:49:08.355227",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "d6a125fd-33b5-4e39-acdc-e4f66c764075",
+    "mentorName": "Jan-Peter Casini",
+    "feedback": "bad",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T17:49:09.247041",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "6d9be2b1-1b2a-4932-a2aa-22887c91447b",
+    "mentorName": "Amanda Bien",
+    "feedback": "good",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T17:49:10.399261",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "55f3f6a4-8528-4305-8d83-8fc431cd637b",
+    "mentorName": "Cecilia Drub",
+    "feedback": "bad",
+    "query": {
+      "country": "Mexico",
+      "firstName": "Pietro",
+      "lastName": "Tovar",
+      "lookingFor": "I am seeking guidance on designing curriculum modules that weave together South Asian historical narratives with Latin American contexts to enhance cross-cultural understanding among students. I would appreciate advice on implementing active learning and project-based strategies that foster critical thinking and inclusivity. Additionally, I hope to learn best practices for publishing research in comparative cultural studies and mentoring undergraduate research projects.",
+      "primarySubject": "Comparative South Asian and Latin American Cultural Studies",
+      "stateProvince": "\u0924\u092e\u093f\u0932\u0928\u093e\u0921\u0941",
+      "targetMentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+      "yearsTeaching": "2 years",
+      "additionalQuery": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T18:12:34.677337",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "d6a125fd-33b5-4e39-acdc-e4f66c764075",
+    "mentorName": "Jan-Peter Casini",
+    "feedback": "good",
+    "query": {
+      "country": "United States",
+      "firstName": "John",
+      "lastName": "Speer",
+      "mentorSkills": "I specialize in fostering collaborative school environments and empowering educators through reflective practice. I leverage data-driven decision making to improve student outcomes and align instructional strategies with school goals. My leadership approach emphasizes mentorship, professional development, and evidence-based interventions. I have successfully implemented peer coaching programs and guided teachers in curriculum design, classroom management, and differentiated instruction.",
+      "phoneNumber": "(328)120-6797",
+      "primarySubject": "School Leadership and Administration",
+      "schoolDistrict": "DoDEA Europe District",
+      "stateProvince": "Nordrhein-Westfalen",
+      "timeZone": "Europe/Berlin",
+      "goal": "Find someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T18:12:35.950174",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "29bb1c43-f19f-4d0e-b393-9f1247c90bb5",
+    "mentorName": "Jane Gollum",
+    "feedback": "good",
+    "query": {
+      "country": "United States",
+      "firstName": "John",
+      "lastName": "Speer",
+      "mentorSkills": "I specialize in fostering collaborative school environments and empowering educators through reflective practice. I leverage data-driven decision making to improve student outcomes and align instructional strategies with school goals. My leadership approach emphasizes mentorship, professional development, and evidence-based interventions. I have successfully implemented peer coaching programs and guided teachers in curriculum design, classroom management, and differentiated instruction.",
+      "phoneNumber": "(328)120-6797",
+      "primarySubject": "School Leadership and Administration",
+      "schoolDistrict": "DoDEA Europe District",
+      "stateProvince": "Nordrhein-Westfalen",
+      "timeZone": "Europe/Berlin",
+      "goal": "Find someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T18:12:36.675666",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "35ef93e5-cb05-4c91-b8d2-53b61acd2086",
+    "mentorName": "Sophie Olivas",
+    "feedback": "bad",
+    "query": {
+      "country": "United States",
+      "firstName": "John",
+      "lastName": "Speer",
+      "mentorSkills": "I specialize in fostering collaborative school environments and empowering educators through reflective practice. I leverage data-driven decision making to improve student outcomes and align instructional strategies with school goals. My leadership approach emphasizes mentorship, professional development, and evidence-based interventions. I have successfully implemented peer coaching programs and guided teachers in curriculum design, classroom management, and differentiated instruction.",
+      "phoneNumber": "(328)120-6797",
+      "primarySubject": "School Leadership and Administration",
+      "schoolDistrict": "DoDEA Europe District",
+      "stateProvince": "Nordrhein-Westfalen",
+      "timeZone": "Europe/Berlin",
+      "goal": "Find someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T18:12:37.519081",
+    "menteeId": "8f529f47-9e40-4314-a58e-0cb652d7b19e",
+    "menteeName": "John Speer",
+    "mentorId": "f3a4fc91-647b-4fb0-8467-360c1d817998",
+    "mentorName": "Citlali Dufour",
+    "feedback": "bad",
+    "query": {
+      "country": "United States",
+      "firstName": "John",
+      "lastName": "Speer",
+      "mentorSkills": "I specialize in fostering collaborative school environments and empowering educators through reflective practice. I leverage data-driven decision making to improve student outcomes and align instructional strategies with school goals. My leadership approach emphasizes mentorship, professional development, and evidence-based interventions. I have successfully implemented peer coaching programs and guided teachers in curriculum design, classroom management, and differentiated instruction.",
+      "phoneNumber": "(328)120-6797",
+      "primarySubject": "School Leadership and Administration",
+      "schoolDistrict": "DoDEA Europe District",
+      "stateProvince": "Nordrhein-Westfalen",
+      "timeZone": "Europe/Berlin",
+      "goal": "Find someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T19:25:10.937469",
+    "menteeId": "temp-1745609096383",
+    "menteeName": "Lydia Trujillo",
+    "mentorId": "8ba81952-b87b-4e06-a1c4-c0219d8cd06f",
+    "mentorName": "Gerold Morandini",
+    "feedback": "good",
+    "query": {
+      "country": "United States",
+      "firstName": "Trevor",
+      "lastName": "Mathisen",
+      "lookingFor": "I am a Senior at SJSU.",
+      "primarySubject": "English Language Arts",
+      "stateProvince": "North Carolina",
+      "yearsTeaching": 3,
+      "goal": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T19:25:11.714390",
+    "menteeId": "temp-1745609096383",
+    "menteeName": "Lydia Trujillo",
+    "mentorId": "755d8e68-84d1-459a-9b28-d6647796139b",
+    "mentorName": "Francisca Morissette",
+    "feedback": "bad",
+    "query": {
+      "country": "United States",
+      "firstName": "Trevor",
+      "lastName": "Mathisen",
+      "lookingFor": "I am a Senior at SJSU.",
+      "primarySubject": "English Language Arts",
+      "stateProvince": "North Carolina",
+      "yearsTeaching": 3,
+      "goal": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T19:25:12.699399",
+    "menteeId": "temp-1745609096383",
+    "menteeName": "Lydia Trujillo",
+    "mentorId": "f860d926-fa48-49d6-b3fd-fcef55ae52aa",
+    "mentorName": "Felix Favata",
+    "feedback": "good",
+    "query": {
+      "country": "United States",
+      "firstName": "Trevor",
+      "lastName": "Mathisen",
+      "lookingFor": "I am a Senior at SJSU.",
+      "primarySubject": "English Language Arts",
+      "stateProvince": "North Carolina",
+      "yearsTeaching": 3,
+      "goal": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T19:25:16.371422",
+    "menteeId": "temp-1745609096383",
+    "menteeName": "Lydia Trujillo",
+    "mentorId": "6d9be2b1-1b2a-4932-a2aa-22887c91447b",
+    "mentorName": "Amanda Bien",
+    "feedback": "bad",
+    "query": {
+      "country": "United States",
+      "firstName": "Trevor",
+      "lastName": "Mathisen",
+      "lookingFor": "I am a Senior at SJSU.",
+      "primarySubject": "English Language Arts",
+      "stateProvince": "North Carolina",
+      "yearsTeaching": 3,
+      "goal": "find me someone good"
+    }
+  },
+  {
+    "timestamp": "2025-04-25T19:28:36.305387",
+    "menteeId": "temp-1745609096383",
+    "menteeName": "Lydia Trujillo",
+    "mentorId": "d6a125fd-33b5-4e39-acdc-e4f66c764075",
+    "mentorName": "Jan-Peter Casini",
+    "feedback": "bad",
+    "query": {
+      "country": "United States",
+      "firstName": "Trevor",
+      "lastName": "Mathisen",
+      "lookingFor": "I am a Senior at SJSU.",
+      "primarySubject": "English Language Arts",
+      "stateProvince": "North Carolina",
+      "yearsTeaching": 3,
+      "goal": "find me someone good"
+    }
+  }
+]

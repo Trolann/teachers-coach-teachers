@@ -9,9 +9,14 @@ import json
 from uuid import uuid4
 import threading
 import concurrent.futures
-from typing import Dict, List, Optional, Any, Tuple
-import sys
+import queue
+from typing import Dict, List, Optional, Any
 import os
+import time
+import glob
+
+# Import the generate_mentors module
+from extensions.openai_generator import generate_mentor_profiles, openai_thread_pool
 
 logger = get_logger(__name__)
 fake_mentors_bp = Blueprint('fake_mentors', __name__)
@@ -20,8 +25,68 @@ fake_mentors_bp = Blueprint('fake_mentors', __name__)
 embedding_factory = EmbeddingFactory()
 the_algorithm = TheAlgorithm()
 
-# Thread pool for parallel processing of OpenAI API calls
-openai_thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=20)
+# Path to the configuration file
+CONFIG_FILE_PATH = os.path.join(os.path.dirname(__file__), 'base-config.json')
+GENERATE_MENTORS_DIR = os.path.join(os.path.dirname(__file__), 'generate_mentors')
+
+# Global variable to track generation progress
+generation_progress = {
+    'total': 0,
+    'current': 0,
+    'in_progress': False,
+    'error': None,
+    'results': []
+}
+
+# Lock for thread-safe updates to generation_progress
+progress_lock = threading.Lock()
+
+# Queue for collecting results
+result_queue = queue.Queue()
+
+
+def load_config() -> Dict[str, Any]:
+    """Load configuration from the JSON file"""
+    try:
+        if os.path.exists(CONFIG_FILE_PATH):
+            with open(CONFIG_FILE_PATH, 'r') as f:
+                return json.load(f)
+        else:
+            logger.warning(f"Configuration file not found at {CONFIG_FILE_PATH}")
+            return {}
+    except Exception as e:
+        logger.error(f"Error loading configuration: {str(e)}")
+        return {}
+
+
+def save_config(config: Dict[str, Any]) -> bool:
+    """Save configuration to the JSON file"""
+    try:
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(CONFIG_FILE_PATH), exist_ok=True)
+
+        with open(CONFIG_FILE_PATH, 'w') as f:
+            json.dump(config, f, indent=2)
+        return True
+    except Exception as e:
+        logger.error(f"Error saving configuration: {str(e)}")
+        return False
+
+
+def get_json_files() -> List[str]:
+    """Get a list of JSON files in the generate_mentors directory"""
+    try:
+        # Ensure the directory exists
+        os.makedirs(GENERATE_MENTORS_DIR, exist_ok=True)
+
+        # Get all JSON files
+        json_files = glob.glob(os.path.join(GENERATE_MENTORS_DIR, "*.json"))
+
+        # Return just the filenames without the path
+        return [os.path.basename(f) for f in json_files]
+    except Exception as e:
+        logger.error(f"Error getting JSON files: {str(e)}")
+        return []
 
 
 @fake_mentors_bp.route('/fake-mentors')
@@ -31,25 +96,23 @@ def fake_mentors_page():
     mentor_count = User.query.filter_by(user_type=UserType.MENTOR).count()
     logger.info(f'Current mentor count: {mentor_count}')
 
+    # Load configuration
+    config = load_config()
+
+    # Get JSON files in the generate_mentors directory
+    json_files = get_json_files()
+
     return render_template(
         'dashboard/fake_mentors.html',
-        mentor_count=mentor_count
+        mentor_count=mentor_count,
+        config=config,
+        json_files=json_files
     )
 
 
 def generate_embeddings(cognito_sub: str, embedding_data: Dict[str, str]) -> Optional[Dict[str, List[float]]]:
     """
     Generate embeddings for a user - this is the function that will be threaded
-    
-    This function ONLY calls the OpenAI API and does not interact with the database.
-    
-    Args:
-        cognito_sub: The user's cognito sub ID
-        embedding_data: The data to generate embeddings from
-        
-    Returns:
-        Optional[Dict[str, List[float]]]: Dictionary with embedding types as keys and vector embeddings as values,
-                                         or None if there was an error
     """
     try:
         # Only call the OpenAI API part, not the database operations
@@ -107,7 +170,7 @@ def import_mentors_from_json():
         # Process all profiles and prepare data for threading
         users_to_add = []
         embedding_tasks = []
-        
+
         for profile in profiles:
             try:
                 # Validate the profile has required fields
@@ -117,7 +180,8 @@ def import_mentors_from_json():
 
                 # Create a user with mentor profile data
                 # Generate a fake email if not present
-                email = profile.get('email', f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
+                email = profile.get('email',
+                                    f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
                 cognito_sub = str(uuid4())  # Generate a fake cognito sub ID
 
                 # Check if a user with this email already exists
@@ -134,11 +198,11 @@ def import_mentors_from_json():
                     application_status="APPROVED"  # Set as approved to ensure they appear in matching
                 )
                 users_to_add.append(user)
-                
+
                 # Prepare embedding data from profile
                 embedding_data = {}
 
-                # Add mentorSkills as bio if available
+                # Add fields as bio if available
                 for item in profile:
                     if item in EXCLUDED_EMBEDDING_FIELDS:
                         continue
@@ -147,34 +211,32 @@ def import_mentors_from_json():
                     else:
                         embedding_data[item] = str(profile[item])
 
-
                 # Store the embedding data for later processing
                 if embedding_data:
                     embedding_tasks.append((cognito_sub, embedding_data))
-                
+
                 logger.debug(f'Prepared imported mentor user with cognito_sub: {cognito_sub}')
             except Exception as e:
                 logger.error(f'Error preparing profile: {str(e)}')
                 logger.exception(e)
-        
+
         # Add all users to the database
         for user in users_to_add:
             db.session.add(user)
-        
+
         # Flush to get IDs
         db.session.flush()
-        
+
         # Now use thread pool to generate embeddings in parallel (only the OpenAI calls)
-        # Map futures to cognito_sub for easier tracking
         future_to_sub = {}
         for cognito_sub, embedding_data in embedding_tasks:
             future = openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data)
             future_to_sub[future] = cognito_sub
-        
+
         # Process results as they complete
         successful_embeddings = 0
         embeddings_to_store = []  # Collect all embeddings to store in main thread
-        
+
         for future in concurrent.futures.as_completed(future_to_sub.keys()):
             cognito_sub = future_to_sub[future]
             embeddings_dict = future.result()
@@ -182,11 +244,11 @@ def import_mentors_from_json():
             if embeddings_dict:
                 # Collect the embeddings to store later in the main thread
                 embeddings_to_store.append((cognito_sub, embeddings_dict))
-        
+
         # Store all embeddings in the database (in the main thread)
         for cognito_sub, embeddings_dict in embeddings_to_store:
             try:
-                # Store each embedding in the database directly without calling store_embeddings_dict
+                # Store each embedding in the database directly
                 for embedding_type, vector_embedding in embeddings_dict.items():
                     # Check if an embedding of this type already exists for this user
                     existing_embedding = UserEmbedding.query.filter_by(
@@ -206,15 +268,16 @@ def import_mentors_from_json():
                             vector_embedding=vector_embedding
                         )
                         db.session.add(new_embedding)
-                
+
                 successful_embeddings += 1
             except Exception as e:
                 logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
-        
+
         # Commit all changes
         db.session.commit()
-        
-        logger.info(f'Successfully imported {len(users_to_add)} mentor profiles with {successful_embeddings} embeddings')
+
+        logger.info(
+            f'Successfully imported {len(users_to_add)} mentor profiles with {successful_embeddings} embeddings')
         return jsonify({'success': True, 'count': len(users_to_add)})
     except Exception as e:
         db.session.rollback()
@@ -223,45 +286,74 @@ def import_mentors_from_json():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# This function is removed and replaced with the implementation below
-
-
 @fake_mentors_bp.route('/fake-mentors/generate', methods=['POST'])
 def generate_fake_mentors():
-    """Generate fake mentor profiles using thread pool"""
+    """Generate fake mentor profiles using OpenAI and Faker"""
     global generation_progress
     logger.debug('Received request to generate fake mentors')
-    
+
     # Check if generation is already in progress
     if generation_progress['in_progress']:
         return jsonify({
-            'success': False, 
+            'success': False,
             'error': 'Generation already in progress'
         }), 409
-    
+
     try:
         # Get the number of profiles to generate
-        num_profiles = int(request.form.get('numProfiles', 0))
+        # Handle both form data and JSON data
+        if request.is_json:
+            data = request.json
+            num_profiles = int(data.get('numProfiles', 0))
+            config_data = data.get('config')
+            locale = data.get('locale', 'en_US')
+        else:
+            num_profiles = int(request.form.get('numProfiles', 0))
+            config_data = request.form.get('config')
+            locale = request.form.get('locale', 'en_US')
+            
+        logger.debug(f'Request data: numProfiles={num_profiles}, locale={locale}')
+            
         if num_profiles <= 0:
             return jsonify({'success': False, 'error': 'Number of profiles must be greater than 0'}), 400
-        
+
         if num_profiles > 100:
             return jsonify({'success': False, 'error': 'Maximum 100 profiles can be generated at once'}), 400
 
-        logger.info(f'Generating {num_profiles} fake mentor profiles')
-        
-        # Reset progress tracking
+        # Get the configuration
+        if config_data:
+            try:
+                config = json.loads(config_data) if isinstance(config_data, str) else config_data
+            except json.JSONDecodeError:
+                return jsonify({'success': False, 'error': 'Invalid configuration JSON'}), 400
+        else:
+            config = load_config()
+
+        # Handle diverse locale
+        if locale == 'diverse':
+            locale = ['en_US', 'es_MX', 'fr_CA', 'it_IT', 'de_DE', 'ja_JP', 'zh_CN', 'ru_RU', 'hi_IN', 'ko_KR', 'vi_VN',
+                 'tl_PH', 'ar_SA', 'fa_IR']
+
+        logger.info(f'Generating {num_profiles} fake mentor profiles with locale {locale}')
+
+        # Reset progress tracking - initialize with 0 to ensure bar stays empty
         with progress_lock:
             generation_progress['total'] = num_profiles
             generation_progress['current'] = 0
             generation_progress['in_progress'] = True
             generation_progress['error'] = None
-        
+            generation_progress['results'] = []
+            generation_progress['generation_started'] = False  # Add flag to track when actual generation starts
+
         # Start a thread to process generation
-        threading.Thread(target=_process_profile_generation, args=(num_profiles,), daemon=True).start()
-        
+        threading.Thread(
+            target=_process_generation,
+            args=(num_profiles, config, locale),
+            daemon=True
+        ).start()
+
         return jsonify({
-            'success': True, 
+            'success': True,
             'message': 'Profile generation started',
             'total': num_profiles
         })
@@ -274,134 +366,50 @@ def generate_fake_mentors():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-def _process_profile_generation(num_profiles: int) -> None:
+def update_progress(current: int, total: int) -> None:
+    """Update the generation progress"""
+    global generation_progress
+    with progress_lock:
+        # Only update progress if it's actual generation progress
+        if not generation_progress.get('generation_started', False):
+            generation_progress['generation_started'] = True
+        generation_progress['current'] = current
+
+
+def _process_generation(num_profiles: int, config: Dict[str, Any], locale: str) -> None:
     """
-    Process profile generation using thread pool
-    
-    Args:
-        num_profiles: The total number of profiles to generate
+    Process profile generation using the generate_mentors module
     """
     global generation_progress
-    
-    try:
-        # Create users and prepare embedding data
-        users = []
-        embedding_tasks = []
-        
-        for i in range(num_profiles):
-            try:
-                # Generate a unique email
-                email = f"mentor{uuid4().hex[:8]}@example.com"
-                
-                # Generate a fake cognito sub ID
-                cognito_sub = str(uuid4())
-                
-                # Create a basic profile
-                profile = {
-                    "first_name": f"Mentor{i+1}",
-                    "last_name": f"Test{i+1}",
-                    "email": email,
-                    "bio": f"I am a test mentor {i+1} with expertise in various areas.",
-                    "expertise_areas": ["Software Development", "Data Science", "Product Management"],
-                    "years_of_experience": 5 + (i % 15),  # 5-20 years of experience
-                    "skills": ["Python", "JavaScript", "Leadership", "Communication"]
-                }
-                
-                # Create the user
-                user = User(
-                    email=email,
-                    user_type="MENTOR",
-                    cognito_sub=cognito_sub,
-                    profile=profile,
-                    application_status="APPROVED"  # Set as approved to ensure they appear in matching
-                )
-                users.append(user)
-                
-                # Prepare embedding data
-                embedding_data = {
-                    "bio": profile["bio"],
-                    "expertise": ", ".join(profile["expertise_areas"]),
-                    "experience": f"{profile['years_of_experience']} years of experience",
-                    "skills": ", ".join(profile["skills"])
-                }
-                
-                # Store for later processing
-                embedding_tasks.append((cognito_sub, embedding_data))
-                
-                # Update progress for user creation
-                with progress_lock:
-                    generation_progress['current'] += 0.5  # Count as half the work
-                    logger.debug(f'Prepared fake mentor {i+1}/{num_profiles}')
-            except Exception as e:
-                logger.error(f'Error preparing mentor {i+1}: {str(e)}')
-                logger.exception(e)
-        
-        # Add all users to the database
-        for user in users:
-            db.session.add(user)
-        
-        # Flush to get IDs
-        db.session.flush()
-        
-        # Now use thread pool to generate embeddings in parallel (only the OpenAI calls)
-        # Map futures to cognito_sub for easier tracking
-        future_to_sub = {}
-        for cognito_sub, embedding_data in embedding_tasks:
-            future = openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data)
-            future_to_sub[future] = cognito_sub
-        
-        # Process results as they complete
-        successful_embeddings = 0
-        embeddings_to_store = []  # Collect all embeddings to store in main thread
-        
-        for future in concurrent.futures.as_completed(future_to_sub.keys()):
-            cognito_sub = future_to_sub[future]
-            embeddings_dict = future.result()
-            
-            if embeddings_dict:
-                # Collect the embeddings to store later in the main thread
-                embeddings_to_store.append((cognito_sub, embeddings_dict))
-        
-        # Store all embeddings in the database (in the main thread)
-        for cognito_sub, embeddings_dict in embeddings_to_store:
-            try:
-                # Store each embedding in the database directly without calling store_embeddings_dict
-                for embedding_type, vector_embedding in embeddings_dict.items():
-                    # Check if an embedding of this type already exists for this user
-                    existing_embedding = UserEmbedding.query.filter_by(
-                        user_id=cognito_sub,
-                        embedding_type=embedding_type
-                    ).first()
 
-                    if existing_embedding:
-                        # Update existing embedding
-                        logger.info(f"Updating existing {embedding_type} embedding for user {cognito_sub}")
-                        existing_embedding.vector_embedding = vector_embedding
-                    else:
-                        # Create new embedding
-                        new_embedding = UserEmbedding(
-                            user_id=cognito_sub,
-                            embedding_type=embedding_type,
-                            vector_embedding=vector_embedding
-                        )
-                        db.session.add(new_embedding)
-                
-                successful_embeddings += 1
-                # Update progress for embedding generation
-                with progress_lock:
-                    generation_progress['current'] += 0.5  # Count as the other half of the work
-            except Exception as e:
-                logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
+    try:
+        logger.info(f'Starting generation of {num_profiles} profiles with config: {config}')
         
-        # Commit all changes
-        db.session.commit()
-        
-        # All profiles generated
+        # Use the generate_mentors module to generate profiles
+        profiles_and_queries = generate_mentor_profiles(
+            num_profiles=num_profiles,
+            config=config,
+            locale=locale,
+            progress_update_callback=update_progress
+        )
+
+        # Extract profiles and queries
+        profiles = [profile for profile, _ in profiles_and_queries]
+        queries = [query for _, query in profiles_and_queries]
+
+        # Create test data structure that includes both mentors and queries
+        test_data = {
+            "mentors": profiles,
+            "queries": queries
+        }
+
+        # Store the results in the progress object
         with progress_lock:
+            generation_progress['results'] = test_data
             generation_progress['in_progress'] = False
-            logger.info(f'Successfully generated {len(users)} fake mentor profiles with {successful_embeddings} embeddings')
+
+        logger.info(f'Successfully generated {len(profiles)} fake mentor profiles with {len(queries)} matching queries')
     except Exception as e:
-        db.session.rollback()
         with progress_lock:
             generation_progress['error'] = str(e)
             generation_progress['in_progress'] = False
@@ -409,92 +417,27 @@ def _process_profile_generation(num_profiles: int) -> None:
         logger.exception(e)
 
 
-@fake_mentors_bp.route('/fake-mentors/test-matching', methods=['POST'])
-def test_matching():
-    """Test the matching algorithm with a query"""
-    logger.debug('Received request to test matching')
-    try:
-        # Get the user_id to test as
-        user_id = request.form.get('user_id')
-        if not user_id:
-            user_id = str(uuid4())  # Generate a temporary user ID for testing
-            logger.info(f'No user_id provided, using generated ID: {user_id}')
-        
-        # Get the search criteria from the form
-        search_json = request.form.get('search_criteria', '{}')
-        try:
-            criteria = json.loads(search_json)
-            if not isinstance(criteria, dict):
-                return jsonify({'success': False, 'error': 'Search criteria must be a valid JSON object'}), 400
-        except json.JSONDecodeError as e:
-            logger.error(f'Invalid JSON in search criteria: {str(e)}')
-            return jsonify({'success': False, 'error': f'Invalid JSON format: {str(e)}'}), 400
-
-        # Get the limit parameter
-        try:
-            limit = int(request.form.get('limit', 10))
-        except ValueError:
-            limit = 10
-
-        logger.info(f'Testing matching with user_id: {user_id}, criteria: {criteria}, limit: {limit}')
-        
-        # Use the algorithm to find matches
-        matches = the_algorithm.get_closest_embeddings(user_id, criteria, limit)
-
-        # Format the response
-        formatted_matches = []
-        for match in matches:
-            user = User.query.filter_by(cognito_sub=match["user_id"]).first()
-            if user:
-                # Format the profile for display
-                profile = user.profile
-                # Add formatted name for display
-                if 'firstName' in profile and 'lastName' in profile:
-                    profile['formattedName'] = f"{profile['firstName']} {profile['lastName']}"
-                
-                formatted_matches.append({
-                    "user_id": match["user_id"],
-                    "score": match["score"],
-                    "email": user.email,
-                    "profile": profile,
-                    "matched_on": [e.embedding_type for e in match["embeddings"]]
-                })
-
-        return jsonify({
-            "success": True,
-            "matches": formatted_matches,
-            "total": len(formatted_matches),
-            "criteria": criteria,
-            "requester_id": user_id
-        }), 200
-    except Exception as e:
-        logger.error(f'Error testing matching: {str(e)}')
-        logger.exception(e)
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-# Global variable to track generation progress
-generation_progress = {
-    'total': 0,
-    'current': 0,
-    'in_progress': False,
-    'error': None
-}
-
-# Lock for thread-safe updates to generation_progress
-progress_lock = threading.Lock()
 
 @fake_mentors_bp.route('/fake-mentors/progress', methods=['GET'])
 def get_generation_progress():
     """Get the current progress of mentor generation"""
     global generation_progress
-    return jsonify({
+
+    response_data = {
         'success': True,
         'total': generation_progress['total'],
         'current': generation_progress['current'],
         'in_progress': generation_progress['in_progress'],
-        'error': generation_progress['error']
-    })
+        'error': generation_progress['error'],
+        'generation_started': generation_progress.get('generation_started', False)  # Include generation_started flag
+    }
+
+    # Include results if generation is complete and results are requested
+    include_results = request.args.get('include_results', 'false').lower() == 'true'
+    if include_results and not generation_progress['in_progress'] and generation_progress['results']:
+        response_data['results'] = generation_progress['results']
+
+    return jsonify(response_data)
 
 
 @fake_mentors_bp.route('/fake-mentors/count', methods=['GET'])
@@ -508,6 +451,277 @@ def get_mentor_count():
         }), 200
     except Exception as e:
         logger.error(f'Error getting mentor count: {str(e)}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@fake_mentors_bp.route('/fake-mentors/update-config', methods=['POST'])
+def update_config():
+    """Update the configuration file"""
+    try:
+        config_data = request.json
+        if not config_data:
+            return jsonify({'success': False, 'error': 'No configuration data provided'}), 400
+
+        # Save the configuration
+        success = save_config(config_data)
+        if success:
+            return jsonify({'success': True, 'message': 'Configuration updated successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to save configuration'}), 500
+    except Exception as e:
+        logger.error(f'Error updating configuration: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@fake_mentors_bp.route('/fake-mentors/get-config', methods=['GET'])
+def get_config():
+    """Get the current configuration"""
+    try:
+        config = load_config()
+        return jsonify({'success': True, 'config': config})
+    except Exception as e:
+        logger.error(f'Error getting configuration: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@fake_mentors_bp.route('/fake-mentors/get-json-files', methods=['GET'])
+def get_json_files_route():
+    """Get a list of JSON files in the generate_mentors directory"""
+    try:
+        json_files = get_json_files()
+        return jsonify({'success': True, 'files': json_files})
+    except Exception as e:
+        logger.error(f'Error getting JSON files: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@fake_mentors_bp.route('/fake-mentors/load-json-file', methods=['POST'])
+def load_json_file():
+    """Load a JSON file from the generate_mentors directory"""
+    try:
+        filename = request.json.get('filename')
+        if not filename:
+            return jsonify({'success': False, 'error': 'No filename provided'}), 400
+
+        file_path = os.path.join(GENERATE_MENTORS_DIR, filename)
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'error': f'File {filename} not found'}), 404
+
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        logger.error(f'Error loading JSON file: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@fake_mentors_bp.route('/fake-mentors/save-to-file', methods=['POST'])
+def save_results_to_file():
+    """Save generated results to a file"""
+    logger.debug('Received request to save results to file')
+    try:
+        # Get the data and filename from the request
+        data = request.json.get('data')
+        filename = request.json.get('filename')
+        file_format = request.json.get('format', 'both')  # Default to both formats
+
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        # Ensure directory exists
+        os.makedirs(GENERATE_MENTORS_DIR, exist_ok=True)
+        
+        saved_files = []
+        
+        # Save in original format if requested
+        if file_format in ['original', 'both']:
+            if not filename:
+                # Generate a filename with timestamp
+                timestamp = time.strftime("%Y%m%d-%H%M%S")
+                original_filename = f"fake-mentors-{timestamp}.json"
+            else:
+                original_filename = filename
+                
+            original_file_path = os.path.join(GENERATE_MENTORS_DIR, original_filename)
+            with open(original_file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+            saved_files.append({
+                'format': 'original',
+                'filename': original_filename,
+                'path': original_file_path
+            })
+            logger.info(f"Successfully saved results to {original_file_path}")
+            
+        # Save in matching-test-data format if requested
+        if file_format in ['matching', 'both']:
+            # Generate a filename with ISO timestamp
+            timestamp = time.strftime("%Y-%m-%dT%H:%M:%S")
+            matching_filename = f"matching-test-data-{timestamp}.json"
+            
+            matching_file_path = os.path.join(GENERATE_MENTORS_DIR, matching_filename)
+            with open(matching_file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+            saved_files.append({
+                'format': 'matching',
+                'filename': matching_filename,
+                'path': matching_file_path
+            })
+            logger.info(f"Successfully saved results to {matching_file_path}")
+
+        return jsonify({
+            'success': True,
+            'files': saved_files
+        })
+    except Exception as e:
+        logger.error(f'Error saving results to file: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@fake_mentors_bp.route('/fake-mentors/load-to-db', methods=['POST'])
+def load_results_to_db():
+    """Load generated results into the database"""
+    logger.debug('Received request to load results into database')
+    try:
+        # Get the data from the request
+        data = request.json.get('data')
+
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        # Extract profiles from the data
+        profiles = data.get('mentors', [])
+
+        if not profiles:
+            return jsonify({'success': False, 'error': 'No mentor profiles found in data'}), 400
+
+        # Process all profiles
+        users_to_add = []
+        embedding_tasks = []
+
+        for profile in profiles:
+            try:
+                # Validate the profile has required fields
+                if not all(key in profile for key in ['firstName', 'lastName']):
+                    logger.warning(f'Skipping profile missing required fields: {profile}')
+                    continue
+
+                # Create a user with mentor profile data
+                # Generate a fake email if not present
+                email = profile.get('email',
+                                    f"{profile['firstName'].lower()}.{profile['lastName'].lower()}@example.com")
+                cognito_sub = profile.get('id', str(uuid4()))  # Use existing ID or generate new one
+
+                # Check if a user with this email already exists
+                existing_user = User.query.filter_by(email=email).first()
+                if existing_user:
+                    logger.warning(f'User with email {email} already exists, skipping')
+                    continue
+
+                user = User(
+                    email=email,
+                    user_type="MENTOR",
+                    cognito_sub=cognito_sub,
+                    profile=profile,
+                    application_status="APPROVED"  # Set as approved to ensure they appear in matching
+                )
+                users_to_add.append(user)
+
+                # Prepare embedding data from profile
+                embedding_data = {}
+
+                # Add fields as embedding data
+                for field_name, field_value in profile.items():
+                    if field_name in EXCLUDED_EMBEDDING_FIELDS:
+                        continue
+                    if isinstance(field_value, list):
+                        embedding_data[field_name] = ', '.join(field_value)
+                    else:
+                        embedding_data[field_name] = str(field_value)
+
+                # Store the embedding data for later processing
+                if embedding_data:
+                    embedding_tasks.append((cognito_sub, embedding_data))
+
+                logger.debug(f'Prepared imported mentor user with cognito_sub: {cognito_sub}')
+            except Exception as e:
+                logger.error(f'Error preparing profile: {str(e)}')
+                logger.exception(e)
+
+        # Add all users to the database
+        for user in users_to_add:
+            db.session.add(user)
+
+        # Flush to get IDs
+        db.session.flush()
+
+        # Now use thread pool to generate embeddings in parallel (only the OpenAI calls)
+        future_to_sub = {}
+        for cognito_sub, embedding_data in embedding_tasks:
+            future = openai_thread_pool.submit(generate_embeddings, cognito_sub, embedding_data)
+            future_to_sub[future] = cognito_sub
+
+        # Process results as they complete
+        successful_embeddings = 0
+        embeddings_to_store = []  # Collect all embeddings to store in main thread
+
+        for future in concurrent.futures.as_completed(future_to_sub.keys()):
+            cognito_sub = future_to_sub[future]
+            embeddings_dict = future.result()
+
+            if embeddings_dict:
+                # Collect the embeddings to store later in the main thread
+                embeddings_to_store.append((cognito_sub, embeddings_dict))
+
+        # Store all embeddings in the database (in the main thread)
+        for cognito_sub, embeddings_dict in embeddings_to_store:
+            try:
+                # Store each embedding in the database directly
+                for embedding_type, vector_embedding in embeddings_dict.items():
+                    # Check if an embedding of this type already exists for this user
+                    existing_embedding = UserEmbedding.query.filter_by(
+                        user_id=cognito_sub,
+                        embedding_type=embedding_type
+                    ).first()
+
+                    if existing_embedding:
+                        # Update existing embedding
+                        logger.info(f"Updating existing {embedding_type} embedding for user {cognito_sub}")
+                        existing_embedding.vector_embedding = vector_embedding
+                    else:
+                        # Create new embedding
+                        new_embedding = UserEmbedding(
+                            user_id=cognito_sub,
+                            embedding_type=embedding_type,
+                            vector_embedding=vector_embedding
+                        )
+                        db.session.add(new_embedding)
+
+                successful_embeddings += 1
+            except Exception as e:
+                logger.error(f'Error storing embeddings for user {cognito_sub}: {str(e)}')
+
+        # Commit all changes
+        db.session.commit()
+
+        logger.info(
+            f'Successfully loaded {len(users_to_add)} mentor profiles with {successful_embeddings} embeddings into database')
+        return jsonify({
+            'success': True,
+            'count': len(users_to_add),
+            'embeddings': successful_embeddings
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'Error loading results into database: {str(e)}')
+        logger.exception(e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -537,128 +751,5 @@ def export_mentors_as_json():
         }), 200
     except Exception as e:
         logger.error(f'Error exporting mentors: {str(e)}')
-        logger.exception(e)
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@fake_mentors_bp.route('/fake-mentors/run-matching-tests', methods=['POST'])
-def run_matching_tests():
-    """Run AI matching tests with uploaded test data"""
-    logger.debug('Received request to run matching tests')
-    try:
-        # Check if file was uploaded
-        if 'testDataFile' not in request.files:
-            return jsonify({'success': False, 'error': 'No test data file provided'}), 400
-
-        file = request.files['testDataFile']
-        if file.filename == '':
-            return jsonify({'success': False, 'error': 'No file selected'}), 400
-
-        # Read and parse the file
-        file_content = file.read().decode('utf-8')
-
-        # Parse as JSON
-        try:
-            test_data = json.loads(file_content)
-        except json.JSONDecodeError as e:
-            return jsonify({'success': False, 'error': f'Invalid JSON format: {str(e)}'}), 400
-
-        # Validate test data structure
-        if not isinstance(test_data, dict) or 'mentors' not in test_data or 'queries' not in test_data:
-            return jsonify({
-                'success': False, 
-                'error': 'Invalid test data format. Must contain "mentors" and "queries" arrays.'
-            }), 400
-
-        # Import the test module functions
-        from flask_app.tests.ai_matching import prepare_mentor_data, prepare_query_data
-
-        # Prepare mentor data
-        mentors = test_data.get('mentors', [])
-        prepared_mentors = prepare_mentor_data(mentors)
-        
-        # Store mentor embeddings
-        for mentor in prepared_mentors:
-            # Generate embedding data from mentor profile
-            embedding_data = {
-                "firstName": mentor["profile"]["firstName"],
-                "lastName": mentor["profile"]["lastName"],
-                "primarySubject": mentor["profile"]["primarySubject"],
-                "mentorSkills": mentor["profile"]["mentorSkills"]
-            }
-            
-            # Store the embeddings
-            embedding_factory.store_embedding(mentor["cognito_sub"], embedding_data)
-        
-        # Run tests for each query
-        queries = test_data.get('queries', [])
-        passed = 0
-        total = len(queries)
-        detailed_results = []
-        
-        for i, query in enumerate(queries):
-            logger.debug(f"Testing query {i+1}/{total}...")
-            
-            # Prepare query data
-            prepared_query = prepare_query_data(query)
-            
-            # Get matches using the algorithm
-            matches = the_algorithm.get_closest_embeddings(
-                "test-user-id",  # Use a dummy user ID for testing
-                prepared_query,
-                limit=10  # Get more than 3 to see where the target mentor ranks
-            )
-            
-            # Check if the target mentor is in the top 3 matches
-            target_mentor_id = query["targetMentorId"]
-            target_in_top3 = False
-            target_rank = None
-            
-            for rank, match in enumerate(matches[:3], 1):
-                if match["user_id"] == target_mentor_id:
-                    target_in_top3 = True
-                    target_rank = rank
-                    break
-            
-            # If not in top 3, find the actual rank if present
-            if not target_in_top3:
-                for rank, match in enumerate(matches, 1):
-                    if match["user_id"] == target_mentor_id:
-                        target_rank = rank
-                        break
-            
-            # Record the result
-            result = {
-                "query_index": i,
-                "query_name": f"{query['firstName']} {query['lastName']}",
-                "target_mentor_id": target_mentor_id,
-                "target_mentor_name": next((f"{m['firstName']} {m['lastName']}" for m in mentors if m["id"] == target_mentor_id), "Unknown"),
-                "target_in_top3": target_in_top3,
-                "target_rank": target_rank,
-                "passed": target_in_top3
-            }
-            detailed_results.append(result)
-            
-            if target_in_top3:
-                passed += 1
-        
-        # Calculate pass rate
-        pass_rate = (passed / total) * 100 if total > 0 else 0
-        
-        # Format results
-        results = {
-            "summary": {
-                "passed": passed,
-                "total": total,
-                "pass_rate": pass_rate
-            },
-            "detailed_results": detailed_results
-        }
-        
-        logger.info(f"Matching tests completed: {passed}/{total} passed ({pass_rate:.2f}%)")
-        return jsonify({"success": True, "results": results}), 200
-        
-    except Exception as e:
-        logger.error(f'Error running matching tests: {str(e)}')
         logger.exception(e)
         return jsonify({'success': False, 'error': str(e)}), 500
