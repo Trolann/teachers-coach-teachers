@@ -7,6 +7,7 @@
         .card {
             margin-bottom: 20px;
         }
+
         pre {
             background-color: #f8f9fa;
             padding: 15px;
@@ -14,48 +15,86 @@
             max-height: 400px;
             overflow-y: auto;
         }
+
         .json-key {
             color: #7d3c98;
         }
+
         .json-string {
             color: #2e86c1;
         }
+
         .json-number {
             color: #e67e22;
         }
+
         .json-boolean {
             color: #c0392b;
         }
+
         .json-null {
             color: #95a5a6;
         }
+
         .nav-tabs {
             margin-bottom: 20px;
         }
+
         .tab-content {
             padding-top: 10px;
+        }
+
+        .json-property {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .json-property-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .json-property-value {
+            width: 100%;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 200px;
+        }
+
+        textarea.json-property-value {
+            min-height: 80px;
         }
     </style>
 
     <div class="container-fluid">
         <h1>AI Matching Test Panel</h1>
-        
+
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs" id="matchingTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button" role="tab" aria-controls="results" aria-selected="true">Results</button>
+                <button class="nav-link active" id="results-tab" data-bs-toggle="tab" data-bs-target="#results"
+                        type="button" role="tab" aria-controls="results" aria-selected="true">Results
+                </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="test-matching-tab" data-bs-toggle="tab" data-bs-target="#test-matching" type="button" role="tab" aria-controls="test-matching" aria-selected="false">Test Matching</button>
+                <button class="nav-link" id="test-matching-tab" data-bs-toggle="tab" data-bs-target="#test-matching"
+                        type="button" role="tab" aria-controls="test-matching" aria-selected="false">Test Matching
+                </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="human-testing-tab" data-bs-toggle="tab" data-bs-target="#human-testing" type="button" role="tab" aria-controls="human-testing" aria-selected="false">Human Testing</button>
+                <button class="nav-link" id="human-testing-tab" data-bs-toggle="tab" data-bs-target="#human-testing"
+                        type="button" role="tab" aria-controls="human-testing" aria-selected="false">Human Testing
+                </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="run-tests-tab" data-bs-toggle="tab" data-bs-target="#run-tests" type="button" role="tab" aria-controls="run-tests" aria-selected="false">Run Automated Tests</button>
+                <button class="nav-link" id="run-tests-tab" data-bs-toggle="tab" data-bs-target="#run-tests"
+                        type="button" role="tab" aria-controls="run-tests" aria-selected="false">Run Automated Tests
+                </button>
             </li>
         </ul>
-        
+
         <!-- Tab Content -->
         <div class="tab-content" id="matchingTabsContent">
             <!-- Results Tab (Default) -->
@@ -71,7 +110,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Test Matching Tab -->
             <div class="tab-pane fade" id="test-matching" role="tabpanel" aria-labelledby="test-matching-tab">
                 <div class="row">
@@ -85,23 +124,27 @@
                                 <form id="matchingForm">
                                     <div class="mb-3">
                                         <label for="userId" class="form-label">Requester User ID (optional)</label>
-                                        <input type="text" class="form-control" id="userId" name="user_id" placeholder="Leave blank to generate a temporary ID">
+                                        <input type="text" class="form-control" id="userId" name="user_id"
+                                               placeholder="Leave blank to generate a temporary ID">
                                         <div class="form-text">The user ID to use as the requester for matching</div>
                                     </div>
                                     <div class="mb-3">
                                         <label for="searchCriteria" class="form-label">Search Criteria (JSON)</label>
-                                        <textarea class="form-control" id="searchCriteria" name="search_criteria" rows="5" placeholder='{"bio": "I need help with educational leadership", "expertise": "curriculum development"}'></textarea>
+                                        <textarea class="form-control" id="searchCriteria" name="search_criteria"
+                                                  rows="5"
+                                                  placeholder='{"bio": "I need help with educational leadership", "expertise": "curriculum development"}'></textarea>
                                         <div class="form-text">Enter a JSON object with search criteria</div>
                                     </div>
                                     <div class="mb-3">
                                         <label for="limit" class="form-label">Result Limit</label>
-                                        <input type="number" class="form-control" id="limit" name="limit" min="1" max="50" value="10">
+                                        <input type="number" class="form-control" id="limit" name="limit" min="1"
+                                               max="50" value="10">
                                     </div>
                                     <button type="submit" class="btn btn-primary">Test Matching</button>
                                 </form>
                             </div>
                         </div>
-                        
+
                         <!-- Matching Results -->
                         <div class="card mt-3">
                             <div class="card-header">
@@ -116,7 +159,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Human Testing Tab -->
             <div class="tab-pane fade" id="human-testing" role="tabpanel" aria-labelledby="human-testing-tab">
                 <div class="row">
@@ -153,7 +196,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="card mt-3">
                                     <div class="card-header">
                                         <h5 class="mb-0">Query Configuration</h5>
@@ -161,22 +204,27 @@
                                     <div class="card-body">
                                         <div class="mb-3">
                                             <label for="queryEditor" class="form-label">Edit Query</label>
-                                            <div id="queryEditor" class="border rounded p-2" style="min-height: 300px;"></div>
+                                            <div id="queryEditor" class="border rounded p-2"
+                                                 style="min-height: 300px;"></div>
                                             <div class="form-text">Edit the query parameters as needed</div>
                                         </div>
-                                        
+
                                         <div class="mb-3">
-                                            <label for="goalQuery" class="form-label">Goal <span class="text-danger">*</span></label>
-                                            <textarea class="form-control" id="goalQuery" rows="3" placeholder="I'm looking for a mentor who..." required></textarea>
-                                            <div class="form-text">Describe what you're looking for in a mentor (required)</div>
+                                            <label for="goalQuery" class="form-label">Goal <span
+                                                    class="text-danger">*</span></label>
+                                            <textarea class="form-control" id="goalQuery" rows="3"
+                                                      placeholder="I'm looking for a mentor who..." required></textarea>
+                                            <div class="form-text">Describe what you're looking for in a mentor
+                                                (required)
+                                            </div>
                                         </div>
-                                        
+
                                         <button id="findMentorsBtn" class="btn btn-primary">Find Mentors</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Human Testing Results -->
                         <div id="humanTestingResults" class="mt-4" style="display: none;">
                             <div class="card">
@@ -194,7 +242,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Run Automated Tests Tab -->
             <div class="tab-pane fade" id="run-tests" role="tabpanel" aria-labelledby="run-tests-tab">
                 <div class="card">
@@ -210,7 +258,7 @@
                             <div class="form-text">Select a JSON file from the server</div>
                         </div>
                         <button id="runServerFileTest" class="btn btn-primary" disabled>Run Tests</button>
-                        
+
                         <div id="testResults" class="mt-3"></div>
                     </div>
                 </div>
@@ -279,7 +327,7 @@
                 width: 100%;
             }
         `;
-        
+
         // Add styles to head
         const styleElement = document.createElement('style');
         styleElement.textContent = mentorCardStyles;
@@ -288,22 +336,22 @@
         if (typeof bootstrap === 'undefined') {
             console.error("Bootstrap JavaScript is not loaded. Tab functionality may not work properly.");
             // Add a simple fallback for tab switching
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 const tabButtons = document.querySelectorAll('.nav-tabs button');
                 const tabPanes = document.querySelectorAll('.tab-pane');
-                
+
                 tabButtons.forEach(button => {
-                    button.addEventListener('click', function() {
+                    button.addEventListener('click', function () {
                         // Remove active class from all buttons and panes
                         tabButtons.forEach(btn => btn.classList.remove('active'));
                         tabPanes.forEach(pane => {
                             pane.classList.remove('active');
                             pane.classList.remove('show');
                         });
-                        
+
                         // Add active class to clicked button
                         this.classList.add('active');
-                        
+
                         // Get target pane and activate it
                         const target = this.getAttribute('data-bs-target');
                         const targetPane = document.querySelector(target);
@@ -315,7 +363,7 @@
                 });
             });
         }
-        
+
         // Format JSON with syntax highlighting
         function syntaxHighlight(json) {
             if (typeof json !== 'string') {
@@ -355,28 +403,28 @@
         }
 
         // Test Matching Form
-        document.getElementById('matchingForm').addEventListener('submit', function(e) {
+        document.getElementById('matchingForm').addEventListener('submit', function (e) {
             e.preventDefault();
             const formData = new FormData(this);
-            
+
             fetch('/admin/test-matching/test', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                let resultHtml = '';
-                if (data.success) {
-                    resultHtml = `
+                .then(response => response.json())
+                .then(data => {
+                    let resultHtml = '';
+                    if (data.success) {
+                        resultHtml = `
                         <div class="alert alert-success">Found ${data.total} matches for requester ID: ${data.requester_id}</div>
                         <h6>Search Criteria:</h6>
                         <pre>${syntaxHighlight(data.criteria)}</pre>
                         <h6>Matches:</h6>
                     `;
-                    
-                    if (data.matches.length > 0) {
-                        data.matches.forEach((match, index) => {
-                            resultHtml += `
+
+                        if (data.matches.length > 0) {
+                            data.matches.forEach((match, index) => {
+                                resultHtml += `
                                 <div class="card mb-3">
                                     <div class="card-header">
                                         <strong>Match #${index + 1}</strong> - Score: ${match.score.toFixed(2)}
@@ -408,33 +456,33 @@
                                     </div>
                                 </div>
                             `;
-                        });
+                            });
+                        } else {
+                            resultHtml += '<div class="alert alert-warning">No matches found</div>';
+                        }
                     } else {
-                        resultHtml += '<div class="alert alert-warning">No matches found</div>';
+                        resultHtml = `<div class="alert alert-danger">Error: ${data.error}</div>`;
                     }
-                } else {
-                    resultHtml = `<div class="alert alert-danger">Error: ${data.error}</div>`;
-                }
-                document.getElementById('matchingResults').innerHTML = resultHtml;
-            })
-            .catch(error => {
-                document.getElementById('matchingResults').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-            });
+                    document.getElementById('matchingResults').innerHTML = resultHtml;
+                })
+                .catch(error => {
+                    document.getElementById('matchingResults').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                });
         });
 
         // This function has been moved and improved above
-        
+
         // Function to load server files for a specific select element
         function loadServerFiles(selectElementId = 'serverFileSelect') {
             const selectElement = document.getElementById(selectElementId);
             if (!selectElement) return;
-            
+
             fetch('/admin/test-matching/get-json-files')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         selectElement.innerHTML = '';
-                        
+
                         if (data.files.length === 0) {
                             selectElement.innerHTML = '<option value="">No files available</option>';
                             if (selectElementId === 'serverFileSelect') {
@@ -448,17 +496,17 @@
                                 option.textContent = file;
                                 selectElement.appendChild(option);
                             });
-                            
+
                             // Enable button when a file is selected (for server file test tab)
                             if (selectElementId === 'serverFileSelect') {
-                                selectElement.addEventListener('change', function() {
+                                selectElement.addEventListener('change', function () {
                                     document.getElementById('runServerFileTest').disabled = !this.value;
                                 });
                             }
-                            
+
                             // Add event listener for query file select to load queries
                             if (selectElementId === 'queryFileSelect') {
-                                selectElement.addEventListener('change', function() {
+                                selectElement.addEventListener('change', function () {
                                     if (this.value) {
                                         loadQueries(this.value);
                                     } else {
@@ -478,31 +526,31 @@
                     console.error('Error loading server files:', error);
                 });
         }
-        
+
         // Load server files when the Run Automated Tests tab is shown
-        document.getElementById('run-tests-tab').addEventListener('shown.bs.tab', function() {
+        document.getElementById('run-tests-tab').addEventListener('shown.bs.tab', function () {
             loadServerFiles('serverFileSelect');
         });
-        
+
         // Also load server files on page load if we're on the Run Automated Tests tab
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             if (window.location.hash === '#run-tests') {
                 loadServerFiles('serverFileSelect');
             }
-            
+
             // Load human test results on page load
             loadHumanTestResults();
-            
+
             // Load mentees when the Human Testing tab is shown
-            document.getElementById('human-testing-tab').addEventListener('shown.bs.tab', function() {
+            document.getElementById('human-testing-tab').addEventListener('shown.bs.tab', function () {
                 loadMentees();
                 loadServerFiles('queryFileSelect');
-                
+
                 // Initialize an empty query editor
                 const queryEditor = document.getElementById('queryEditor');
                 queryEditor.innerHTML = '<div class="alert alert-info">Select a mentee to load query fields</div>';
             });
-            
+
             // Also load files for Human Testing tab if that's the active tab on page load
             if (window.location.hash === '#human-testing') {
                 loadMentees();
@@ -510,14 +558,14 @@
             }
         });
 
-        
+
         // Function to display test results
         function displayTestResults(data, testResultsDiv) {
             if (data.success) {
                 const results = data.results;
                 const summary = results.summary;
                 const details = results.detailed_results;
-                
+
                 let resultHtml = `
                     <div class="alert alert-${summary.pass_rate >= 70 ? 'success' : 'warning'}">
                         Test Results: ${summary.passed}/${summary.total} passed (${summary.pass_rate.toFixed(2)}%)
@@ -535,7 +583,7 @@
                         </thead>
                         <tbody>
                 `;
-                
+
                 details.forEach(result => {
                     resultHtml += `
                         <tr>
@@ -552,12 +600,12 @@
                         </tr>
                     `;
                 });
-                
+
                 resultHtml += `
                         </tbody>
                     </table>
                 `;
-                
+
                 if (data.resultFile) {
                     resultHtml += `
                         <div class="alert alert-info mt-3">
@@ -565,40 +613,40 @@
                         </div>
                     `;
                 }
-                
+
                 testResultsDiv.innerHTML = resultHtml;
             } else {
                 testResultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
             }
         }
-        
+
         // Run tests with server file
-        document.getElementById('runServerFileTest').addEventListener('click', function() {
+        document.getElementById('runServerFileTest').addEventListener('click', function () {
             const serverFileSelect = document.getElementById('serverFileSelect');
             const selectedFile = serverFileSelect.value;
             const testResultsDiv = document.getElementById('testResults');
-            
+
             if (!selectedFile) {
                 testResultsDiv.innerHTML = '<div class="alert alert-danger">Please select a file</div>';
                 return;
             }
-            
+
             testResultsDiv.innerHTML = '<div class="alert alert-info">Running tests, please wait...</div>';
-            
+
             fetch('/admin/test-matching/run-server-file-test', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ filename: selectedFile })
+                body: JSON.stringify({filename: selectedFile})
             })
-            .then(response => response.json())
-            .then(data => {
-                displayTestResults(data, testResultsDiv);
-            })
-            .catch(error => {
-                testResultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-            });
+                .then(response => response.json())
+                .then(data => {
+                    displayTestResults(data, testResultsDiv);
+                })
+                .catch(error => {
+                    testResultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                });
         });
 
         // Handle tab navigation via URL hash
@@ -611,13 +659,13 @@
         }
 
         // Initialize tabs and handle navigation
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Initialize Bootstrap tabs
             const tabElements = document.querySelectorAll('button[data-bs-toggle="tab"]');
             tabElements.forEach(tabEl => {
                 new bootstrap.Tab(tabEl);
-                
-                tabEl.addEventListener('shown.bs.tab', function(event) {
+
+                tabEl.addEventListener('shown.bs.tab', function (event) {
                     const targetId = event.target.getAttribute('data-bs-target').replace('#', '');
                     window.location.hash = targetId;
                 });
@@ -629,44 +677,44 @@
 
         // Handle back/forward browser navigation
         window.addEventListener('hashchange', handleTabNavigation);
-        
+
         // Create editable JSON editor dynamically based on the mentee profile
         function createJsonEditor(container, jsonData) {
             container.innerHTML = '';
-            
+
             // Skip these fields that shouldn't be editable
             const skipFields = ['targetMentorId', 'id', 'userId', 'cognito_sub', 'email'];
-            
+
             // Create form elements for each property
             Object.keys(jsonData).forEach(key => {
                 if (skipFields.includes(key)) return;
-                
+
                 const value = jsonData[key];
                 const propertyDiv = document.createElement('div');
                 propertyDiv.className = 'json-property';
-                
+
                 const label = document.createElement('label');
                 label.className = 'json-property-name';
                 label.textContent = key + ':';
                 propertyDiv.appendChild(label);
-                
+
                 let input;
-                
+
                 if (typeof value === 'boolean') {
                     // Create a select for boolean values
                     input = document.createElement('select');
                     input.className = 'form-select json-property-value';
-                    
+
                     const trueOption = document.createElement('option');
                     trueOption.value = 'true';
                     trueOption.textContent = 'true';
                     trueOption.selected = value === true;
-                    
+
                     const falseOption = document.createElement('option');
                     falseOption.value = 'false';
                     falseOption.textContent = 'false';
                     falseOption.selected = value === false;
-                    
+
                     input.appendChild(trueOption);
                     input.appendChild(falseOption);
                 } else if (typeof value === 'number') {
@@ -680,13 +728,13 @@
                     input = document.createElement('textarea');
                     input.className = 'form-control json-property-value';
                     input.value = JSON.stringify(value);
-                    input.rows = 2;
+                    input.rows = 3;
                 } else if (typeof value === 'object' && value !== null) {
                     // Create a textarea for objects
                     input = document.createElement('textarea');
                     input.className = 'form-control json-property-value';
                     input.value = JSON.stringify(value, null, 2);
-                    input.rows = 3;
+                    input.rows = 4;
                 } else {
                     // Create a text input for strings and other values
                     input = document.createElement('input');
@@ -694,55 +742,55 @@
                     input.className = 'form-control json-property-value';
                     input.value = value !== null ? value : '';
                 }
-                
+
                 input.setAttribute('data-key', key);
                 propertyDiv.appendChild(input);
                 container.appendChild(propertyDiv);
             });
-            
+
             // Add a button to add new properties
             const addPropertyDiv = document.createElement('div');
             addPropertyDiv.className = 'mt-3';
-            
+
             const addPropertyBtn = document.createElement('button');
             addPropertyBtn.type = 'button';
             addPropertyBtn.className = 'btn btn-sm btn-outline-primary';
             addPropertyBtn.textContent = 'Add Property';
-            addPropertyBtn.onclick = function() {
+            addPropertyBtn.onclick = function () {
                 const key = prompt('Enter property name:');
                 if (key && key.trim()) {
                     const propertyDiv = document.createElement('div');
                     propertyDiv.className = 'json-property';
-                    
+
                     const label = document.createElement('label');
                     label.className = 'json-property-name';
                     label.textContent = key.trim() + ':';
                     propertyDiv.appendChild(label);
-                    
+
                     const input = document.createElement('input');
                     input.type = 'text';
                     input.className = 'form-control json-property-value';
                     input.setAttribute('data-key', key.trim());
                     propertyDiv.appendChild(input);
-                    
+
                     container.insertBefore(propertyDiv, addPropertyDiv);
                 }
             };
-            
+
             addPropertyDiv.appendChild(addPropertyBtn);
             container.appendChild(addPropertyDiv);
         }
-        
+
         // Get JSON data from editor
         function getJsonFromEditor(container) {
             const result = {};
-            
+
             // Get all inputs
             const inputs = container.querySelectorAll('.json-property-value');
             inputs.forEach(input => {
                 const key = input.getAttribute('data-key');
                 let value = input.value;
-                
+
                 // Try to parse the value
                 try {
                     if (input.tagName === 'SELECT' && (value === 'true' || value === 'false')) {
@@ -759,23 +807,23 @@
                     // If parsing fails, keep as string
                     console.warn(`Failed to parse value for ${key}:`, e);
                 }
-                
+
                 result[key] = value;
             });
-            
+
             return result;
         }
-        
+
         // Load mentees for human testing
         function loadMentees() {
             const menteeSelect = document.getElementById('menteeSelect');
-            
+
             fetch('/admin/test-matching/get-mentees')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         menteeSelect.innerHTML = '';
-                        
+
                         if (data.mentees.length === 0) {
                             menteeSelect.innerHTML = '<option value="">No mentees available</option>';
                         } else {
@@ -788,19 +836,19 @@
                                 option.textContent = `${mentee.name} (${mentee.email})`;
                                 menteeSelect.appendChild(option);
                             });
-                            
+
                             // Add event listener to load profile into query editor
-                            menteeSelect.addEventListener('change', function() {
+                            menteeSelect.addEventListener('change', function () {
                                 if (this.value) {
                                     // Clear the JSON mentee selection when a database mentee is selected
                                     const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
                                     if (jsonMenteeSelect) {
                                         jsonMenteeSelect.value = '';
                                     }
-                                    
+
                                     const selectedOption = this.options[this.selectedIndex];
                                     const profileData = JSON.parse(selectedOption.getAttribute('data-profile'));
-                                    
+
                                     // Load the actual profile data into the editor
                                     const queryEditor = document.getElementById('queryEditor');
                                     createJsonEditor(queryEditor, profileData);
@@ -817,95 +865,95 @@
                     console.error('Error loading mentees:', error);
                 });
         }
-        
+
         // Load queries from selected file
         function loadQueries(filename) {
             const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
             const jsonMenteeWrapper = document.getElementById('jsonMenteeWrapper');
-            
+
             fetch('/admin/test-matching/get-queries', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ filename: filename })
+                body: JSON.stringify({filename: filename})
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    jsonMenteeSelect.innerHTML = '';
-                    
-                    if (data.queries.length === 0) {
-                        jsonMenteeSelect.innerHTML = '<option value="">No mentees available in file</option>';
-                        jsonMenteeWrapper.style.display = 'none';
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        jsonMenteeSelect.innerHTML = '';
+
+                        if (data.queries.length === 0) {
+                            jsonMenteeSelect.innerHTML = '<option value="">No mentees available in file</option>';
+                            jsonMenteeWrapper.style.display = 'none';
+                        } else {
+                            jsonMenteeSelect.innerHTML = '<option value="">Select a mentee from JSON</option>';
+                            data.queries.forEach(query => {
+                                const option = document.createElement('option');
+                                option.value = JSON.stringify(query.data);
+                                option.textContent = query.name;
+                                jsonMenteeSelect.appendChild(option);
+                            });
+
+                            // Show JSON mentee selection container
+                            jsonMenteeWrapper.style.display = 'block';
+
+                            // Load query into editor when selected
+                            jsonMenteeSelect.addEventListener('change', function () {
+                                if (this.value) {
+                                    // Clear the database mentee selection when a JSON mentee is selected
+                                    const menteeSelect = document.getElementById('menteeSelect');
+                                    if (menteeSelect) {
+                                        menteeSelect.value = '';
+                                    }
+
+                                    try {
+                                        const queryData = JSON.parse(this.value);
+                                        const queryEditor = document.getElementById('queryEditor');
+                                        createJsonEditor(queryEditor, queryData);
+                                    } catch (e) {
+                                        console.error('Error parsing query data:', e);
+                                    }
+                                }
+                            });
+                        }
                     } else {
-                        jsonMenteeSelect.innerHTML = '<option value="">Select a mentee from JSON</option>';
-                        data.queries.forEach(query => {
-                            const option = document.createElement('option');
-                            option.value = JSON.stringify(query.data);
-                            option.textContent = query.name;
-                            jsonMenteeSelect.appendChild(option);
-                        });
-                        
-                        // Show JSON mentee selection container
-                        jsonMenteeWrapper.style.display = 'block';
-                        
-                        // Load query into editor when selected
-                        jsonMenteeSelect.addEventListener('change', function() {
-                            if (this.value) {
-                                // Clear the database mentee selection when a JSON mentee is selected
-                                const menteeSelect = document.getElementById('menteeSelect');
-                                if (menteeSelect) {
-                                    menteeSelect.value = '';
-                                }
-                                
-                                try {
-                                    const queryData = JSON.parse(this.value);
-                                    const queryEditor = document.getElementById('queryEditor');
-                                    createJsonEditor(queryEditor, queryData);
-                                } catch (e) {
-                                    console.error('Error parsing query data:', e);
-                                }
-                            }
-                        });
+                        jsonMenteeSelect.innerHTML = '<option value="">Error loading mentees from file</option>';
+                        jsonMenteeWrapper.style.display = 'none';
+                        console.error('Error loading queries:', data.error);
                     }
-                } else {
+                })
+                .catch(error => {
                     jsonMenteeSelect.innerHTML = '<option value="">Error loading mentees from file</option>';
                     jsonMenteeWrapper.style.display = 'none';
-                    console.error('Error loading queries:', data.error);
-                }
-            })
-            .catch(error => {
-                jsonMenteeSelect.innerHTML = '<option value="">Error loading mentees from file</option>';
-                jsonMenteeWrapper.style.display = 'none';
-                console.error('Error loading queries:', error);
-            });
+                    console.error('Error loading queries:', error);
+                });
         }
-        
+
         // Find mentors button click handler
-        document.getElementById('findMentorsBtn').addEventListener('click', function() {
+        document.getElementById('findMentorsBtn').addEventListener('click', function () {
             const menteeSelect = document.getElementById('menteeSelect');
             const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
             const goalQuery = document.getElementById('goalQuery');
             const mentorMatches = document.getElementById('mentorMatches');
             const humanTestingResults = document.getElementById('humanTestingResults');
             const queryEditor = document.getElementById('queryEditor');
-            
+
             let menteeId, menteeName, queryData;
-            
+
             // Check if goal is provided (required)
             if (!goalQuery.value.trim()) {
                 alert('Please enter a goal for your mentor search');
                 goalQuery.focus();
                 return;
             }
-            
+
             // Determine which mentee is selected
             if (menteeSelect.value) {
                 // Database mentee is selected
                 menteeId = menteeSelect.value;
                 menteeName = menteeSelect.options[menteeSelect.selectedIndex].getAttribute('data-name');
-                
+
                 // Get query data from editor
                 try {
                     queryData = getJsonFromEditor(queryEditor);
@@ -917,14 +965,14 @@
                 // JSON mentee is selected
                 // For JSON queries, we'll use a temporary ID
                 menteeId = 'temp-' + Date.now();
-                
+
                 // Try to get a name from the query data
                 try {
                     const selectedQueryData = JSON.parse(jsonMenteeSelect.value);
-                    menteeName = selectedQueryData.firstName && selectedQueryData.lastName ? 
-                        `${selectedQueryData.firstName} ${selectedQueryData.lastName}` : 
+                    menteeName = selectedQueryData.firstName && selectedQueryData.lastName ?
+                        `${selectedQueryData.firstName} ${selectedQueryData.lastName}` :
                         'JSON Query User';
-                    
+
                     // Get query data from editor
                     queryData = getJsonFromEditor(queryEditor);
                 } catch (e) {
@@ -935,38 +983,38 @@
                 alert('Please select a mentee from either the database or a JSON file');
                 return;
             }
-            
+
             // Add goal query (required)
             queryData.goal = goalQuery.value.trim();
-            
+
             // Show loading state
             mentorMatches.innerHTML = '<div class="alert alert-info">Finding mentors, please wait...</div>';
             humanTestingResults.style.display = 'block';
-            
+
             // Call the matching API
             const formData = new FormData();
             formData.append('user_id', menteeId);
             formData.append('search_criteria', JSON.stringify(queryData));
             formData.append('limit', '10');
-            
+
             fetch('/admin/test-matching/test', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.matches.length === 0) {
-                        mentorMatches.innerHTML = '<div class="alert alert-warning">No matches found</div>';
-                        return;
-                    }
-                    
-                    // Display mentor matches
-                    let matchesHtml = '';
-                    data.matches.forEach((match, index) => {
-                        const mentorName = match.profile.formattedName || `${match.profile.firstName} ${match.profile.lastName}`;
-                        
-                        matchesHtml += `
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.matches.length === 0) {
+                            mentorMatches.innerHTML = '<div class="alert alert-warning">No matches found</div>';
+                            return;
+                        }
+
+                        // Display mentor matches
+                        let matchesHtml = '';
+                        data.matches.forEach((match, index) => {
+                            const mentorName = match.profile.formattedName || `${match.profile.firstName} ${match.profile.lastName}`;
+
+                            matchesHtml += `
                             <div class="mentor-card" data-mentor-id="${match.user_id}" data-mentor-name="${mentorName}">
                                 <div class="mentor-card-header">
                                     <h5 class="mb-0">Match #${index + 1}: ${mentorName}</h5>
@@ -1007,18 +1055,18 @@
                                 </div>
                             </div>
                         `;
-                    });
-                    
-                    mentorMatches.innerHTML = matchesHtml;
-                } else {
-                    mentorMatches.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
-                }
-            })
-            .catch(error => {
-                mentorMatches.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-            });
+                        });
+
+                        mentorMatches.innerHTML = matchesHtml;
+                    } else {
+                        mentorMatches.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                    }
+                })
+                .catch(error => {
+                    mentorMatches.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                });
         });
-        
+
         // Toggle mentor details
         function toggleMentorDetails(element) {
             const detailsDiv = element.nextElementSibling;
@@ -1030,17 +1078,17 @@
                 element.textContent = 'Hide Full Profile';
             }
         }
-        
+
         // Save feedback
         function saveFeedback(menteeId, menteeName, mentorId, mentorName, feedback, query) {
             // Disable all feedback buttons for this mentor
             const mentorCard = document.querySelector(`.mentor-card[data-mentor-id="${mentorId}"]`);
             const feedbackButtons = mentorCard.querySelectorAll('.feedback-btn');
             feedbackButtons.forEach(btn => btn.disabled = true);
-            
+
             // Show loading state
             mentorCard.querySelector('.mentor-card-footer').innerHTML += '<div class="mt-2 text-center w-100">Saving feedback...</div>';
-            
+
             // Save feedback
             fetch('/admin/test-matching/save-feedback', {
                 method: 'POST',
@@ -1056,29 +1104,29 @@
                     query: query
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update UI to show feedback was saved
-                    mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI to show feedback was saved
+                        mentorCard.querySelector('.mentor-card-footer').innerHTML = `
                         <div class="alert alert-success mb-0 w-100 text-center">
                             Feedback saved: <strong>${feedback === 'good' ? 'Good Match' : 'Bad Match'}</strong>
                         </div>
                     `;
-                    
-                    // Add a class to the card to indicate feedback type
-                    mentorCard.classList.add(feedback === 'good' ? 'border-success' : 'border-danger');
-                } else {
-                    // Show error
-                    mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+
+                        // Add a class to the card to indicate feedback type
+                        mentorCard.classList.add(feedback === 'good' ? 'border-success' : 'border-danger');
+                    } else {
+                        // Show error
+                        mentorCard.querySelector('.mentor-card-footer').innerHTML = `
                         <div class="alert alert-danger mb-0 w-100 text-center">
                             Error saving feedback: ${data.error}
                         </div>
                     `;
-                    
-                    // Re-enable buttons
-                    setTimeout(() => {
-                        mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+
+                        // Re-enable buttons
+                        setTimeout(() => {
+                            mentorCard.querySelector('.mentor-card-footer').innerHTML = `
                             <button class="btn btn-success feedback-btn" onclick="saveFeedback('${menteeId}', '${menteeName}', '${mentorId}', '${mentorName}', 'good', ${JSON.stringify(query).replace(/"/g, '&quot;')})">
                                 <i class="fas fa-thumbs-up"></i> Good Match
                             </button>
@@ -1086,20 +1134,20 @@
                                 <i class="fas fa-thumbs-down"></i> Bad Match
                             </button>
                         `;
-                    }, 3000);
-                }
-            })
-            .catch(error => {
-                // Show error
-                mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+                        }, 3000);
+                    }
+                })
+                .catch(error => {
+                    // Show error
+                    mentorCard.querySelector('.mentor-card-footer').innerHTML = `
                     <div class="alert alert-danger mb-0 w-100 text-center">
                         Error: ${error.message}
                     </div>
                 `;
-                
-                // Re-enable buttons after a delay
-                setTimeout(() => {
-                    mentorCard.querySelector('.mentor-card-footer').innerHTML = `
+
+                    // Re-enable buttons after a delay
+                    setTimeout(() => {
+                        mentorCard.querySelector('.mentor-card-footer').innerHTML = `
                         <button class="btn btn-success feedback-btn" onclick="saveFeedback('${menteeId}', '${menteeName}', '${mentorId}', '${mentorName}', 'good', ${JSON.stringify(query).replace(/"/g, '&quot;')})">
                             <i class="fas fa-thumbs-up"></i> Good Match
                         </button>
@@ -1107,14 +1155,14 @@
                             <i class="fas fa-thumbs-down"></i> Bad Match
                         </button>
                     `;
-                }, 3000);
-            });
+                    }, 3000);
+                });
         }
-        
+
         // Load human test results
         function loadHumanTestResults() {
             const resultsDiv = document.getElementById('humanTestResults');
-            
+
             fetch('/admin/test-matching/get-feedback-results')
                 .then(response => response.json())
                 .then(data => {
@@ -1123,10 +1171,10 @@
                             resultsDiv.innerHTML = '<p class="text-muted">No human test results available yet.</p>';
                             return;
                         }
-                        
+
                         const summary = data.summary;
                         const menteeStats = data.menteeStats;
-                        
+
                         let resultsHtml = `
                             <div class="alert alert-${summary.goodPercentage >= 70 ? 'success' : 'warning'}">
                                 <h5 class="mb-0">Overall Results</h5>
@@ -1149,7 +1197,7 @@
                                     </thead>
                                     <tbody>
                         `;
-                        
+
                         menteeStats.forEach(mentee => {
                             resultsHtml += `
                                 <tr>
@@ -1161,7 +1209,7 @@
                                 </tr>
                             `;
                         });
-                        
+
                         resultsHtml += `
                                     </tbody>
                                 </table>
@@ -1180,7 +1228,7 @@
                                     </thead>
                                     <tbody>
                         `;
-                        
+
                         // Show the 10 most recent results
                         const recentResults = [...data.results].reverse().slice(0, 10);
                         recentResults.forEach(result => {
@@ -1198,7 +1246,7 @@
                                 </tr>
                             `;
                         });
-                        
+
                         resultsHtml += `
                                     </tbody>
                                 </table>
@@ -1208,7 +1256,7 @@
                                 <button class="btn btn-primary" onclick="loadHumanTestResults()">Refresh Results</button>
                             </div>
                         `;
-                        
+
                         resultsDiv.innerHTML = resultsHtml;
                     } else {
                         resultsDiv.innerHTML = `<div class="alert alert-danger">Error loading results: ${data.error}</div>`;
