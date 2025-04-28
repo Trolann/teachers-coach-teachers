@@ -17,6 +17,7 @@ class OpenAIConfig:
 
         # OpenAI model
         self.EMBEDDING_MODEL = "text-embedding-3-small"
+        self.DEBUG = True if environ.get('LOG_LEVEL') == 'DEBUG' else False
 
         # Log configuration details (excluding sensitive data)
         logger.debug(f"OpenAI config initialized with model={self.EMBEDDING_MODEL}")

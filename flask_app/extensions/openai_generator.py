@@ -32,6 +32,7 @@ def generate_mentor_profile(faker: Faker, index: int, count: int, config: Dict[s
     """
     Generate a mentor profile using Faker for personal information and OpenAI for education-specific details.
     """
+    state_country_faker = Faker('en_US')
     logger.debug(f"Generating profile {index + 1}/{count}...")
     def get_latin_name() -> tuple[str, str]:
         while True:
@@ -48,18 +49,22 @@ def generate_mentor_profile(faker: Faker, index: int, count: int, config: Dict[s
     first_name, last_name = get_latin_name()
     phone_number = faker.phone_number()
 
-    # Get location information based on locale
-    if faker.locale == 'en_US':
-        country = "United States"
-        state_province = faker.state()
-    else:
-        # For other locales, try to get appropriate region and country
-        try:
-            country = faker.current_country()
-            state_province = faker.state()
-        except:
-            country = faker.country()
-            state_province = faker.state()
+    # # Get location information based on locale
+    # if faker.locale == 'en_US':
+    #     country = "United States"
+    #     state_province = faker.state()
+    # else:
+    #     # For other locales, try to get appropriate region and country
+    #     try:
+    #         country = faker.current_country()
+    #         state_province = faker.state()
+    #     except:
+    #         country = faker.country()
+    #         state_province = faker.state()
+
+    # Always set country and state_province to US for testing
+    country = "United States"
+    state_province = state_country_faker.state()
 
     # Assign a specific job type based on weights
     job_types = config.get('job_types', [])
