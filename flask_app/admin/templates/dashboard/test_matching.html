@@ -778,6 +778,17 @@
             };
 
             addPropertyDiv.appendChild(addPropertyBtn);
+            
+            // Add Save Mentee button
+            const saveMenteeBtn = document.createElement('button');
+            saveMenteeBtn.type = 'button';
+            saveMenteeBtn.className = 'btn btn-sm btn-outline-success ms-2';
+            saveMenteeBtn.textContent = 'Save Mentee';
+            saveMenteeBtn.onclick = function() {
+                saveMenteeProfile(container);
+            };
+            
+            addPropertyDiv.appendChild(saveMenteeBtn);
             container.appendChild(addPropertyDiv);
         }
 
@@ -812,6 +823,78 @@
             });
 
             return result;
+        }
+        
+        // Save mentee profile
+        function saveMenteeProfile(container) {
+            // Get the current profile data from the editor
+            const profileData = getJsonFromEditor(container);
+            
+            // Determine if we're working with a database mentee or a JSON file mentee
+            const menteeSelect = document.getElementById('menteeSelect');
+            const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
+            const queryFileSelect = document.getElementById('queryFileSelect');
+            
+            let saveType, menteeId, fileName;
+            
+            if (menteeSelect.value) {
+                // Database mentee
+                saveType = 'database';
+                menteeId = menteeSelect.value;
+            } else if (jsonMenteeSelect.value && queryFileSelect.value) {
+                // JSON file mentee
+                saveType = 'file';
+                fileName = queryFileSelect.value;
+                
+                // Get the selected mentee index from the JSON file
+                const selectedIndex = jsonMenteeSelect.selectedIndex - 1; // -1 because of the placeholder option
+                if (selectedIndex < 0) {
+                    alert('Please select a valid mentee from the JSON file');
+                    return;
+                }
+            } else {
+                alert('Please select a mentee from either the database or a JSON file');
+                return;
+            }
+            
+            // Show loading state
+            const saveBtn = Array.from(container.querySelectorAll('button')).find(btn => btn.textContent === 'Save Mentee');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Saving...';
+            saveBtn.disabled = true;
+            
+            // Call the API to save the profile
+            fetch('/admin/test-matching/save-mentee', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    saveType: saveType,
+                    menteeId: menteeId,
+                    fileName: fileName,
+                    selectedIndex: selectedIndex,
+                    profileData: profileData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert('Mentee profile saved successfully!');
+                } else {
+                    // Show error message
+                    alert('Error saving mentee profile: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error saving mentee profile: ' + error.message);
+            })
+            .finally(() => {
+                // Restore button state
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            });
         }
 
         // Load mentees for human testing

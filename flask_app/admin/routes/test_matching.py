@@ -231,6 +231,96 @@ def save_feedback():
         logger.exception(e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@test_matching_bp.route('/test-matching/save-mentee', methods=['POST'])
+def save_mentee():
+    """Save mentee profile to database or JSON file"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+            
+        save_type = data.get('saveType')
+        profile_data = data.get('profileData')
+        
+        if not save_type or not profile_data:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+            
+        if save_type == 'database':
+            # Save to database
+            mentee_id = data.get('menteeId')
+            if not mentee_id:
+                return jsonify({'success': False, 'error': 'Missing mentee ID'}), 400
+                
+            # Get the mentee from the database
+            mentee = User.query.filter_by(cognito_sub=mentee_id).first()
+            if not mentee:
+                return jsonify({'success': False, 'error': f'Mentee with ID {mentee_id} not found'}), 404
+                
+            # Update the profile
+            try:
+                mentee.update_profile(profile_data)
+                logger.info(f'Updated profile for mentee {mentee_id}')
+                return jsonify({'success': True})
+            except Exception as e:
+                logger.error(f'Error updating mentee profile: {str(e)}')
+                return jsonify({'success': False, 'error': f'Error updating profile: {str(e)}'}), 500
+                
+        elif save_type == 'file':
+            # Save to JSON file
+            file_name = data.get('fileName')
+            selected_index = data.get('selectedIndex')
+            
+            if not file_name or selected_index is None:
+                return jsonify({'success': False, 'error': 'Missing file name or selected index'}), 400
+                
+            file_path = os.path.join(GENERATE_MENTORS_DIR, file_name)
+            if not os.path.exists(file_path):
+                return jsonify({'success': False, 'error': f'File {file_name} not found'}), 404
+                
+            # Read the file
+            try:
+                with open(file_path, 'r') as f:
+                    file_data = json.load(f)
+            except Exception as e:
+                logger.error(f'Error reading file {file_name}: {str(e)}')
+                return jsonify({'success': False, 'error': f'Error reading file: {str(e)}'}), 500
+                
+            # Update the query in the file
+            queries = file_data.get('queries', [])
+            if not queries:
+                # Try alternate key
+                queries = file_data.get('test_queries', [])
+                if queries:
+                    # Use the alternate key for saving
+                    query_key = 'test_queries'
+                else:
+                    return jsonify({'success': False, 'error': 'No queries found in the file'}), 400
+            else:
+                query_key = 'queries'
+                
+            if selected_index >= len(queries):
+                return jsonify({'success': False, 'error': f'Selected index {selected_index} is out of range'}), 400
+                
+            # Update the query
+            file_data[query_key][selected_index] = profile_data
+            
+            # Save the file
+            try:
+                with open(file_path, 'w') as f:
+                    json.dump(file_data, f, indent=2)
+                logger.info(f'Updated query in file {file_name}')
+                return jsonify({'success': True})
+            except Exception as e:
+                logger.error(f'Error writing to file {file_name}: {str(e)}')
+                return jsonify({'success': False, 'error': f'Error writing to file: {str(e)}'}), 500
+        else:
+            return jsonify({'success': False, 'error': f'Invalid save type: {save_type}'}), 400
+            
+    except Exception as e:
+        logger.error(f'Error saving mentee profile: {str(e)}')
+        logger.exception(e)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @test_matching_bp.route('/test-matching/get-feedback-results', methods=['GET'])
 def get_feedback_results():
     """Get human feedback results"""
