@@ -835,19 +835,21 @@
             const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
             const queryFileSelect = document.getElementById('queryFileSelect');
             
-            let saveType, menteeId, fileName;
+            let saveType, menteeId, fileName, selectedIndex;
             
             if (menteeSelect.value) {
                 // Database mentee
                 saveType = 'database';
                 menteeId = menteeSelect.value;
+                selectedIndex = null;
             } else if (jsonMenteeSelect.value && queryFileSelect.value) {
                 // JSON file mentee
                 saveType = 'file';
                 fileName = queryFileSelect.value;
+                menteeId = null;
                 
                 // Get the selected mentee index from the JSON file
-                const selectedIndex = jsonMenteeSelect.selectedIndex - 1; // -1 because of the placeholder option
+                selectedIndex = jsonMenteeSelect.selectedIndex - 1; // -1 because of the placeholder option
                 if (selectedIndex < 0) {
                     alert('Please select a valid mentee from the JSON file');
                     return;
@@ -856,6 +858,14 @@
                 alert('Please select a mentee from either the database or a JSON file');
                 return;
             }
+            
+            console.log('Saving mentee profile:', {
+                saveType,
+                menteeId,
+                fileName,
+                selectedIndex,
+                profileDataKeys: Object.keys(profileData)
+            });
             
             // Show loading state
             const saveBtn = Array.from(container.querySelectorAll('button')).find(btn => btn.textContent === 'Save Mentee');
@@ -877,7 +887,12 @@
                     profileData: profileData
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Show success message
@@ -888,6 +903,7 @@
                 }
             })
             .catch(error => {
+                console.error('Error saving mentee profile:', error);
                 alert('Error saving mentee profile: ' + error.message);
             })
             .finally(() => {

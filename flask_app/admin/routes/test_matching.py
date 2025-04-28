@@ -237,32 +237,41 @@ def save_mentee():
     try:
         data = request.json
         if not data:
+            logger.error("No data provided in save-mentee request")
             return jsonify({'success': False, 'error': 'No data provided'}), 400
             
         save_type = data.get('saveType')
         profile_data = data.get('profileData')
         
+        logger.info(f"Save mentee request received: type={save_type}, data keys={list(profile_data.keys()) if profile_data else None}")
+        
         if not save_type or not profile_data:
+            logger.error(f"Missing required fields: save_type={save_type}, profile_data={'present' if profile_data else 'missing'}")
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
             
         if save_type == 'database':
             # Save to database
             mentee_id = data.get('menteeId')
             if not mentee_id:
+                logger.error("Missing mentee ID for database save")
                 return jsonify({'success': False, 'error': 'Missing mentee ID'}), 400
+                
+            logger.info(f"Saving mentee profile to database for ID: {mentee_id}")
                 
             # Get the mentee from the database
             mentee = User.query.filter_by(cognito_sub=mentee_id).first()
             if not mentee:
+                logger.error(f"Mentee with ID {mentee_id} not found in database")
                 return jsonify({'success': False, 'error': f'Mentee with ID {mentee_id} not found'}), 404
                 
             # Update the profile
             try:
                 mentee.update_profile(profile_data)
-                logger.info(f'Updated profile for mentee {mentee_id}')
+                logger.info(f'Successfully updated profile for mentee {mentee_id}')
                 return jsonify({'success': True})
             except Exception as e:
                 logger.error(f'Error updating mentee profile: {str(e)}')
+                logger.exception(e)
                 return jsonify({'success': False, 'error': f'Error updating profile: {str(e)}'}), 500
                 
         elif save_type == 'file':
@@ -270,19 +279,25 @@ def save_mentee():
             file_name = data.get('fileName')
             selected_index = data.get('selectedIndex')
             
+            logger.info(f"Saving mentee profile to file: {file_name}, index: {selected_index}")
+            
             if not file_name or selected_index is None:
+                logger.error(f"Missing file name or selected index: file_name={file_name}, selected_index={selected_index}")
                 return jsonify({'success': False, 'error': 'Missing file name or selected index'}), 400
                 
             file_path = os.path.join(GENERATE_MENTORS_DIR, file_name)
             if not os.path.exists(file_path):
+                logger.error(f"File {file_name} not found at path: {file_path}")
                 return jsonify({'success': False, 'error': f'File {file_name} not found'}), 404
                 
             # Read the file
             try:
                 with open(file_path, 'r') as f:
                     file_data = json.load(f)
+                    logger.info(f"Successfully loaded JSON file: {file_name}")
             except Exception as e:
                 logger.error(f'Error reading file {file_name}: {str(e)}')
+                logger.exception(e)
                 return jsonify({'success': False, 'error': f'Error reading file: {str(e)}'}), 500
                 
             # Update the query in the file
@@ -293,27 +308,34 @@ def save_mentee():
                 if queries:
                     # Use the alternate key for saving
                     query_key = 'test_queries'
+                    logger.info(f"Using 'test_queries' key, found {len(queries)} queries")
                 else:
+                    logger.error("No queries found in the file under 'queries' or 'test_queries' keys")
                     return jsonify({'success': False, 'error': 'No queries found in the file'}), 400
             else:
                 query_key = 'queries'
+                logger.info(f"Using 'queries' key, found {len(queries)} queries")
                 
             if selected_index >= len(queries):
+                logger.error(f"Selected index {selected_index} is out of range (max: {len(queries)-1})")
                 return jsonify({'success': False, 'error': f'Selected index {selected_index} is out of range'}), 400
                 
             # Update the query
+            logger.info(f"Updating query at index {selected_index} in {query_key}")
             file_data[query_key][selected_index] = profile_data
             
             # Save the file
             try:
                 with open(file_path, 'w') as f:
                     json.dump(file_data, f, indent=2)
-                logger.info(f'Updated query in file {file_name}')
+                logger.info(f'Successfully updated query in file {file_name}')
                 return jsonify({'success': True})
             except Exception as e:
                 logger.error(f'Error writing to file {file_name}: {str(e)}')
+                logger.exception(e)
                 return jsonify({'success': False, 'error': f'Error writing to file: {str(e)}'}), 500
         else:
+            logger.error(f"Invalid save type: {save_type}")
             return jsonify({'success': False, 'error': f'Invalid save type: {save_type}'}), 400
             
     except Exception as e:
