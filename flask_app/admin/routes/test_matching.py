@@ -266,7 +266,16 @@ def save_mentee():
                 
             # Update the profile
             try:
+                # Log the profile data we're trying to update
+                logger.info(f'Updating profile for mentee {mentee_id} with data: {profile_data}')
+                    
+                # Update the profile
                 mentee.update_profile(profile_data)
+                    
+                # Commit the changes to the database
+                from flask_app.extensions.database import db
+                db.session.commit()
+                    
                 logger.info(f'Successfully updated profile for mentee {mentee_id}')
                 return jsonify({'success': True})
             except Exception as e:

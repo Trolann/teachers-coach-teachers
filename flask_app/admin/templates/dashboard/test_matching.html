@@ -894,9 +894,17 @@
                 return response.json();
             })
             .then(data => {
+                console.log('Save response:', data);
                 if (data.success) {
                     // Show success message
                     alert('Mentee profile saved successfully!');
+                    
+                    // If this was a database save, refresh the mentee list to show updated data
+                    if (saveType === 'database') {
+                        setTimeout(() => {
+                            loadMentees();
+                        }, 500);
+                    }
                 } else {
                     // Show error message
                     alert('Error saving mentee profile: ' + data.error);
