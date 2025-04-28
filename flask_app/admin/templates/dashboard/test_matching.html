@@ -1109,7 +1109,7 @@
                     if (data.success) {
                         // Update UI to show feedback was saved
                         mentorCard.querySelector('.mentor-card-footer').innerHTML = `
-                        <div class="alert alert-success mb-0 w-100 text-center">
+                        <div class="alert alert-${feedback === 'good' ? 'success' : 'danger'} mb-0 w-100 text-center">
                             Feedback saved: <strong>${feedback === 'good' ? 'Good Match' : 'Bad Match'}</strong>
                         </div>
                     `;
