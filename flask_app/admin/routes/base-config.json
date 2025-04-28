@@ -20,26 +20,42 @@
   "job_types": [
     {
       "name": "University faculty (professor, department chair, etc.)",
-      "weight": 30
-    },
-    {
-      "name": "School district administrator or curriculum specialist",
       "weight": 20
     },
     {
-      "name": "Education department/district administrator, curriculum specialist, etc.",
+      "name": "School or school district administrator or curriculum specialist",
       "weight": 15
     },
     {
-      "name": "K-12 Public School Teacher - must be an expert with bio including multiple years/types of experience.",
-      "weight": 25
+      "name": "K-12 Classroom Teacher",
+      "weight": 15
     },
     {
-      "name": "Any of the above and being retired or semi-retired.",
+      "name": "Special Education Specialist",
       "weight": 10
     },
     {
-      "name": "Principal",
+      "name": "Curriculum Developer",
+      "weight": 10
+    },
+    {
+      "name": "ESL/Bilingual Education Specialist",
+      "weight": 10
+    },
+    {
+      "name": "Educational Technology Expert",
+      "weight": 5
+    },
+    {
+      "name": "School Counselor/Psychologist",
+      "weight": 5
+    },
+    {
+      "name": "Education Researcher/Academic",
+      "weight": 5
+    },
+    {
+      "name": "Alternative Education Professional",
       "weight": 5
     }
   ],
@@ -49,16 +65,16 @@
       "name": "primarySubject"
     },
     {
-      "description": "2-3 sentences about what specific guidance they're seeking from this mentor",
+      "description": "2-3 sentences about what specific guidance they're seeking written in the first person, such as \"I am looking for help with...\" or \"I want to...\" (don't limit to just those).",
       "name": "lookingFor"
     },
     {
-      "description": "between 1-5 years",
+      "description": "an appropriate experience level for the generated content. For example, someone looking to become a principal shouldn't have 1 year of experience, but also shouldn't have 20.",
       "name": "yearsTeaching"
     }
   ],
-  "query_system_prompt": "You generate realistic JSON data for education professionals seeking mentorship.",
-  "query_user_prompt": "Based on this mentor profile:\n{profile}\n\nGenerate a search query for a junior teacher named {mentee_first_name} {mentee_last_name} from {mentee_state}, {mentee_country} who would be looking for this specific mentor.\n\nThe query should be a JSON object with these fields:\n{query_fields}\n\nReturn ONLY the JSON with no explanations.",
-  "system_prompt": "You generate realistic JSON data for education professionals and academic experts.",
-  "user_prompt": "Generate realistic education-specific details for a teacher/mentor with the following information:\n\nPersonal Details:\n- Name: {first_name} {last_name}\n- Phone: {phone_number}\n- Location: {state_province}, {country}\n\nThis person should be an education expert from one of these backgrounds (choose one):\n{job_types}\n\nGenerate a JSON object with these fields:\n{fields}\n\nMake it diverse and realistic for an accomplished education professional who would be a good mentor for junior teachers. Return ONLY the JSON with no explanations."
+  "query_system_prompt": "You are a mentee profile generator for an education mentorship platform. You create realistic profiles of junior educators seeking mentorship that would naturally match with specific mentor profiles. Your responses should contain only valid JSON data that represents authentic junior educator profiles designed to test matching algorithms.",
+  "query_user_prompt": "Based on this mentor profile:\n{profile}\n\nGenerate a realistic profile for a junior educator who would be an ideal mentee match for this mentor. The mentee should be named {mentee_first_name} {mentee_last_name} from {mentee_state}, {mentee_country}.\n\nCreate a JSON object with these fields:\n{query_fields}\n\nWhen creating the mentee profile, you can use some of these items to generate quality profiles:\n- Include 2-3 specific professional goals that align with the mentor's expertise\n- Match 60-70% of the demographic contexts they serve (but not all, to test partial matching)\n- Include specific challenges the mentee faces that the mentor could help address\n- Reference teaching approaches or methodologies similar to the mentor's\n- Include 1-2 areas where the mentee wants to grow that align perfectly with mentor strengths\n- Make the years of experience appropriate for a junior educator\n- Add realistic personal details that would make this match beneficial but not obvious\n- Ensure educational background is compatible but not identical\n- Include shared professional interests but at different experience levels\n\nReturn only valid JSON without explanations.",
+  "system_prompt": "You are an education data generator that creates realistic profiles of education professionals. Your responses should only contain valid JSON data that represents diverse and authentic educator profiles. Each profile should be detailed and nuanced, reflecting the complexity of real education professionals with varied backgrounds, specialties, and experiences. Write in the first person.",
+  "user_prompt": "Generate a realistic education professional profile with the following details:\n- Name: {first_name} {last_name}\n- Contact: {phone_number}\n- Location: {state_province}, {country}\n\nCreate a JSON object with these fields:\n{fields}\n\nMake this person a {job_types} with authentic and diverse details. Consider:\n\n- Demographics they serve (urban/rural/suburban, socioeconomic diversity, immigrant populations, tribal communities, etc.)\n- Cultural competencies and language skills\n- Specialized teaching approaches (project-based learning, culturally responsive teaching, Universal Design for Learning, etc.)\n- Experience with diverse learners (neurodivergent students, English language learners, gifted students, students with disabilities)\n- Professional development focus areas and research interests\n- Community engagement initiatives or partnerships\n- Challenges faced in their educational context\n- Innovative approaches to educational equity\n- Cross-disciplinary expertise (arts integration, STEM, social-emotional learning)\n- Religious or secular educational contexts where relevant\n\nEnsure the profile reflects the realities of modern education and provides a nuanced view of an accomplished professional in their specific role.\n\nReturn only valid JSON without explanations."
 }
