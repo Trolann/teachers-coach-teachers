@@ -667,6 +667,9 @@
                 if (data.success) {
                     // Display the results
                     displayResults(data.data);
+                    // Enable the save/load buttons
+                    document.getElementById('saveToFileBtn').disabled = false;
+                    document.getElementById('loadToDBBtn').disabled = false;
                 } else {
                     alert('Error loading file: ' + data.error);
                 }
@@ -934,6 +937,20 @@
             // Add event listeners for save/load buttons
             document.getElementById('saveToFileBtn').addEventListener('click', saveResultsToFile);
             document.getElementById('loadToDBBtn').addEventListener('click', loadResultsIntoDB);
+            
+            // Refresh the list of JSON files
+            fetch('/admin/fake-mentors/get-json-files')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const select = document.getElementById('existingFiles');
+                        select.innerHTML = '<option value="">-- Select a file --</option>';
+                        data.files.forEach(file => {
+                            select.innerHTML += `<option value="${file}">${file}</option>`;
+                        });
+                    }
+                })
+                .catch(error => console.error('Error loading JSON files:', error));
         });
     </script>
 {% endblock %}

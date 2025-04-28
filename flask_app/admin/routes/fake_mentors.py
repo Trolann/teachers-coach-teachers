@@ -596,8 +596,15 @@ def load_results_to_db():
         if not data:
             return jsonify({'success': False, 'error': 'No data provided'}), 400
 
-        # Extract profiles from the data
-        profiles = data.get('mentors', [])
+        # Extract profiles from the data - handle both formats
+        if isinstance(data, list):
+            # Data is already a list of profiles
+            profiles = data
+        elif isinstance(data, dict):
+            # Data is in the format with mentors and queries
+            profiles = data.get('mentors', [])
+        else:
+            return jsonify({'success': False, 'error': 'Invalid data format'}), 400
 
         if not profiles:
             return jsonify({'success': False, 'error': 'No mentor profiles found in data'}), 400
