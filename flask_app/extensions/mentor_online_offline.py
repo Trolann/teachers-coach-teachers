@@ -19,7 +19,7 @@ class MentorOnlineOffline:
         """Check if a mentor is currently online."""
         return self._status.get(user_id, False)
 
-    def get_all_online(self):
+    def get_all_online(self, debug: bool = False) -> list:
         """Return a list of all currently online mentors."""
         return [user_id for user_id, status in self._status.items() if status]
     # curl http://localhost:5001/mentor_status/all_online

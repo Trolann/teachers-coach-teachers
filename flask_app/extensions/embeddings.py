@@ -3,6 +3,7 @@ import openai
 from flask_app.extensions.logging import get_logger
 from flask_app.models.embedding import UserEmbedding
 from flask_app.extensions.database import db
+from flask_app.extensions.mentor_online_offline import mentor_status_tracker
 from flask_app.config import OpenAIConfig, EXCLUDED_EMBEDDING_FIELDS
 
 logger = get_logger(__name__)
@@ -222,32 +223,27 @@ class TheAlgorithm:
         try:
             # Import User model here to avoid circular imports
             from flask_app.models.user import User, UserType, ApplicationStatus
-
-            # Join with User model to filter by user_type and is_active
+            query = (
+                UserEmbedding.query
+                .join(User, UserEmbedding.user_id == User.cognito_sub)
+                .filter(User.user_type == UserType.MENTOR)
+            )
+            # Build base query first, then apply filters
             if embedding_type != 'all':
-                closest_embeddings = (
-                    UserEmbedding.query
-                    .join(User, UserEmbedding.user_id == User.cognito_sub)
-                    .filter(UserEmbedding.embedding_type == embedding_type)
-                    .filter(User.user_type == UserType.MENTOR)
-                    .filter(
-                        User.is_active == True)  # TODO: Update to use Sohini's is_active based on mentor availability
-                    .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
-                    .limit(limit)
-                    .all()
-                )
+                query = query.filter(UserEmbedding.embedding_type == embedding_type)
+            oaiconfig = OpenAIConfig()
+            if not oaiconfig.DEBUG:
+                query = query.filter(User.cognito_sub in mentor_status_tracker.get_all_online())
             else:
-                logger.debug(f'Searching across all embedding types')
-                closest_embeddings = (
-                    UserEmbedding.query
-                    .join(User, UserEmbedding.user_id == User.cognito_sub)
-                    .filter(User.user_type == UserType.MENTOR)
-                    .filter(
-                        User.is_active == True)  # TODO: Update to use Sohini's is_active based on mentor availability
-                    .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
-                    .limit(limit)
-                    .all()
-                )
+                logger.debug("Debug mode is enabled, skipping online filter")
+
+            # Finish the query with ordering and limit
+            closest_embeddings = (
+                query
+                .order_by(UserEmbedding.vector_embedding.cosine_distance(vector))
+                .limit(limit)
+                .all()
+            )
             logger.debug(f"Found {len(closest_embeddings)} active mentor matches for embedding type '{embedding_type}'")
             return closest_embeddings
         except Exception as e:
