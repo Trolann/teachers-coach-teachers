@@ -120,9 +120,6 @@
                 <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab" aria-controls="generate" aria-selected="true">Generate Mentors</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="import-tab" data-bs-toggle="tab" data-bs-target="#import" type="button" role="tab" aria-controls="import" aria-selected="false">Import Mentors</button>
-            </li>
-            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="export-tab" data-bs-toggle="tab" data-bs-target="#export" type="button" role="tab" aria-controls="export" aria-selected="false">Export Mentors</button>
             </li>
             <li class="nav-item" role="presentation">
@@ -213,30 +210,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Import Mentors Tab -->
-            <div class="tab-pane fade" id="import" role="tabpanel" aria-labelledby="import-tab">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Import Mentors from JSON</h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="importForm" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <label for="jsonFile" class="form-label">JSON/JSONL File</label>
-                                <input type="file" class="form-control" id="jsonFile" name="file" accept=".json,.jsonl">
-                                <div class="form-text">Upload a JSON or JSONL file containing mentor profiles</div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="numProfiles" class="form-label">Number of Profiles to Import</label>
-                                <input type="number" class="form-control" id="numProfiles" name="numProfiles" min="1" max="100" value="10">
-                            </div>
-                            <button type="submit" class="btn btn-primary" id="importButton">Import Mentors</button>
-                        </form>
-                        <div id="importResult" class="mt-3"></div>
                     </div>
                 </div>
             </div>
@@ -794,70 +767,6 @@
             });
         }
 
-        // Import Mentors Form
-        document.getElementById('importForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const numProfiles = parseInt(document.getElementById('numProfiles').value);
-            const importButton = document.getElementById('importButton');
-            const mentorCountBadge = document.getElementById('mentorCount');
-            
-            // Disable button and change mentor count badge to yellow (in progress)
-            importButton.disabled = true;
-            mentorCountBadge.classList.remove('bg-primary');
-            mentorCountBadge.classList.add('bg-warning');
-            
-            // Get current mentor count
-            fetch('/admin/fake-mentors/count')
-                .then(response => response.json())
-                .then(data => {
-                    const startCount = data.success ? data.count : 0;
-                    
-                    // Start the import
-                    return fetch('/admin/fake-mentors/import', {
-                        method: 'POST',
-                        body: formData
-                    });
-                })
-                .then(response => response.json())
-                .then(data => {
-                    let resultHtml = '';
-                    if (data.success) {
-                        resultHtml = `<div class="alert alert-success">Successfully imported ${data.count} mentor profiles</div>`;
-                        
-                        // Update the mentor count and change badge to green (success)
-                        fetch('/admin/fake-mentors/count')
-                            .then(response => response.json())
-                            .then(countData => {
-                                if (countData.success) {
-                                    mentorCountBadge.textContent = countData.count;
-                                    mentorCountBadge.classList.remove('bg-warning');
-                                    mentorCountBadge.classList.add('bg-success');
-                                    
-                                    // Change back to blue after 3 seconds
-                                    setTimeout(() => {
-                                        mentorCountBadge.classList.remove('bg-success');
-                                        mentorCountBadge.classList.add('bg-primary');
-                                    }, 3000);
-                                }
-                            });
-                    } else {
-                        resultHtml = `<div class="alert alert-danger">Error: ${data.error}</div>`;
-                        // Change badge back to blue
-                        mentorCountBadge.classList.remove('bg-warning');
-                        mentorCountBadge.classList.add('bg-primary');
-                    }
-                    document.getElementById('importResult').innerHTML = resultHtml;
-                    importButton.disabled = false;
-                })
-                .catch(error => {
-                    document.getElementById('importResult').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-                    // Change badge back to blue
-                    mentorCountBadge.classList.remove('bg-warning');
-                    mentorCountBadge.classList.add('bg-primary');
-                    importButton.disabled = false;
-                });
-        });
 
         // Generate Mentors Form
         document.getElementById('generateForm').addEventListener('submit', function(e) {
