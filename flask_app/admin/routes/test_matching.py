@@ -269,12 +269,43 @@ def save_mentee():
                 # Log the profile data we're trying to update
                 logger.info(f'Updating profile for mentee {mentee_id} with data: {profile_data}')
                     
-                # Update the profile
-                mentee.update_profile(profile_data)
+                # Get the current profile for comparison
+                current_profile = mentee.profile.copy() if mentee.profile else {}
+                logger.info(f'Current profile before update: {current_profile}')
                     
-                # Commit the changes to the database
+                # Update the profile directly
+                if not mentee.profile:
+                    mentee.profile = {}
+                    
+                # Merge the new data with existing profile
+                mentee.profile.update(profile_data)
+                    
+                # Import db
                 from flask_app.extensions.database import db
+                    
+                # Mark as modified and commit
+                db.session.add(mentee)
+                    
+                # Try to force the update with a direct SQL update as a fallback
+                try:
+                    import json
+                    from sqlalchemy import text
+                        
+                    # Convert profile to JSON string
+                    profile_json = json.dumps(mentee.profile)
+                        
+                    # Execute direct SQL update
+                    sql = text("UPDATE users SET profile = :profile WHERE cognito_sub = :cognito_sub")
+                    db.session.execute(sql, {"profile": profile_json, "cognito_sub": mentee_id})
+                    logger.info(f"Executed direct SQL update for mentee {mentee_id}")
+                except Exception as sql_error:
+                    logger.warning(f"Direct SQL update failed, continuing with standard commit: {sql_error}")
+                    
+                # Commit the transaction
                 db.session.commit()
+                    
+                # Log the updated profile
+                logger.info(f'Updated profile after commit: {mentee.profile}')
                     
                 logger.info(f'Successfully updated profile for mentee {mentee_id}')
                 return jsonify({'success': True})
