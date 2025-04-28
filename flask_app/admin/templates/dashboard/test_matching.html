@@ -779,16 +779,19 @@
 
             addPropertyDiv.appendChild(addPropertyBtn);
             
-            // Add Save Mentee button
-            const saveMenteeBtn = document.createElement('button');
-            saveMenteeBtn.type = 'button';
-            saveMenteeBtn.className = 'btn btn-sm btn-outline-success ms-2';
-            saveMenteeBtn.textContent = 'Save Mentee';
-            saveMenteeBtn.onclick = function() {
-                saveMenteeProfile(container);
-            };
-            
-            addPropertyDiv.appendChild(saveMenteeBtn);
+            // Add Save Mentee button only for JSON mentees
+            const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
+            if (jsonMenteeSelect && jsonMenteeSelect.value) {
+                const saveMenteeBtn = document.createElement('button');
+                saveMenteeBtn.type = 'button';
+                saveMenteeBtn.className = 'btn btn-sm btn-outline-success ms-2';
+                saveMenteeBtn.textContent = 'Save Mentee';
+                saveMenteeBtn.onclick = function() {
+                    saveMenteeProfile(container);
+                };
+                
+                addPropertyDiv.appendChild(saveMenteeBtn);
+            }
             container.appendChild(addPropertyDiv);
         }
 
@@ -830,38 +833,25 @@
             // Get the current profile data from the editor
             const profileData = getJsonFromEditor(container);
             
-            // Determine if we're working with a database mentee or a JSON file mentee
-            const menteeSelect = document.getElementById('menteeSelect');
+            // Get JSON file and mentee information
             const jsonMenteeSelect = document.getElementById('jsonMenteeSelect');
             const queryFileSelect = document.getElementById('queryFileSelect');
             
-            let saveType, menteeId, fileName, selectedIndex;
+            if (!jsonMenteeSelect.value || !queryFileSelect.value) {
+                alert('Please select a valid mentee from the JSON file');
+                return;
+            }
             
-            if (menteeSelect.value) {
-                // Database mentee
-                saveType = 'database';
-                menteeId = menteeSelect.value;
-                selectedIndex = null;
-            } else if (jsonMenteeSelect.value && queryFileSelect.value) {
-                // JSON file mentee
-                saveType = 'file';
-                fileName = queryFileSelect.value;
-                menteeId = null;
-                
-                // Get the selected mentee index from the JSON file
-                selectedIndex = jsonMenteeSelect.selectedIndex - 1; // -1 because of the placeholder option
-                if (selectedIndex < 0) {
-                    alert('Please select a valid mentee from the JSON file');
-                    return;
-                }
-            } else {
-                alert('Please select a mentee from either the database or a JSON file');
+            const fileName = queryFileSelect.value;
+            
+            // Get the selected mentee index from the JSON file
+            const selectedIndex = jsonMenteeSelect.selectedIndex - 1; // -1 because of the placeholder option
+            if (selectedIndex < 0) {
+                alert('Please select a valid mentee from the JSON file');
                 return;
             }
             
             console.log('Saving mentee profile:', {
-                saveType,
-                menteeId,
                 fileName,
                 selectedIndex,
                 profileDataKeys: Object.keys(profileData)
@@ -880,8 +870,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    saveType: saveType,
-                    menteeId: menteeId,
+                    saveType: 'file',
                     fileName: fileName,
                     selectedIndex: selectedIndex,
                     profileData: profileData
@@ -898,13 +887,6 @@
                 if (data.success) {
                     // Show success message
                     alert('Mentee profile saved successfully!');
-                    
-                    // If this was a database save, refresh the mentee list to show updated data
-                    if (saveType === 'database') {
-                        setTimeout(() => {
-                            loadMentees();
-                        }, 500);
-                    }
                 } else {
                     // Show error message
                     alert('Error saving mentee profile: ' + data.error);
@@ -959,6 +941,17 @@
                                     // Load the actual profile data into the editor
                                     const queryEditor = document.getElementById('queryEditor');
                                     createJsonEditor(queryEditor, profileData);
+                                    
+                                    // Remove Save button if it exists (since we're now showing a database mentee)
+                                    const addPropertyDiv = queryEditor.querySelector('div.mt-3');
+                                    if (addPropertyDiv) {
+                                        const saveBtn = Array.from(addPropertyDiv.querySelectorAll('button')).find(btn => 
+                                            btn.textContent === 'Save Mentee');
+                                        
+                                        if (saveBtn) {
+                                            saveBtn.remove();
+                                        }
+                                    }
                                 }
                             });
                         }
@@ -1018,6 +1011,26 @@
                                         const queryData = JSON.parse(this.value);
                                         const queryEditor = document.getElementById('queryEditor');
                                         createJsonEditor(queryEditor, queryData);
+                                        
+                                        // Add Save button if not already present
+                                        const addPropertyDiv = queryEditor.querySelector('div.mt-3');
+                                        if (addPropertyDiv) {
+                                            // Check if Save button already exists
+                                            const existingSaveBtn = Array.from(addPropertyDiv.querySelectorAll('button')).find(btn => 
+                                                btn.textContent === 'Save Mentee');
+                                            
+                                            if (!existingSaveBtn) {
+                                                const saveMenteeBtn = document.createElement('button');
+                                                saveMenteeBtn.type = 'button';
+                                                saveMenteeBtn.className = 'btn btn-sm btn-outline-success ms-2';
+                                                saveMenteeBtn.textContent = 'Save Mentee';
+                                                saveMenteeBtn.onclick = function() {
+                                                    saveMenteeProfile(queryEditor);
+                                                };
+                                                
+                                                addPropertyDiv.appendChild(saveMenteeBtn);
+                                            }
+                                        }
                                     } catch (e) {
                                         console.error('Error parsing query data:', e);
                                     }
