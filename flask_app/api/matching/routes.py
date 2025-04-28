@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from extensions.logging import get_logger
 from extensions.embeddings import EmbeddingFactory, TheAlgorithm
 from extensions.cognito import require_auth, CognitoTokenVerifier, parse_headers
-
+from extensions.mentee_matches import mentee_matches
 
 matching_bp = Blueprint('matching', __name__, url_prefix='/matching')
 logger = get_logger(__name__)
@@ -105,3 +105,39 @@ def debug_test_embeddings():
     except Exception as e:
         logger.error(f"Error generating or storing embeddings: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+@matching_bp.route('/get_matches_for_mentee', methods=['GET'])
+@require_auth
+def get_matches_for_mentee():
+    """
+    Get mentor matches for a mentee
+    """
+    user = get_user_from_token(request.headers)
+    if not user:
+        return jsonify({'error': 'User not found or invalid token'}), 401
+
+    if user.user_type != UserType.MENTEE:
+        return jsonify({'error': 'Only mentees can access their matches'}), 403
+
+    mentee_id = user.cognito_sub
+    mentor_ids = mentee_matches.get(mentee_id, [])
+
+    mentor_profiles = []
+
+    for mentor_id in mentor_ids:
+        mentor = User.get_by_id(mentor_id)
+        if not mentor:
+            continue
+
+        profile_data = {    # Need to verify or update these fields once the User model has a .profile attribute
+            'user_id': mentor.cognito_sub,
+            'name': mentor.profile.get('name'),
+            'location': mentor.profile.get('location'),
+            'picture': mentor.profile.get('picture'),
+            'other_fields': mentor.profile
+        }
+        mentor_profiles.append(profile_data)
+
+    return jsonify({
+        'matches': mentor_profiles
+    })
