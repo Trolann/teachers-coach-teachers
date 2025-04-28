@@ -282,11 +282,8 @@ def save_mentee():
                     
                 # Import db
                 from flask_app.extensions.database import db
-                    
-                # Mark as modified and commit
-                db.session.add(mentee)
-                    
-                # Try to force the update with a direct SQL update as a fallback
+                
+                # Use direct SQL update to avoid session conflicts
                 try:
                     import json
                     from sqlalchemy import text
@@ -297,12 +294,32 @@ def save_mentee():
                     # Execute direct SQL update
                     sql = text("UPDATE users SET profile = :profile WHERE cognito_sub = :cognito_sub")
                     db.session.execute(sql, {"profile": profile_json, "cognito_sub": mentee_id})
-                    logger.info(f"Executed direct SQL update for mentee {mentee_id}")
+                    db.session.commit()
+                    logger.info(f"Successfully updated profile for mentee {mentee_id} using SQL update")
                 except Exception as sql_error:
-                    logger.warning(f"Direct SQL update failed, continuing with standard commit: {sql_error}")
+                    logger.error(f"SQL update failed: {sql_error}")
+                    logger.exception(sql_error)
                     
-                # Commit the transaction
-                db.session.commit()
+                    # Try to refresh the session as a fallback
+                    try:
+                        # Expire the object from the session
+                        db.session.expire(mentee)
+                        
+                        # Get a fresh instance
+                        fresh_mentee = User.query.filter_by(cognito_sub=mentee_id).first()
+                        
+                        # Update profile
+                        if not fresh_mentee.profile:
+                            fresh_mentee.profile = {}
+                        fresh_mentee.profile.update(profile_data)
+                        
+                        # Save changes
+                        db.session.commit()
+                        logger.info(f"Successfully updated profile using session refresh approach")
+                    except Exception as refresh_error:
+                        logger.error(f"Session refresh approach failed: {refresh_error}")
+                        logger.exception(refresh_error)
+                        return jsonify({'success': False, 'error': f'Error updating profile: {str(refresh_error)}'}), 500
                     
                 # Log the updated profile
                 logger.info(f'Updated profile after commit: {mentee.profile}')
