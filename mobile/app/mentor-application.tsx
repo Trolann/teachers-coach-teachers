@@ -1,324 +1,8 @@
-// import React, { useState } from 'react';
-// import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput, Image } from 'react-native';
-// import * as ImagePicker from 'expo-image-picker';
-// import { useRouter } from 'expo-router';
-// import { ThemedView } from '@/components/ThemedView';
-// import { ThemedText } from '@/components/ThemedText';
-// import BackendManager from './auth/BackendManager';
-
-// export default function MentorApplicationScreen() {
-//   const router = useRouter();
-//   const [formData, setFormData] = useState({
-//     firstName: '',
-//     lastName: '',
-//     phoneNumber: '',
-//     country: '',
-//     stateProvince: '',
-//     schoolDistrict: '',
-//     timeZone: '',
-//     primarySubject: '',
-//     mentorSkills: '',
-//   });
-
-//   const handleChange = (field, value) => {
-//     setFormData(prev => ({
-//       ...prev,
-//       [field]: value
-//     }));
-//   };
-
-//   const [selectedImage, setSelectedImage] = useState(null);
-
-//   const pickImage = async () => {
-//     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-//     if (!permissionResult.granted) {
-//       Alert.alert("Permission denied", "Permission to access your media is required.");
-//       return;
-//     }
-  
-//     const result = await ImagePicker.launchImageLibraryAsync({
-//       allowsEditing: true,
-//       quality: 1,
-//     });
-  
-//     if (!result.canceled) {
-//       const asset = result.assets[0];
-//       setSelectedImage(asset);
-//     }
-//   }; 
-
-//   const handleSubmit = async () => {
-//     try {
-//       // TODO: Send data to the backend (currently just an alert success message)
-//       const backendManager = BackendManager.getInstance();
-
-//       // Upload image if selected
-//       if (selectedImage) {
-//         await backendManager.submitPicture(selectedImage.uri);
-//       }
-//       Alert.alert(
-//         "Success",
-//         "Your mentor profile has been saved successfully!",
-//         [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
-//       );
-//     } catch (error) {
-//       console.error('Profile submission failed:', error);
-//       Alert.alert("Error", "Failed to save your profile. Please try again.");
-//     }
-//   };
-
-//   return (
-//     <ThemedView style={styles.container}>
-//       <ScrollView contentContainerStyle={styles.scrollContainer}>
-          
-//           {/* Logo/Icon */}
-//           <View style={styles.logoContainer}>
-//             <View style={styles.logo} />
-//           </View>
-
-//           {/* Header */}
-//           <View style={styles.headerContainer}>
-//             <ThemedText style={styles.headerText}>
-//               Become a Mentor
-//             </ThemedText>
-//             <ThemedText style={styles.subHeaderText}>
-//               Share your expertise and guide the next generation of educators.
-//             </ThemedText>
-//           </View>
-
-//           {/* Personal Information Section */}
-//           <View style={styles.sectionContainer}>
-//             <ThemedText style={styles.sectionTitle}>Personal Information</ThemedText>
-            
-//             <View style={styles.rowContainer}>
-//               <View style={styles.halfInputContainer}>
-//                 <ThemedText style={styles.inputLabel}>First Name</ThemedText>
-//                 <TextInput 
-//                   style={styles.input}
-//                   value={formData.firstName}
-//                   onChangeText={(text) => handleChange('firstName', text)}
-//                 />
-//               </View>
-              
-//               <View style={styles.halfInputContainer}>
-//                 <ThemedText style={styles.inputLabel}>Last Name</ThemedText>
-//                 <TextInput 
-//                   style={styles.input}
-//                   value={formData.lastName}
-//                   onChangeText={(text) => handleChange('lastName', text)}
-//                 />
-//               </View>
-//             </View>
-
-//             <View style={styles.inputContainer}>
-//               <ThemedText style={styles.inputLabel}>Phone Number</ThemedText>
-//               <TextInput 
-//                 style={styles.input}
-//                 value={formData.phoneNumber}
-//                 onChangeText={(text) => handleChange('phoneNumber', text)}
-//                 keyboardType="phone-pad"
-//               />
-//             </View>
-
-//             <View style={styles.inputContainer}>
-//               <ThemedText style={styles.inputLabel}>Country</ThemedText>
-//               <TextInput 
-//                 style={styles.input}
-//                 value={formData.country}
-//                 onChangeText={(text) => handleChange('country', text)}
-//               />
-//             </View>
-
-//             <View style={styles.inputContainer}>
-//               <ThemedText style={styles.inputLabel}>State/Province</ThemedText>
-//               <TextInput 
-//                 style={styles.input}
-//                 value={formData.stateProvince}
-//                 onChangeText={(text) => handleChange('stateProvince', text)}
-//               />
-//             </View>
-
-//             <View style={styles.inputContainer}>
-//               <ThemedText style={styles.inputLabel}>School District</ThemedText>
-//               <TextInput 
-//                 style={styles.input}
-//                 value={formData.schoolDistrict}
-//                 onChangeText={(text) => handleChange('schoolDistrict', text)}
-//               />
-//             </View>
-
-//             <View style={styles.inputContainer}>
-//               <ThemedText style={styles.inputLabel}>Time Zone</ThemedText>
-//               <TextInput 
-//                 style={styles.input}
-//                 value={formData.timeZone}
-//                 onChangeText={(text) => handleChange('timeZone', text)}
-//               />
-//             </View>
-//           </View>
-
-//           {/* Teaching Experience Section */}
-//           <View style={styles.sectionContainer}>
-//             <ThemedText style={styles.sectionTitle}>Teaching Experience</ThemedText>
-            
-//             <View style={styles.inputContainer}>
-//               <ThemedText style={styles.inputLabel}>Primary Subject(s) Taught</ThemedText>
-//               <TextInput 
-//                 style={styles.input}
-//                 value={formData.primarySubject}
-//                 onChangeText={(text) => handleChange('primarySubject', text)}
-//               />
-//             </View>
-            
-//             <View style={styles.inputContainer}>
-//               <ThemedText style={styles.inputLabel}>Areas of Expertise</ThemedText>
-//               <TextInput 
-//                 style={[styles.input, styles.multilineInput]}
-//                 value={formData.mentorSkills}
-//                 onChangeText={(text) => handleChange('mentorSkills', text)}
-//                 multiline={true}
-//                 numberOfLines={4}
-//                 textAlignVertical="top"
-//                 placeholder="Example: Classroom management, project-based learning, educational technology integration..."
-//                 placeholderTextColor="#888"
-//               />
-//             </View>
-//           </View>
-
-//           {/* Image Picker */}
-//           <View style={{ alignItems: 'center', marginBottom: 20 }}>
-//             <TouchableOpacity onPress={pickImage}>
-//               {selectedImage ? (
-//                 <Image
-//                   source={{ uri: selectedImage.uri }}
-//                   style={{ width: 100, height: 100, borderRadius: 50 }}
-//                 />
-//               ) : (
-//                 <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' }}>
-//                   <ThemedText>Pick Image</ThemedText>
-//                 </View>
-//               )}
-//             </TouchableOpacity>
-//           </View>
-          
-//           {/* Submit Button */}
-//           <TouchableOpacity 
-//             style={styles.submitButton}
-//             onPress={handleSubmit}
-//           >
-//             <ThemedText style={styles.buttonText}>Submit</ThemedText>
-//           </TouchableOpacity>
-//       </ScrollView>
-//     </ThemedView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     padding: 20,
-//     paddingTop: 50,
-//     backgroundColor: 'white',
-//   },
-//   scrollContainer: {
-//     flexGrow: 1,
-//     paddingVertical: 20,
-//     paddingHorizontal: 15,
-//   },
-//   headerContainer: {
-//     alignItems: 'center',
-//     marginBottom: 30,
-//   },
-//   headerText: {
-//     fontSize: 26,
-//     fontWeight: '600',
-//     color: 'black',
-//     textAlign: 'center',
-//   },
-//   sectionContainer: {
-//     marginBottom: 30,
-//   },
-//   subHeaderText: {
-//     fontSize: 16,
-//     color: '#666',
-//     fontWeight: '500',
-//     textAlign: 'center',
-//     marginTop: 10,
-//   },
-//   sectionTitle: {
-//     fontSize: 22,
-//     fontWeight: '500',
-//     color: '#333',
-//     textAlign: 'center',
-//     marginBottom: 20,
-//   },
-//   rowContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     width: '100%',
-//   },
-//   inputContainer: {
-//     marginBottom: 15,
-//     width: '100%',
-//   },
-//   halfInputContainer: {
-//     width: '48%',
-//     marginBottom: 15,
-//   },
-//   inputLabel: {
-//     fontSize: 16,
-//     color: '#666',
-//     marginBottom: 5,
-//   },
-//   inputDescription: {
-//     fontSize: 14,
-//     color: '#888',
-//     marginBottom: 8,
-//     fontStyle: 'italic',
-//   },
-//   input: {
-//     backgroundColor: '#f5f5f5',
-//     borderWidth: 1,
-//     borderColor: '#ddd',
-//     borderRadius: 8,
-//     padding: 12,
-//     fontSize: 16,
-//     borderBottomWidth: 0,  // Adding this line
-//   },
-//   multilineInput: {
-//     minHeight: 100,
-//     paddingTop: 12,
-//   },
-//   submitButton: {
-//     backgroundColor: '#82CD7B',
-//     padding: 16,
-//     borderRadius: 25,
-//     alignItems: 'center',
-//     marginTop: 10,
-//   },
-//   buttonText: {
-//     color: 'white',
-//     fontSize: 18,
-//     fontWeight: '600',
-//   },
-//   logoContainer: {
-//     alignItems: 'center',
-//     marginBottom: 40,
-//   },
-//   logo: {
-//     width: 80,
-//     height: 80,
-//     borderWidth: 2,
-//     borderColor: '#000',
-//     borderRadius: 16,
-//   },
-// });
 import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { Picker } from '@react-native-picker/picker';
 
 export default function MentorApplicationScreen() {
   const router = useRouter();
@@ -417,43 +101,22 @@ export default function MentorApplicationScreen() {
     }
   };
 
-  // Helper function for select inputs
-  const renderPickerSelect = (field, options, label) => {
-    if (Platform.OS === 'ios') {
-      return (
-        <View style={styles.pickerContainer}>
-          <ThemedText style={styles.inputLabel}>{label}</ThemedText>
-          <Picker
-            selectedValue={formData[field]}
-            onValueChange={(value) => handleChange(field, value)}
-            style={styles.picker}
-          >
-            <Picker.Item label="Select an option" value="" />
-            {options.map((option, index) => (
-              <Picker.Item key={index} label={option} value={option} />
-            ))}
-          </Picker>
-        </View>
-      );
-    } else {
-      return (
-        <View style={styles.pickerContainer}>
-          <ThemedText style={styles.inputLabel}>{label}</ThemedText>
-          <View style={styles.pickerAndroid}>
-            <Picker
-              selectedValue={formData[field]}
-              onValueChange={(value) => handleChange(field, value)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select an option" value="" />
-              {options.map((option, index) => (
-                <Picker.Item key={index} label={option} value={option} />
-              ))}
-            </Picker>
-          </View>
-        </View>
-      );
-    }
+  // Helper function for text inputs with suggestions
+  const renderTextInputWithHint = (field, label, placeholder = '', hint = '') => {
+    return (
+      <View style={styles.inputContainer}>
+        <ThemedText style={styles.inputLabel}>{label}</ThemedText>
+        {hint && (
+          <ThemedText style={styles.inputDescription}>{hint}</ThemedText>
+        )}
+        <TextInput 
+          style={styles.input}
+          value={formData[field]}
+          onChangeText={(text) => handleChange(field, text)}
+          placeholder={placeholder}
+        />
+      </View>
+    );
   };
 
   // Helper function for checkboxes
@@ -481,7 +144,7 @@ export default function MentorApplicationScreen() {
         {/* Header */}
         <View style={styles.headerContainer}>
           <ThemedText style={styles.headerText}>
-            Become a Mentor
+          🍎 Become a Mentor
           </ThemedText>
           <ThemedText style={styles.subHeaderText}>
             Share your expertise and guide the next generation of educators.
@@ -490,11 +153,11 @@ export default function MentorApplicationScreen() {
 
         {/* Personal Information Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Personal Information</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Personal Information 📝</ThemedText>
           
           <View style={styles.rowContainer}>
             <View style={styles.halfInputContainer}>
-              <ThemedText style={styles.inputLabel}>First Name*</ThemedText>
+              <ThemedText style={styles.inputLabel}>First Name</ThemedText>
               <TextInput 
                 style={styles.input}
                 value={formData.firstName}
@@ -503,7 +166,7 @@ export default function MentorApplicationScreen() {
             </View>
             
             <View style={styles.halfInputContainer}>
-              <ThemedText style={styles.inputLabel}>Last Name*</ThemedText>
+              <ThemedText style={styles.inputLabel}>Last Name</ThemedText>
               <TextInput 
                 style={styles.input}
                 value={formData.lastName}
@@ -513,7 +176,7 @@ export default function MentorApplicationScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Phone Number*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Phone Number</ThemedText>
             <TextInput 
               style={styles.input}
               value={formData.phoneNumber}
@@ -525,10 +188,10 @@ export default function MentorApplicationScreen() {
 
         {/* Geographic Information Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Geographic Information</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Geographic Information 🗺️</ThemedText>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Country*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Country</ThemedText>
             <TextInput 
               style={styles.input}
               value={formData.country}
@@ -537,7 +200,7 @@ export default function MentorApplicationScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>State/Province*</ThemedText>
+            <ThemedText style={styles.inputLabel}>State/Province</ThemedText>
             <TextInput 
               style={styles.input}
               value={formData.stateProvince}
@@ -555,7 +218,7 @@ export default function MentorApplicationScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>School District*</ThemedText>
+            <ThemedText style={styles.inputLabel}>School District</ThemedText>
             <TextInput 
               style={styles.input}
               value={formData.schoolDistrict}
@@ -564,21 +227,22 @@ export default function MentorApplicationScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Time Zone*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Time Zone</ThemedText>
             <TextInput 
               style={styles.input}
               value={formData.timeZone}
               onChangeText={(text) => handleChange('timeZone', text)}
+              placeholder="e.g., EST, PST, GMT+1"
             />
           </View>
         </View>
 
         {/* Teaching Experience Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Teaching Experience</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Teaching Experience 📕</ThemedText>
           
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Primary Subject(s) Taught*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Primary Subject(s) Taught</ThemedText>
             <TextInput 
               style={styles.input}
               value={formData.primarySubject}
@@ -587,7 +251,7 @@ export default function MentorApplicationScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Education Certifications*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Education Certifications</ThemedText>
             <TextInput 
               style={styles.input}
               value={formData.educationCertifications}
@@ -604,10 +268,18 @@ export default function MentorApplicationScreen() {
             />
           </View>
 
-          {renderPickerSelect('schoolType', ['Public', 'Private', 'Charter', 'Magnet', 'Alternative', 'Other'], 'School Type*')}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>School Type</ThemedText>
+            <TextInput 
+              style={styles.input}
+              value={formData.schoolType}
+              onChangeText={(text) => handleChange('schoolType', text)}
+              placeholder="Public, Private, Charter, Magnet, Alternative, Other"
+            />
+          </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Current Grade Levels*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Current Grade Levels</ThemedText>
             <TextInput 
               style={styles.input}
               value={formData.currentGradeLevels}
@@ -626,7 +298,7 @@ export default function MentorApplicationScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Grade Levels of Expertise*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Grade Levels of Expertise</ThemedText>
             <ThemedText style={styles.inputDescription}>
               In which grade levels do you feel most experienced and comfortable mentoring others?
             </ThemedText>
@@ -641,11 +313,11 @@ export default function MentorApplicationScreen() {
 
         {/* Years of Experience Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Years of Experience</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Years of Experience 📆</ThemedText>
 
           <View style={styles.rowContainer}>
             <View style={styles.halfInputContainer}>
-              <ThemedText style={styles.inputLabel}>Years in Education*</ThemedText>
+              <ThemedText style={styles.inputLabel}>Years in Education</ThemedText>
               <TextInput 
                 style={styles.input}
                 value={formData.yearsInEducation}
@@ -655,7 +327,7 @@ export default function MentorApplicationScreen() {
             </View>
             
             <View style={styles.halfInputContainer}>
-              <ThemedText style={styles.inputLabel}>Years in Current Role*</ThemedText>
+              <ThemedText style={styles.inputLabel}>Years in Current Role</ThemedText>
               <TextInput 
                 style={styles.input}
                 value={formData.yearsInCurrentRole}
@@ -690,45 +362,55 @@ export default function MentorApplicationScreen() {
 
         {/* Student Demographics Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Student Demographics</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Student Demographics 📚</ThemedText>
 
-          {renderPickerSelect('racialDemographic', [
-            'More than 50% Caucasian',
-            'More than 50% Hispanic',
-            'More than 50% Asian',
-            'More than 50% African American',
-            'Relatively mixed across all races'
-          ], 'Primary Racial Demographic')}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Primary Racial Demographic</ThemedText>
+            <TextInput 
+              style={styles.input}
+              value={formData.racialDemographic}
+              onChangeText={(text) => handleChange('racialDemographic', text)}
+              placeholder="e.g., More than 50% Caucasian, Hispanic, Mixed..."
+            />
+          </View>
 
-          {renderPickerSelect('secondaryDemographic', [
-            'Less than 50% Caucasian',
-            'Less than 50% Hispanic',
-            'Less than 50% Asian',
-            'Less than 50% African American',
-            'Less than 50% Other'
-          ], 'Secondary Racial Demographic')}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Secondary Racial Demographic</ThemedText>
+            <TextInput 
+              style={styles.input}
+              value={formData.secondaryDemographic}
+              onChangeText={(text) => handleChange('secondaryDemographic', text)}
+              placeholder="e.g., Less than 50% Caucasian, Hispanic, Asian..."
+            />
+          </View>
 
-          {renderPickerSelect('socioeconomicDemographic', [
-            'More than 50% not socioeconomically disadvantaged',
-            'More than 50% socioeconomically disadvantaged',
-            'Mixed socioeconomic backgrounds',
-            'Roughly equal distribution of all student populations'
-          ], 'Socioeconomic Demographic')}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Socioeconomic Demographic</ThemedText>
+            <TextInput 
+              style={styles.input}
+              value={formData.socioeconomicDemographic}
+              onChangeText={(text) => handleChange('socioeconomicDemographic', text)}
+              placeholder="e.g., Mixed, Mostly disadvantaged, Mostly not disadvantaged..."
+            />
+          </View>
 
-          {renderPickerSelect('ellPercentage', [
-            '0-24%',
-            '25-50%',
-            '51-75%',
-            '75% and higher'
-          ], 'Percentage of English Language Learners')}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Percentage of English Language Learners</ThemedText>
+            <TextInput 
+              style={styles.input}
+              value={formData.ellPercentage}
+              onChangeText={(text) => handleChange('ellPercentage', text)}
+              placeholder="e.g., 0-24%, 25-50%, 51-75%, 75%+"
+            />
+          </View>
         </View>
 
         {/* Professional Qualifications Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Professional Qualifications</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Professional Qualifications 💼</ThemedText>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Current Teaching Certifications*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Current Teaching Certifications</ThemedText>
             <TextInput 
               style={styles.input}
               value={formData.teachingCertifications}
@@ -757,7 +439,7 @@ export default function MentorApplicationScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Areas of Pedagogical Expertise*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Areas of Pedagogical Expertise</ThemedText>
             <TextInput 
               style={[styles.input, styles.multilineInput]}
               value={formData.pedagogicalExpertise}
@@ -770,7 +452,7 @@ export default function MentorApplicationScreen() {
 
         {/* Mentorship Experience Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Mentorship Experience</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Mentorship Experience 👔</ThemedText>
 
           <View style={styles.inputContainer}>
             <ThemedText style={styles.inputLabel}>Previous Mentoring Experience (Formal or Informal)</ThemedText>
@@ -794,7 +476,7 @@ export default function MentorApplicationScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Preferred Mentoring Style/Approach*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Preferred Mentoring Style/Approach</ThemedText>
             <TextInput 
               style={[styles.input, styles.multilineInput]}
               value={formData.mentoringStyle}
@@ -805,18 +487,21 @@ export default function MentorApplicationScreen() {
             />
           </View>
 
-          {renderPickerSelect('maxMentees', [
-            '1',
-            '2',
-            '3',
-            '4',
-            '5+'
-          ], 'Maximum Number of Mentees Willing to Support*')}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Maximum Number of Mentees Willing to Support</ThemedText>
+            <TextInput 
+              style={styles.input}
+              value={formData.maxMentees}
+              onChangeText={(text) => handleChange('maxMentees', text)}
+              placeholder="e.g., 1, 2, 3, 4, 5+"
+              keyboardType="numeric"
+            />
+          </View>
         </View>
 
         {/* Specializations Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Areas of Specialization</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Areas of Specialization 👌</ThemedText>
           <ThemedText style={styles.inputDescription}>
             Please select all areas in which you have significant expertise and could mentor others:
           </ThemedText>
@@ -844,30 +529,35 @@ export default function MentorApplicationScreen() {
 
         {/* Availability Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Availability</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Availability ⌚</ThemedText>
 
-          {renderPickerSelect('availabilityFrequency', [
-            'Weekly',
-            'Bi-weekly',
-            'Monthly',
-            'As needed'
-          ], 'Available Meeting Frequency*')}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Available Meeting Frequency</ThemedText>
+            <TextInput 
+              style={styles.input}
+              value={formData.availabilityFrequency}
+              onChangeText={(text) => handleChange('availabilityFrequency', text)}
+              placeholder="e.g., Weekly, Bi-weekly, Monthly, As needed"
+            />
+          </View>
 
-          {renderPickerSelect('preferredContactMethod', [
-            'Video call',
-            'Phone call',
-            'Email',
-            'Text message',
-            'In-person'
-          ], 'Preferred Contact Method*')}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Preferred Contact Method</ThemedText>
+            <TextInput 
+              style={styles.input}
+              value={formData.preferredContactMethod}
+              onChangeText={(text) => handleChange('preferredContactMethod', text)}
+              placeholder="e.g., Video call, Phone call, Email, Text message, In-person"
+            />
+          </View>
         </View>
 
         {/* Mentorship Philosophy Section */}
         <View style={styles.sectionContainer}>
-          <ThemedText style={styles.sectionTitle}>Mentorship Philosophy</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Mentorship Philosophy 🤔</ThemedText>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Your Mentoring Philosophy*</ThemedText>
+            <ThemedText style={styles.inputLabel}>Your Mentoring Philosophy</ThemedText>
             <ThemedText style={styles.inputDescription}>
               Please share your approach to mentoring other educators.
             </ThemedText>
@@ -985,22 +675,6 @@ const styles = StyleSheet.create({
     minHeight: 100,
     paddingTop: 12,
     textAlignVertical: 'top',
-  },
-  pickerContainer: {
-    marginBottom: 15,
-    width: '100%',
-  },
-  pickerAndroid: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    backgroundColor: '#ffffff',
-    overflow: 'hidden',
-  },
-  picker: {
-    backgroundColor: '#ffffff',
-    height: 50,
-    width: '100%',
   },
   checkboxContainer: {
     flexDirection: 'row',
