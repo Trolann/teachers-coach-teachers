@@ -14,7 +14,7 @@ class UserEmbedding(db.Model):
         db.Index('ix_user_embedding_type', 'user_id', 'embedding_type'),
         {'extend_existing': True}
     )
-    N_DIMENSIONS = 1536  # Number of dimensions for the vector embedding
+    N_DIMENSIONS = 3072  # Number of dimensions for the vector embedding
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     user_id = db.Column(db.String(100), db.ForeignKey('users.cognito_sub', ondelete='CASCADE'),

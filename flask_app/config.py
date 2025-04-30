@@ -16,7 +16,7 @@ class OpenAIConfig:
             raise ValueError("Missing required OPENAI_API_KEY configuration")
 
         # OpenAI model
-        self.EMBEDDING_MODEL = "text-embedding-3-small"
+        self.EMBEDDING_MODEL = "text-embedding-3-large"
         self.DEBUG = True if environ.get('LOG_LEVEL') == 'DEBUG' else False
 
         # Log configuration details (excluding sensitive data)

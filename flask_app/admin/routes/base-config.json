@@ -71,6 +71,10 @@
     {
       "description": "an appropriate experience level for the generated content. For example, someone looking to become a principal shouldn't have 1 year of experience, but also shouldn't have 20.",
       "name": "yearsTeaching"
+    },
+    {
+      "name": "mentorSkills",
+      "description": "the 'goal' of the mentees session, or why they opened the app today. Should be specific on what they are trying to improve (and should result in selecting the given mentor profile)"
     }
   ],
   "query_system_prompt": "You are a mentee profile generator for an education mentorship platform. You create realistic profiles of junior educators seeking mentorship that would naturally match with specific mentor profiles. Your responses should contain only valid JSON data that represents authentic junior educator profiles designed to test matching algorithms.",
