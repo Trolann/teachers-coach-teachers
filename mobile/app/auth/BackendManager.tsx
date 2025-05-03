@@ -3,6 +3,7 @@ import TokenManager from './TokenManager';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { MentorProfile } from '../utils/types';
 
 /**
  * BackendManager handles all API calls to the backend,
@@ -601,6 +602,32 @@ class BackendManager {
             await this.removeStorageItem(this.USER_NAME_KEY);
         } catch (error) {
             console.error('Error clearing cached name:', error);
+        }
+    }
+
+    /**
+     * Get information about matches for mentee to populate mentor swipe cards
+     * 
+     * @returns Information about matches for mentee
+     */
+    public async getMatchesForMentee(): Promise<MentorProfile[]> {
+        try {
+          const headers = await this.getAuthHeaders();
+          const response = await fetch(`${API_URL}/api/matching/get_matches_for_mentee`, {
+            method: 'GET',
+            headers,
+          });
+      
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch matches');
+          }
+      
+          const data = await response.json();
+          return data.matches as MentorProfile[];
+        } catch (error) {
+          console.error('Error fetching matches:', error);
+          throw error;
         }
     }
 

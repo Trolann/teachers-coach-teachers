@@ -1,1 +1,3 @@
+from collections import defaultdict
+
 mentee_matches = defaultdict(list) # Holds mentee_id -> mentor_id matches

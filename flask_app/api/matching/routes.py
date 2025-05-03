@@ -1,4 +1,6 @@
 from flask import Blueprint, request, jsonify
+from flask_app.api.users.routes import get_user_from_token
+from models.user import User
 from extensions.logging import get_logger
 from extensions.embeddings import EmbeddingFactory, TheAlgorithm
 from extensions.cognito import require_auth, CognitoTokenVerifier, parse_headers
@@ -74,6 +76,10 @@ def find_matches():
                 "matched_on": [e.embedding_type for e in match["embeddings"]]
             })
         
+        # Save mentor IDs for this mentee
+        mentee_matches[user_id] = [match["user_id"] for match in formatted_matches]
+        logger.info(f"Saved {len(mentee_matches[user_id])} matches for mentee {user_id}")
+
         return jsonify({
             "matches": formatted_matches,
             "total": len(formatted_matches)
@@ -126,18 +132,19 @@ def get_matches_for_mentee():
 
     for mentor_id in mentor_ids:
         mentor = User.get_by_id(mentor_id)
-        if not mentor:
+        if not mentor or not mentor.profile:
             continue
 
-        profile_data = {    # Need to verify or update these fields once the User model has a .profile attribute
+        profile = mentor.profile
+        
+        mentor_profiles.append({
             'user_id': mentor.cognito_sub,
-            'name': mentor.profile.get('name'),
-            'location': mentor.profile.get('location'),
-            'picture': mentor.profile.get('picture'),
-            'other_fields': mentor.profile
-        }
-        mentor_profiles.append(profile_data)
+            'firstName': profile.get('firstName'),
+            'lastName': profile.get('lastName'),
+            'county': profile.get('county'),
+            'state_province': profile.get('state_province'),
+            'country': profile.get('country'),
+            'primarySubject': profile.get('primarySubject'),
+        })
 
-    return jsonify({
-        'matches': mentor_profiles
-    })
+    return jsonify({'matches': mentor_profiles}), 200
