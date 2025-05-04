@@ -614,6 +614,7 @@ class BackendManager {
     public async getMatchesForMentee(): Promise<MentorProfile[]> {
         try {
           const headers = await this.getAuthHeaders();
+
           const response = await fetch(`${API_URL}/api/matching/get_matches_for_mentee`, {
             method: 'GET',
             headers,
@@ -625,9 +626,24 @@ class BackendManager {
           }
       
           const data = await response.json();
-          return data.matches as MentorProfile[];
+        
+          // For each mentor, fetch their picture and swipe card information
+          const mentors = await Promise.all(
+            data.map(async (mentor: any) => {
+              const pictureBlob = await this.getPicture(mentor.user_id);
+              const pictureUrl = pictureBlob ? URL.createObjectURL(pictureBlob) : '';
+      
+              return {
+                ...mentor,
+                picture: pictureUrl,
+              } as MentorProfile;
+            })
+          );
+      
+          return mentors;
+          
         } catch (error) {
-          console.error('Error fetching matches:', error);
+          console.error('Error fetching matches for mentee:', error);
           throw error;
         }
     }
