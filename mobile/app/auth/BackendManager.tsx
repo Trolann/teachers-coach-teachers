@@ -3,7 +3,7 @@ import TokenManager from './TokenManager';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { MentorProfile } from '../utils/types';
+import { MentorProfile, MenteeProfile } from '../utils/types';
 
 /**
  * BackendManager handles all API calls to the backend,
@@ -607,9 +607,9 @@ class BackendManager {
     }
 
     /**
-     * Get information about matches for mentee to populate mentor swipe cards
+     * Get list of mentors who matched with the authenticated mentee
      * 
-     * @returns Information about matches for mentee
+     * @returns Array of mentor profiles
      */
     public async getMatchesForMentee(): Promise<MentorProfile[]> {
         try {
@@ -641,10 +641,81 @@ class BackendManager {
           );
       
           return mentors;
-          
+
         } catch (error) {
           console.error('Error fetching matches for mentee:', error);
           throw error;
+        }
+    }
+
+    /**
+     * Submit a mentee request to a mentor
+     * 
+     * @param mentorId The Cognito sub of the mentor
+     */
+    public async submitMenteeRequest(mentorId: string): Promise<void> {
+        try {
+        const headers = await this.getAuthHeaders();
+    
+        const response = await fetch(`${API_URL}/api/matching/mentee_request`, {
+            method: 'POST',
+            headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mentor_id: mentorId }),
+        });
+    
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to submit mentee request');
+        }
+    
+        } catch (error) {
+        console.error('Error submitting mentee request:', error);
+        throw error;
+        }
+    }
+
+    /**
+     * Get list of mentees who requested the authenticated mentor
+     * 
+     * @returns Array of mentee profiles
+     */
+    public async getRequestsForMentor(): Promise<MenteeProfile[]> {
+        try {
+        const headers = await this.getAuthHeaders();
+    
+        const response = await fetch(`${API_URL}/api/matching/get_mentee_requests`, {
+            method: 'GET',
+            headers,
+        });
+    
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch mentee requests');
+        }
+    
+        const data = await response.json();
+
+        // For each mentee, fetch their picture and swipe card information
+        const mentees = await Promise.all(
+            data.mentee_requests.map(async (mentee: any) => {
+              const pictureBlob = await this.getPicture(mentee.user_id);
+              const pictureUrl = pictureBlob ? URL.createObjectURL(pictureBlob) : '';
+      
+              return {
+                ...mentee,
+                picture: pictureUrl,
+              } as MenteeProfile;
+            })
+          );
+      
+          return mentees;
+    
+        } catch (error) {
+        console.error('Error fetching mentee requests:', error);
+        throw error;
         }
     }
 

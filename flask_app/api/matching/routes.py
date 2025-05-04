@@ -4,7 +4,7 @@ from models.user import User
 from extensions.logging import get_logger
 from extensions.embeddings import EmbeddingFactory, TheAlgorithm
 from extensions.cognito import require_auth, CognitoTokenVerifier, parse_headers
-from extensions.mentee_matches import mentee_matches
+from extensions.matches import mentee_to_mentor_matches, submit_mentee_request, get_requests_for_mentor
 
 matching_bp = Blueprint('matching', __name__, url_prefix='/matching')
 logger = get_logger(__name__)
@@ -77,8 +77,8 @@ def find_matches():
             })
         
         # Save mentor IDs for this mentee
-        mentee_matches[user_id] = [match["user_id"] for match in formatted_matches]
-        logger.info(f"Saved {len(mentee_matches[user_id])} matches for mentee {user_id}")
+        mentee_to_mentor_matches[user_id] = [match["user_id"] for match in formatted_matches]
+        logger.info(f"Saved {len(mentee_to_mentor_matches[user_id])} matches for mentee {user_id}")
 
         return jsonify({
             "matches": formatted_matches,
@@ -126,7 +126,7 @@ def get_matches_for_mentee():
         return jsonify({'error': 'Only mentees can access their matches'}), 403
 
     mentee_id = user.cognito_sub
-    mentor_ids = mentee_matches.get(mentee_id, [])
+    mentor_ids = mentee_to_mentor_matches.get(mentee_id, [])
 
     mentor_profiles = []
 
@@ -148,3 +148,71 @@ def get_matches_for_mentee():
         })
 
     return jsonify({'matches': mentor_profiles}), 200
+
+@matching_bp.route('/mentee_request', methods=['POST'])
+@require_auth
+def mentee_request():
+    """
+    Mentee submits a request to enter a session with a mentor.
+    Requires JSON body with 'mentor_id'.
+    """
+    user = get_user_from_token(request.headers)
+    if not user:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    if user.user_type != UserType.MENTEE:
+        return jsonify({'error': 'Only mentees can submit requests'}), 403
+
+    mentee_id = user.cognito_sub
+    data = request.get_json()
+
+    mentor_id = data.get('mentor_id')
+    if not mentor_id:
+        return jsonify({'error': 'mentor_id is required'}), 400
+
+    try:
+        submit_mentee_request(mentor_id, mentee_id)
+        logger.info(f"Mentee {mentee_id} submitted request to mentor {mentor_id}")
+        return jsonify({'message': 'Request submitted successfully'}), 200
+    except Exception as e:
+        logger.error(f"Error submitting request: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@matching_bp.route('/get_mentee_requests', methods=['GET'])
+@require_auth
+def get_mentee_requests():
+    """
+    Fetches a list of mentees who have requested to meet the authenticated mentor.
+    """
+    user = get_user_from_token(request.headers)
+    if not user:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    if user.user_type != UserType.MENTOR:
+        return jsonify({'error': 'Only mentors can view mentee requests'}), 403
+
+    try:
+        mentor_id = user.cognito_sub
+        mentee_ids = get_requests_for_mentor(mentor_id)
+
+        mentees = []
+        for mentee_id in mentee_ids:
+            mentee = User.get_by_id(mentee_id)
+            if not mentee or not mentee.profile:
+                continue
+            profile = mentee.profile
+
+            mentees.append({
+                'user_id': mentee.cognito_sub,
+                'firstName': profile.get('firstName'),
+                'lastName': profile.get('lastName'),
+                'county': profile.get('county'),
+                'state_province': profile.get('state_province'),
+                'country': profile.get('country'),
+                'primarySubject': profile.get('primarySubject'),
+            })
+
+        return jsonify({'mentee_requests': mentees}), 200
+    except Exception as e:
+        logger.error(f"Error retrieving mentee requests: {str(e)}")
+        return jsonify({'error': str(e)}), 500
