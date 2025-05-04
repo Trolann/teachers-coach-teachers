@@ -193,14 +193,15 @@ class BackendManager {
     }
 
     /**
-     * Get a user picture
+     * Get a user's picture by their user_id
      * 
+     * @param userId - The Cognito ID of the user
      * @returns The user picture
      */
-    public async getPicture(): Promise<Blob> {
+    public async getPicture(userId: string): Promise<Blob> {
         try {
           const headers = await this.getAuthHeaders();
-          const response = await fetch(`${API_URL}/api/pictures/me`, {
+          const response = await fetch(`${API_URL}/api/pictures/${userId}`, {
             method: 'GET',
             headers,
           });
@@ -215,7 +216,7 @@ class BackendManager {
           console.error('Error fetching profile picture:', error);
           throw error;
         }
-      }
+    }
       
     /**
      * Submit a user application
