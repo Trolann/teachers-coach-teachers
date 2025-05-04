@@ -2,9 +2,6 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-
-
-
 const MenteeCard = ({
     mentor,
     infoVisible,
@@ -16,7 +13,7 @@ const MenteeCard = ({
             <View style={styles.onlineIndicator} />
 
             {/* Mentor Image */}
-            <Image source={mentor.image} style={styles.mentorImage} />
+            <Image source={typeof mentor.image === 'string' ? { uri: mentor.image } : mentor.image} />
 
             {/* Info Icon */}
             {infoVisible !== undefined && (

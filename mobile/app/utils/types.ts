@@ -6,5 +6,5 @@ export interface MentorProfile {
     state_province: string;
     country: string;
     primarySubject: string;
-    // picture: string;
+    picture: string;
 }

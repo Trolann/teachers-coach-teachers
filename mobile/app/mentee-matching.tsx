@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, Animated, Platform, Pressable, Button, Linking } from 'react-native';
+import BackendManager from './auth/BackendManager';
 import SwipeCards from 'react-native-swipe-cards';
 import { Ionicons } from '@expo/vector-icons';
 import { Href, Link, useRouter } from 'expo-router';
@@ -16,6 +17,7 @@ export default function MenteeLandingScreen() {
     setInfoVisible(infoVisible === mentorId ? null : mentorId);
   };
 
+  /*
   const [mentorList, setMentorList] = useState([
     {
       id: 1, name: 'Melissa Gao', subject: 'Biology', location: 'Austin, Texas', rating: 4.8, image: require('../assets/images/stock_mentor2.jpg'),
@@ -30,7 +32,34 @@ export default function MenteeLandingScreen() {
       bio: "History geek with a knack for storytelling. Specializes in American and European history."
     },
   ]);
+  */
 
+  const [mentorList, setMentorList] = useState([]);
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const backend = BackendManager.getInstance();
+        const matches = await backend.getMatchesForMentee();
+
+        // Transform matches into the format compatible with swipe cards
+        const formatted = matches.map((mentor, index) => ({
+          card_id: index + 1,
+          name: `${mentor.firstName} ${mentor.lastName}`,
+          subject: mentor.primarySubject || 'N/A',
+          location: `${mentor.county}, ${mentor.state_province}, ${mentor.country}`,
+          image: { uri: mentor.picture }
+        }));
+
+        setMentorList(formatted);
+      } catch (error) {
+        console.error('Failed to load mentor matches:', error);
+      }
+    };
+
+    fetchMatches();
+  }, []);
+  
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   // Function to remove the first mentor from the list (mimics swiping)
@@ -45,9 +74,9 @@ export default function MenteeLandingScreen() {
       useNativeDriver: true,
     }).start(() => {
       console.log(`Liked ${card.name}`);
-      setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.id !== card.id));
+      setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.card_id !== card.id));
       setMatchedMentor(card);
-    });
+  });
 
     const handleJoin = () => {
       router.push({
@@ -56,7 +85,6 @@ export default function MenteeLandingScreen() {
           mentor: JSON.stringify(mentorList[0]),
         },
       });
-
     };
 
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -102,8 +130,6 @@ export default function MenteeLandingScreen() {
       </Animated.View>
     );
   }
-
-
 
   // Message when no cards are left
   const renderNoMoreCards = () => (
@@ -384,6 +410,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  
-
 });
