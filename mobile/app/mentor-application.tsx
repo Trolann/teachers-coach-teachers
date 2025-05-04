@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput, Platf
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import BackendManager from './auth/BackendManager';
 
 export default function MentorApplicationScreen() {
   const router = useRouter();
@@ -88,16 +89,46 @@ export default function MentorApplicationScreen() {
     }));
   };
 
+  const validateForm = () => {
+    // Check required fields
+    if (!formData.firstName || !formData.lastName) {
+      Alert.alert("Error", "Please enter your first and last name.");
+      return false;
+    }
+        
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) return;
+
     try {
-      Alert.alert(
-        "Success",
-        "Your mentor profile has been saved successfully!",
-        [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
-      );
+    // Verify BackendManager exists and is initialized
+    const backendManager = BackendManager.getInstance();
+    console.log('BackendManager instance:', backendManager);
+    
+    if (!backendManager || typeof backendManager.submitApplication !== 'function') {
+      console.error('BackendManager is not properly initialized or missing submitApplication method');
+      Alert.alert("Error", "Backend service is not available. Please try again later.");
+      return;
+    }
+    
+    // Log the form data being submitted
+    console.log('Submitting form data:', formData);
+    
+    // Call the unified submitApplication method with the form data
+    await backendManager.submitApplication('MENTOR', formData);
+
+    console.log('Mentor profile stored successfully');
+    
+    Alert.alert(
+      "Success",
+      "Your mentor profile has been saved successfully!",
+      [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
+    );
     } catch (error) {
       console.error('Profile submission failed:', error);
-      Alert.alert("Error", "Failed to save your profile. Please try again.");
+      Alert.alert("Error", error.message || "Failed to save your profile. Please try again.");
     }
   };
 
