@@ -122,9 +122,6 @@ def get_matches_for_mentee():
     if not user:
         return jsonify({'error': 'User not found or invalid token'}), 401
 
-    if user.user_type != UserType.MENTEE:
-        return jsonify({'error': 'Only mentees can access their matches'}), 403
-
     mentee_id = user.cognito_sub
     mentor_ids = mentee_to_mentor_matches.get(mentee_id, [])
 
@@ -160,9 +157,6 @@ def mentee_request():
     if not user:
         return jsonify({'error': 'User not authenticated'}), 401
 
-    if user.user_type != UserType.MENTEE:
-        return jsonify({'error': 'Only mentees can submit requests'}), 403
-
     mentee_id = user.cognito_sub
     data = request.get_json()
 
@@ -187,9 +181,6 @@ def get_mentee_requests():
     user = get_user_from_token(request.headers)
     if not user:
         return jsonify({'error': 'User not authenticated'}), 401
-
-    if user.user_type != UserType.MENTOR:
-        return jsonify({'error': 'Only mentors can view mentee requests'}), 403
 
     try:
         mentor_id = user.cognito_sub

@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Switch, StyleSheet, Image, TouchableOpacity, ImageBackground } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
 import BackendManager from './auth/BackendManager';
 
+/*
 // Dummy mentees
 const mentees = [
   {
@@ -22,6 +23,7 @@ const mentees = [
     image: require('../assets/images/mentor-profile-picture.png'),
   },
 ];
+*/
 
 const MentorLandingScreen = () => {
   const [isOnline, setIsOnline] = useState(false);
@@ -30,6 +32,22 @@ const MentorLandingScreen = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [allSwiped, setAllSwiped] = useState(false);
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
+  const [mentees, setMentees] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const intervalRef = useRef(null);
+
+  // Trigger fetch when mentor goes online
+  useEffect(() => {
+    if (isOnline) {
+      fetchMentees();
+      intervalRef.current = setInterval(fetchMentees, 10000); // Set interval to update mentees every 10 seconds
+    } else {
+      clearInterval(intervalRef.current); // Clear interval when offline
+      setMentees([]); // Clear cards when going offline
+    }
+
+    return () => clearInterval(intervalRef.current); // Clear interval when component unmounts or goes offline
+  }, [isOnline]);
 
   const userName = 'Susie'; // Replace with dynamic username
 
@@ -57,15 +75,41 @@ const MentorLandingScreen = () => {
       setIsOnline(!value);
       console.error('Error toggling status:', error);
     }
+  };
+
+  const fetchMentees = async () => {
+    setIsLoading(true);
+    try {
+      const backend = BackendManager.getInstance();
+      const requests = await backend.getRequestsForMentor();
+
+      // Transform requests into format compatible with swipe cards
+      const formatted = requests.map((mentee, index) => ({
+        card_id: index + 1,
+        mentee_id: mentee.user_id,
+        name: `${mentee.firstName} ${mentee.lastName}`,
+        primarySubject: mentee.primarySubject,
+        location: `${mentee.county}, ${mentee.state_province}, ${mentee.country}`,
+        image: { uri: mentee.picture }
+      }));
+
+      setMentees(formatted);
+      setAllSwiped(false);
+      setCurrentIndex(0);
+    } catch (error) {
+      console.error('Error fetching mentees:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };  
 
-  const Card = ({ name, primarySubject, district, image }) => (
+  const Card = ({ name, primarySubject, location, image }) => (
     <View style={styles.card}>
       <ImageBackground source={image} style={styles.cardImage} imageStyle={{ borderRadius: 16 }}>
         <View style={styles.cardOverlay}>
           <Text style={styles.cardTitle}>{name}</Text>
           <Text style={styles.cardText}>Primary Subject: {primarySubject}</Text>
-          <Text style={styles.cardText}>School District: {district}</Text>
+          <Text style={styles.cardText}>Location: {location}</Text>
         </View>
       </ImageBackground>
     </View>

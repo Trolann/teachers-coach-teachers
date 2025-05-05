@@ -42,12 +42,12 @@ export default function MenteeLandingScreen() {
         const backend = BackendManager.getInstance();
         const matches = await backend.getMatchesForMentee();
 
-        // Transform matches into the format compatible with swipe cards
+        // Transform matches into format compatible with swipe cards
         const formatted = matches.map((mentor, index) => ({
           card_id: index + 1,
           mentor_id: mentor.user_id,
           name: `${mentor.firstName} ${mentor.lastName}`,
-          subject: mentor.primarySubject || 'N/A',
+          subject: mentor.primarySubject,
           location: `${mentor.county}, ${mentor.state_province}, ${mentor.country}`,
           image: { uri: mentor.picture }
         }));
