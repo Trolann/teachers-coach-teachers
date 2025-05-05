@@ -45,6 +45,7 @@ export default function MenteeLandingScreen() {
         // Transform matches into the format compatible with swipe cards
         const formatted = matches.map((mentor, index) => ({
           card_id: index + 1,
+          mentor_id: mentor.user_id,
           name: `${mentor.firstName} ${mentor.lastName}`,
           subject: mentor.primarySubject || 'N/A',
           location: `${mentor.county}, ${mentor.state_province}, ${mentor.country}`,
@@ -67,16 +68,26 @@ export default function MenteeLandingScreen() {
     setMentorList((prevMentors) => prevMentors.slice(1));
   };
 
-  const handleLike = (card) => {
-    Animated.timing(animatedValue, {
-      toValue: 500,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      console.log(`Liked ${card.name}`);
-      setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.card_id !== card.id));
-      setMatchedMentor(card);
-  });
+  const handleLike = async (card) => {
+    try {
+      Animated.timing(animatedValue, {
+        toValue: 500,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        console.log(`Liked ${card.name}`);
+        setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.card_id !== card.card_id));
+        setMatchedMentor(card);
+      });
+  
+      const backend = BackendManager.getInstance();
+      // Call the API to submit a mentee request
+      await backend.submitMenteeRequest(card.mentor_id);
+  
+    } catch (error) {
+      console.error('Failed to submit mentee request:', error);
+      Alert.alert('Error', 'Could not send your match request. Please try again.');
+    }
 
     const handleJoin = () => {
       router.push({
@@ -110,7 +121,7 @@ export default function MenteeLandingScreen() {
       useNativeDriver: true,
     }).start(() => {
       console.log(`Skipped ${card.name}`);
-      setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.id !== card.id));
+      setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.card_id !== card.card_id));
     });
   };
 

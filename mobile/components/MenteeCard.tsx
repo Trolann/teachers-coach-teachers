@@ -14,21 +14,24 @@ const MenteeCard = ({
 
             {/* Mentor Image */}
             <Image source={typeof mentor.image === 'string' ? { uri: mentor.image } : mentor.image} />
-
+            
             {/* Info Icon */}
-            {infoVisible !== undefined && (
+            {/*
+            infoVisible !== undefined && (
                 <TouchableOpacity onPress={() => toggleInfo(mentor.id)} style={styles.infoButton}>
                     <Ionicons name="information-circle-outline" size={30} color="#666" />
                 </TouchableOpacity>
-            )}
-
+            )
+            */}
 
             {/* Info Bubble */}
-            {infoVisible === mentor.id && (
+            {/*
+            infoVisible === mentor.id && (
                 <View style={styles.infoBubble}>
                     <Text style={styles.infoText}>{mentor.bio}</Text>
                 </View>
-            )}
+            )
+            */}
 
 
             <View style={styles.overlay}>
@@ -36,15 +39,15 @@ const MenteeCard = ({
                 <Text style={styles.mentorLocation}>
                     <Ionicons name="location-outline" size={16} /> {mentor.location}
                 </Text>
+                {/*
                 <View style={styles.ratingContainer}>
                     <Text style={styles.mentorRating}>⭐️ {mentor.rating}</Text>
                 </View>
+                */}
             </View>
         </View>
     );
 };
-
-
 
 const styles = StyleSheet.create({
     card: {
