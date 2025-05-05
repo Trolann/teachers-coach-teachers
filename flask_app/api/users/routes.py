@@ -66,6 +66,7 @@ def submit_application():
 
     logger.info(f'Profile data received: {profile_data}')
     if not profile_data:
+        logger.info("Profile data has been recieved.")
         return jsonify({'error': 'No profile data provided'}), 400
 
 
@@ -153,11 +154,10 @@ def get_application():
     # if user.user_type != UserType.MENTOR:
     #     return jsonify({'error': 'No application found'}), 404
 
-
     return_dict = {
         'user_id': user.cognito_sub,
         'user_name': user.email,
-        'status': user.application_status,
+        'status': user.application_status.value,
         'submitted_at': user.created_at.isoformat(),
         'profile_data': user.profile
     }
