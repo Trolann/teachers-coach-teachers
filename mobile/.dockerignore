@@ -1,0 +1,12 @@
+node_modules
+.git
+.gitignore
+.expo
+.expo-shared
+npm-debug.log
+yarn-error.log
+.DS_Store
+*.log
+.cache
+.vscode
+.idea

@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Mentor Profiles{% endblock %}
+
+{% block content %}
+<script>
+function filterTable() {
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    // Get all header cells that contain 'name' (case-insensitive)
+    const headerCells = document.querySelectorAll('thead th');
+    const nameColumnIndexes = Array.from(headerCells).reduce((indexes, cell, index) => {
+        if (cell.textContent.toLowerCase().includes('name')) {
+            indexes.push(index);
+        }
+        return indexes;
+    }, []);
+
+    rows.forEach(row => {
+        // Skip the "No mentor profiles found" row
+        if (row.cells.length === 1) return;
+
+        // Find the status badge span
+        const statusBadge = row.querySelector('.badge');
+        if (!statusBadge) return;
+
+        const status = statusBadge.textContent.toLowerCase().trim();
+        
+        // Status matching - check if the filter value is contained in the status
+        const matchesStatus = statusFilter === '' || 
+            (statusFilter === 'pending' && status === 'pending') ||
+            (statusFilter === 'approved' && status === 'approved') ||
+            (statusFilter === 'rejected' && status === 'rejected') ||
+            (statusFilter === 'revoked' && status === 'revoked');
+        
+        // Check all name columns for a match
+        const matchesSearch = searchText === '' || 
+            nameColumnIndexes.some(index => {
+                const cellText = row.cells[index]?.textContent.toLowerCase().trim() || '';
+                return cellText.indexOf(searchText) !== -1;
+            });
+
+        row.style.display = matchesStatus && matchesSearch ? '' : 'none';
+    });
+}
+
+function refreshTable() {
+    window.location.reload();
+}
+
+function confirmStatusUpdate(mentorId, action) {
+    let message;
+    let status;
+    
+    switch(action) {
+        case 'approve':
+            message = 'Are you sure you want to approve this mentor?';
+            status = 'APPROVED';
+            break;
+        case 'revoke':
+            message = 'Are you sure you want to revoke this mentor\'s approval?';
+            status = 'REVOKED';
+            break;
+        case 'reject':
+            message = 'Are you sure you want to reject this mentor?';
+            status = 'REJECTED';
+            break;
+        default:
+            message = 'Are you sure you want to update this mentor\'s status?';
+            status = action.toUpperCase();
+    }
+    
+    // Save current filter state
+    const currentStatusFilter = document.getElementById('statusFilter').value;
+    const currentSearchText = document.getElementById('searchInput').value;
+    
+    if (confirm(message)) {
+        // Try the new endpoint first
+        fetch(`/admin/users/${mentorId}/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Store filter values in sessionStorage before reload
+                sessionStorage.setItem('statusFilter', currentStatusFilter);
+                sessionStorage.setItem('searchInput', currentSearchText);
+                location.reload();
+            } else {
+                alert('Error updating mentor status: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(`An error occurred while updating the mentor status: ${error.message}`);
+        });
+    }
+}
+
+// Add event listeners for filters
+document.addEventListener('DOMContentLoaded', function() {
+    // Restore filter values from sessionStorage if they exist
+    const savedStatusFilter = sessionStorage.getItem('statusFilter');
+    const savedSearchInput = sessionStorage.getItem('searchInput');
+    
+    if (savedStatusFilter) {
+        document.getElementById('statusFilter').value = savedStatusFilter;
+        sessionStorage.removeItem('statusFilter');
+    }
+    
+    if (savedSearchInput) {
+        document.getElementById('searchInput').value = savedSearchInput;
+        sessionStorage.removeItem('searchInput');
+    }
+    
+    // Apply filters if any were restored
+    if (savedStatusFilter || savedSearchInput) {
+        filterTable();
+    }
+    
+    // Add event listeners
+    document.getElementById('statusFilter').addEventListener('change', filterTable);
+    document.getElementById('searchInput').addEventListener('input', filterTable);
+});
+</script>
+<div class="card w-100">
+    <div class="card-header">
+        <h4 class="mb-0">Mentor Profiles</h4>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="revoked">Revoked</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search by name...">
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-primary" onclick="refreshTable()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                    {% if mentors %}
+                        {% for key in mentors[0].__dict__.keys() %}
+                            {% if not key.startswith('_') %}
+                                <th>{{ key|replace('_', ' ')|title }}</th>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <th>No Data Available</th>
+                    {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mentor in mentors %}
+                    <tr>
+                        {% for key, value in mentor.__dict__.items() %}
+                            {% if not key.startswith('_') %}
+                                <td>
+                                {% if key == 'application_status' %}
+                                    {% set status_value = value.name if value else 'N/A' %}
+                                    {% set display_status = status_value|capitalize if status_value else 'N/A' %}
+                                    <span class="badge bg-{{ 'success' if status_value == 'APPROVED'
+                                                        else 'warning' if status_value == 'PENDING'
+                                                        else 'danger' }}">
+                                        {{ display_status }}
+                                    </span>
+                                {% elif key == 'expertise_areas' %}
+                                    {{ value|join(', ') if value else 'N/A' }}
+                                {% elif key == 'application_submitted_at' and value %}
+                                    {{ value.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    {{ value if value is not none else 'N/A' }}
+                                {% endif %}
+                                </td>
+                            {% endif %}
+                        {% endfor %}
+                        <td>
+                            {% if mentor.application_status.name == 'APPROVED' %}
+                                <button type="button" class="btn btn-danger"
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'revoke')">
+                                    REVOKE
+                                </button>
+                            {% elif mentor.application_status.name == 'REJECTED' %}
+                                <button type="button" class="btn btn-success"
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'approve')">
+                                    APPROVE
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-success"
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'approve')">
+                                    APPROVE
+                                </button>
+                                <button type="button" class="btn btn-danger ms-2"
+                                        onclick="confirmStatusUpdate('{{ mentor.cognito_sub }}', 'reject')">
+                                    REJECT
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No mentor profiles found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
