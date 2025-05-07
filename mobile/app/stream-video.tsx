@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
 import { CallScreen } from './CallScreen';
+import 'react-native-gesture-handler';
+
 
 // 1. Import the StreamVideo and StreamVideoClient components
 import {
@@ -12,6 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 // 2. Create a StreamVideoClient instance
 import { STREAM_DEMO_CREDS } from '../constants/StreamDemoCredentials';
+import { Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const { apiKey, userId, token, callId } = STREAM_DEMO_CREDS;
 
@@ -39,6 +42,7 @@ export default function App() {
   };
   return (
     // 5. Wrap your app with the StreamVideo component
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <StreamVideo client={client}>
       <SafeAreaView style={styles.container}>
         {activeScreen === 'call-screen' ? (
@@ -48,6 +52,7 @@ export default function App() {
         )}
       </SafeAreaView>
     </StreamVideo>
+    </GestureHandlerRootView>
   );
 }
 
