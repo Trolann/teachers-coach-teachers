@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView, Image, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Header from '@/components/Header';
 import { Ionicons } from '@expo/vector-icons';
+import BackendManager from './auth/BackendManager';
 
 export default function FeedbackScreen() {
+  console.log('Rendering FeedbackScreen component');
   const router = useRouter();
-  const { mentor: mentorString } = useLocalSearchParams();
+  const { mentor: mentorString, sessionId } = useLocalSearchParams();
+  console.log('Session ID from params:', sessionId);
+  
   const mentor = mentorString ? JSON.parse(mentorString as string) : null;
+  console.log('Mentor data parsed:', mentor ? `${mentor.name} (ID: ${mentor.id})` : 'No mentor data');
   
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
@@ -15,42 +20,139 @@ export default function FeedbackScreen() {
   const [skillsToImprove, setSkillsToImprove] = useState('');
   const [appImprovements, setAppImprovements] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Log when component mounts
+  useEffect(() => {
+    console.log('FeedbackScreen mounted with sessionId:', sessionId);
+    return () => {
+      console.log('FeedbackScreen unmounted');
+    };
+  }, []);
+
+  // Create an instance of the BackendManager
+  const backendManager = BackendManager.getInstance();
+  console.log('BackendManager instance created');
 
   const handleRating = (selectedRating) => {
+    console.log('Rating selected:', selectedRating);
     setRating(selectedRating);
   };
 
-  const handleSubmit = () => {
-    // Here you would typically send the feedback to your backend
-    console.log('Submitting feedback:', { 
-      mentorId: mentor?.id, 
-      rating, 
-      feedback,
-      skillsImproved,
-      skillsToImprove,
-      appImprovements
-    });
+  const handleSubmit = async () => {
+    console.log('Submit button pressed');
     
-    // For now, just mark as submitted
-    setSubmitted(true);
+    if (!sessionId) {
+      console.error('Submit failed: Missing sessionId');
+      Alert.alert("Error", "Session ID is required to submit feedback.");
+      return;
+    }
+    
+    if (rating === 0) {
+      console.warn('Submit validation: No rating provided');
+      Alert.alert("Incomplete Feedback", "Please provide a rating before submitting.");
+      return;
+    }
+    
+    console.log('Starting feedback submission process');
+    setIsLoading(true);
+    
+    try {
+      // Prepare feedback data
+      const feedbackData = {
+        rating,
+        feedback,
+        skillsImproved,
+        skillsToImprove,
+        appImprovements
+      };
+      
+      console.log('Feedback data to submit:', feedbackData);
+      
+      // Submit feedback to the backend
+      console.log(`Calling backendManager.submitSessionFeedback for session: ${sessionId}`);
+      const response = await backendManager.submitSessionFeedback(
+        sessionId as string,
+        feedbackData,
+        false // This is mentee feedback
+      );
+      
+      console.log('Feedback submission response:', response);
+      
+      // Update session status to completed
+      console.log(`Updating session status to completed for session: ${sessionId}`);
+      await backendManager.updateSessionStatus(sessionId as string, 'completed');
+      console.log('Session status updated successfully');
+      
+      // For the favorites/not interested functionality
+      if (mentor) {
+        console.log('Mentor data available for favorites/not interested:', mentor.id);
+      }
+      
+      console.log('Feedback submission successful, setting submitted state to true');
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      console.error('Error details:', error.message);
+      Alert.alert(
+        "Submission Failed",
+        "There was an error submitting your feedback. Please try again."
+      );
+    } finally {
+      console.log('Feedback submission process completed, setting loading state to false');
+      setIsLoading(false);
+    }
   };
 
   const handleFinish = () => {
-    // Navigate back to mentee matching or dashboard
+    console.log('Finish button pressed, navigating to mentee-matching');
     router.push('/mentee-matching');
   };
 
-  const handleAddToFavorites = () => {
-    // Implementation for adding to favorites
-    console.log('Added to favorites:', mentor?.name);
+  const handleAddToFavorites = async () => {
+    console.log('Add to favorites button pressed');
+    
+    if (!mentor?.id) {
+      console.error('Add to favorites failed: Missing mentor ID');
+      Alert.alert("Error", "Mentor information is missing.");
+      return;
+    }
+    
+    try {
+      // TODO Implementation for adding to favorites would go here with corresponding backend API endpoint
+      console.log('Added mentor to favorites:', mentor.id, mentor.name);
+      Alert.alert("Success", `${mentor?.name} added to favorites!`);
+    } catch (error) {
+      console.error('Error adding to favorites:', error);
+      console.error('Error details:', error.message);
+      Alert.alert("Error", "Failed to add mentor to favorites.");
+    }
   };
 
-  const handleNotInterested = () => {
-    // Implementation for not interested
-    console.log('Not interested in:', mentor?.name);
+  const handleNotInterested = async () => {
+    console.log('Not interested button pressed');
+    
+    if (!mentor?.id) {
+      console.error('Not interested failed: Missing mentor ID');
+      Alert.alert("Error", "Mentor information is missing.");
+      return;
+    }
+    
+    try {
+      // TODO: Implementation for not interested would go here need corresponding backend API endpoint
+      console.log('Marked mentor as not interested:', mentor.id, mentor.name);
+      Alert.alert("Success", `${mentor?.name} marked as not interested.`);
+    } catch (error) {
+      console.error('Error marking as not interested:', error);
+      console.error('Error details:', error.message);
+      Alert.alert("Error", "Failed to mark mentor as not interested.");
+    }
   };
+
+  console.log('Current state - submitted:', submitted, 'rating:', rating, 'isLoading:', isLoading);
 
   if (submitted) {
+    console.log('Rendering thank you screen');
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
@@ -67,6 +169,7 @@ export default function FeedbackScreen() {
     );
   }
 
+  console.log('Rendering main feedback form');
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -82,6 +185,8 @@ export default function FeedbackScreen() {
               <Image 
                 source={typeof mentor.image === 'string' ? { uri: mentor.image } : mentor.image} 
                 style={styles.mentorImage} 
+                onLoad={() => console.log('Mentor image loaded successfully')}
+                onError={(error) => console.error('Error loading mentor image:', error.nativeEvent.error)}
               />
               <View style={styles.mentorCardOverlay}>
                 <Text style={styles.mentorName}>{mentor?.name || 'Mentor Name'}</Text>
@@ -114,14 +219,17 @@ export default function FeedbackScreen() {
         
         {/* Feedback Text Area */}
         <View style={styles.feedbackContainer}>
-          <Text style={styles.feedbackLabel}>Share your experience (optional)</Text>
+          <Text style={styles.feedbackLabel}>Share your experience</Text>
           <TextInput
             style={styles.feedbackInput}
             multiline
             numberOfLines={5}
             placeholder="What went well? What could be improved?"
             value={feedback}
-            onChangeText={setFeedback}
+            onChangeText={(text) => {
+              console.log('Experience feedback updated');
+              setFeedback(text);
+            }}
           />
         </View>
         
@@ -134,7 +242,10 @@ export default function FeedbackScreen() {
             numberOfLines={3}
             placeholder="e.g. Communication, Leadership, Technical skills"
             value={skillsImproved}
-            onChangeText={setSkillsImproved}
+            onChangeText={(text) => {
+              console.log('Skills improved updated');
+              setSkillsImproved(text);
+            }}
           />
         </View>
         
@@ -147,7 +258,10 @@ export default function FeedbackScreen() {
             numberOfLines={3}
             placeholder="e.g. Public speaking, Time management, Technical skills"
             value={skillsToImprove}
-            onChangeText={setSkillsToImprove}
+            onChangeText={(text) => {
+              console.log('Skills to improve updated');
+              setSkillsToImprove(text);
+            }}
           />
         </View>
         
@@ -160,7 +274,10 @@ export default function FeedbackScreen() {
             numberOfLines={3}
             placeholder="Share your ideas to make our app better"
             value={appImprovements}
-            onChangeText={setAppImprovements}
+            onChangeText={(text) => {
+              console.log('App improvements updated');
+              setAppImprovements(text);
+            }}
           />
         </View>
         
@@ -185,17 +302,23 @@ export default function FeedbackScreen() {
         
         {/* Submit Button */}
         <TouchableOpacity 
-          style={[styles.submitButton, rating === 0 && styles.disabledButton]} 
+          style={[
+            styles.submitButton, 
+            (rating === 0 || isLoading) && styles.disabledButton
+          ]} 
           onPress={handleSubmit}
-          disabled={rating === 0}
+          disabled={rating === 0 || isLoading}
         >
-          <Text style={styles.buttonText}>Submit Feedback</Text>
+          <Text style={styles.buttonText}>
+            {isLoading ? "Submitting..." : "Submit Feedback"}
+          </Text>
         </TouchableOpacity>
         
         {/* Skip Button - Now Centered */}
         <TouchableOpacity 
           style={styles.skipButton}
           onPress={handleFinish}
+          disabled={isLoading}
         >
           <Text style={styles.skipButtonText}>Skip</Text>
         </TouchableOpacity>
@@ -203,16 +326,40 @@ export default function FeedbackScreen() {
       
       {/* Bottom Navigation Bar */}
       <View style={styles.bottomNavbar}>
-        <TouchableOpacity style={styles.navbarItem}>
+        <TouchableOpacity 
+          style={styles.navbarItem}
+          onPress={() => {
+            console.log('Home navigation button pressed');
+            // Add navigation logic here
+          }}
+        >
           <Ionicons name="home" size={24} color="#000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navbarItem}>
+        <TouchableOpacity 
+          style={styles.navbarItem}
+          onPress={() => {
+            console.log('Time navigation button pressed');
+            // Add navigation logic here
+          }}
+        >
           <Ionicons name="time" size={24} color="#666" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navbarItem}>
+        <TouchableOpacity 
+          style={styles.navbarItem}
+          onPress={() => {
+            console.log('Heart navigation button pressed');
+            // Add navigation logic here
+          }}
+        >
           <Ionicons name="heart" size={24} color="#666" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navbarItem}>
+        <TouchableOpacity 
+          style={styles.navbarItem}
+          onPress={() => {
+            console.log('Profile navigation button pressed');
+            // Add navigation logic here
+          }}
+        >
           <Ionicons name="person" size={24} color="#666" />
         </TouchableOpacity>
       </View>

@@ -25,6 +25,10 @@ def create_api_blueprint():
         from .matching.routes import matching_bp
         api_bp.register_blueprint(matching_bp, url_prefix='/matching')
 
+        # Register sessions routes
+        from .sessions.routes import sessions_bp
+        api_bp.register_blueprint(sessions_bp, url_prefix='/sessions')
+
         return api_bp
 
     except Exception as e:

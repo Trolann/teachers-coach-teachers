@@ -9,6 +9,8 @@ import MenteeCard from '@/components/MenteeCard';
 export default function MenteeLandingScreen() {
   const router = useRouter();
   const [matchedMentor, setMatchedMentor] = useState(null);
+  const finalSessionId = "123455";
+
 
   const [infoVisible, setInfoVisible] = useState(null);
 
@@ -181,10 +183,14 @@ export default function MenteeLandingScreen() {
                 const selectedMentor = matchedMentor;
                 setMatchedMentor(null); // close modal first
                 router.push({
-                  pathname: '/stream-video',
+                  // pathname: '/stream-video',
+                  // params: {
+                  //   mentor: JSON.stringify(selectedMentor),
+                  // },
+                  pathname: '/feedback',
                   params: {
-                    mentor: JSON.stringify(selectedMentor),
-                  },
+                    sessionId: finalSessionId
+                  }
                 });
               }}
             >
