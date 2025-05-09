@@ -1,6 +1,6 @@
 // app/auth/login.tsx
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert, SafeAreaView } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert, SafeAreaView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -20,14 +20,13 @@ export default function LoginScreen() {
       if (success) {
         const role = await TokenManager.getInstance().getUserRole();
         console.log('User role:', role);
-        // if (role === 'mentor') {
-        //   router.replace('/mentor-landing');
-        // } else if (role === 'mentee') {
-        //   router.replace('/mentee-matching');
-        // } else {
-        //   router.replace('/pre-application');
-        // }
-        router.replace('/pre-application');
+        if (role === 'mentor') {
+          router.replace('/mentor-landing');
+        } else if (role === 'mentee') {
+          router.replace('/mentee-matching');
+        } else {
+          router.replace('/pre-application');
+        }
       } else {
         Alert.alert('invalid credentials');
       }
@@ -45,7 +44,13 @@ export default function LoginScreen() {
         <View style={styles.card}>
           {/* Logo/Icon placeholder */}
           <View style={styles.logoContainer}>
-            <View style={styles.logo} />
+            <View style={styles.logo}>
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            </View>
           </View>
 
           {/* Welcome Text */}
@@ -136,11 +141,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderWidth: 2,
-    borderColor: '#000',
     borderRadius: 16,
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 180,
+    height: 180,
   },
   welcomeContainer: {
     alignItems: 'center',

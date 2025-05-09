@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -47,10 +47,14 @@ export default function SignupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.card}>
+        <ScrollView style={styles.card}>
           {/* Logo/Icon placeholder */}
           <View style={styles.logoContainer}>
-            <View style={styles.logo} />
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Welcome Text */}
@@ -128,7 +132,7 @@ export default function SignupScreen() {
           >
             <ThemedText style={styles.loginButtonText}>Log In</ThemedText>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
   );
@@ -147,8 +151,6 @@ const styles = StyleSheet.create({
     margin: 20,
     borderRadius: 30,
     padding: 20,
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
   },
   logoContainer: {
@@ -184,7 +186,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#666',
   },
-
+  logoImage: {
+    width: 180,
+    height: 180,
+  },
   inputContainer: {
     gap: 15,
     marginBottom: 20,
