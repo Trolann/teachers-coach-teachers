@@ -83,11 +83,18 @@ def submit_application():
     if user_type == "ADMIN":
         # TODO: require_auth should add an is_admin header
         return jsonify({'error': 'Unable to set profile applications for ADMIN users'}), 400
+    # if not found:
+    #     logger.warn(f"Invalid user_type {user_type}")
+    #     logger.debug(f'User type: {user.user_type} {type(user.user_type)}')
+    #     logger.debug(f'user_type == "ADMIN" {user_type == "ADMIN"}')
+    #     return jsonify({'error': 'Invalid user type'}), 400
     if not found:
-        logger.warn(f"Invalid user_type {user_type}")
-        logger.debug(f'User type: {user.user_type} {type(user.user_type)}')
-        logger.debug(f'user_type == "ADMIN" {user_type == "ADMIN"}')
-        return jsonify({'error': 'Invalid user type'}), 400
+        logger.warn(f"Invalid user_type received: {user_type} (type: {type(user_type)}). "
+                   f"Expected one of: {[ut.name for ut in UserType if ut != UserType.ADMIN]}")
+        logger.debug(f"Request headers: {dict(request.headers)}")
+        logger.debug(f"Raw profile_data received: {profile_data}")
+        return jsonify({'error': f'Invalid user type: {user_type}'}), 400
+
 
 # sharanya uncomment plz
     # # check if there's already a profile, error out if there is

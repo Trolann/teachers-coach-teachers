@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import sendAlert from '../utils/alerts';
 import TokenManager from './TokenManager';
+import { Image } from 'react-native';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -48,10 +49,13 @@ export default function SignupScreen() {
         style={styles.keyboardView}
       >
         <View style={styles.card}>
-          {/* Logo/Icon placeholder */}
-          <View style={styles.logoContainer}>
-            <View style={styles.logo} />
-          </View>
+        <View style={styles.logoContainer}>
+        <Image
+          source={require('@/assets/images/logo.png')}
+          style={styles.logo}
+        />
+      </View>
+
 
           {/* Welcome Text */}
           <View style={styles.welcomeContainer}>
