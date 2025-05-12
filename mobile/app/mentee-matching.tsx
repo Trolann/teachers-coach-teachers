@@ -5,12 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Href, Link, useRouter } from 'expo-router';
 import Header from '@/components/Header';
 import MenteeCard from '@/components/MenteeCard';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function MenteeLandingScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [matchedMentor, setMatchedMentor] = useState(null);
-  const finalSessionId = "123455";
-
 
   const [infoVisible, setInfoVisible] = useState(null);
 
@@ -183,14 +183,14 @@ export default function MenteeLandingScreen() {
                 const selectedMentor = matchedMentor;
                 setMatchedMentor(null); // close modal first
                 router.push({
-                  // pathname: '/stream-video',
-                  // params: {
-                  //   mentor: JSON.stringify(selectedMentor),
-                  // },
-                  pathname: '/feedback',
+                  pathname: '/stream-video',
                   params: {
-                    sessionId: finalSessionId
-                  }
+                    mentor: JSON.stringify(selectedMentor),
+                  },
+                  // pathname: '/feedback',
+                  // params: {
+                  //   sessionId: finalSessionId
+                  // }
                 });
               }}
             >

@@ -313,7 +313,7 @@ export default function FeedbackScreen() {
             {isLoading ? "Submitting..." : "Submit Feedback"}
           </Text>
         </TouchableOpacity>
-        
+       
         {/* Skip Button - Now Centered */}
         <TouchableOpacity 
           style={styles.skipButton}
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   submitButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#00c851',
     paddingVertical: 14,
     paddingHorizontal: 30,
     borderRadius: 25,
