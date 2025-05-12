@@ -6,6 +6,146 @@ import { Platform } from 'react-native';
 import { MentorProfile, MenteeProfile } from '../utils/types';
 
 /**
+ * Updates to BackendManager class to support mentor and mentee application submissions
+ */
+
+// Add these types to your existing types file or within BackendManager.ts
+export interface MentorApplicationData {
+    // Personal Information
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    
+    // Geographic Information
+    country: string;
+    stateProvince: string;
+    county: string;
+    schoolDistrict: string;
+    timeZone: string;
+    
+    // Teaching Experience
+    primarySubject: string;
+    educationCertifications: string;
+    specializedPrograms: string;
+    schoolType: string;
+    currentGradeLevels: string;
+    previousGradeLevels: string;
+    expertiseGradeLevels: string;
+    
+    // Years of Experience
+    yearsInEducation: string;
+    yearsInCurrentRole: string;
+    yearsInCurrentGradeLevel: string;
+    yearsInCurrentSubject: string;
+    
+    // Student Demographics
+    racialDemographic: string;
+    secondaryDemographic: string;
+    socioeconomicDemographic: string;
+    ellPercentage: string;
+    
+    // Professional Qualifications
+    teachingCertifications: string;
+    advancedDegrees: string;
+    pdLeadershipExperience: string;
+    pedagogicalExpertise: string;
+    
+    // Mentorship Experience
+    previousMentoringExperience: string;
+    numTeachersMentored: string;
+    mentoringStyle: string;
+    maxMentees: string;
+    
+    // Specializations
+    classroomManagement: boolean;
+    technologyIntegration: boolean;
+    assessmentDataAnalysis: boolean;
+    curriculumDevelopment: boolean;
+    studentEngagement: boolean;
+    differentiatedInstruction: boolean;
+    crisisResponse: boolean;
+    specialEducation: boolean;
+    additionalSpecializations: string;
+    
+    // Availability
+    availabilityFrequency: string;
+    preferredContactMethod: string;
+    
+    // Mentorship Philosophy
+    mentoringPhilosophy: string;
+    successMetrics: string;
+}
+
+export interface MenteeApplicationData {
+    // Personal Information
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    
+    // Geographic Information
+    country: string;
+    stateProvince: string;
+    county: string;
+    schoolDistrict: string;
+    timeZone: string;
+    
+    // Teaching Experience
+    primarySubject: string;
+    educationCertifications: string;
+    specializedPrograms: string;
+    schoolType: string;
+    currentGradeLevels: string;
+    previousGradeLevels: string;
+    
+    // Years of Experience
+    yearsInEducation: string;
+    yearsInCurrentRole: string;
+    yearsInCurrentGradeLevel: string;
+    yearsInCurrentSubject: string;
+    
+    // Student Demographics
+    racialDemographic: string;
+    secondaryDemographic: string;
+    socioeconomicDemographic: string;
+    ellPercentage: string;
+    
+    // Community Context
+    schoolSocioeconomicDesignation: string;
+    freeReducedLunchPercentage: string;
+    primaryLanguages: string;
+    majorIndustries: string;
+    studentBarriers: string;
+    householdIncomeRange: string;
+    housingInsecurityPercentage: string;
+    technologyAccess: string;
+    
+    // Mentorship Goals
+    supportAreas: string;
+    immediateChallenges: string;
+    mentorshipGoals: string;
+    improvementTimeline: string;
+    sessionFrequency: string;
+    desiredMentorCharacteristics: string;
+    
+    // Professional Goals
+    shortTermGoals: string;
+    longTermGoals: string;
+    professionalGrowthAreas: string;
+    skillsToDevelop: string;
+    
+    // Current Resources
+    currentSupportSystems: string;
+    previousMentorship: string;
+    professionalDevelopmentAccess: string;
+    districtConstraints: string;
+
+    // Pre-Matching Preferences
+    selectedCategories: string[];
+    selectedIssues: string[];
+    goal: string;
+}
+
+/**
  * BackendManager handles all API calls to the backend,
  * automatically managing authentication tokens and headers
  * 
@@ -92,16 +232,23 @@ class BackendManager {
      * Creates headers with authentication token
      */
     private async getAuthHeaders(): Promise<Headers> {
+        console.log(`[getAuthHeaders] Getting authentication tokens`);
         const tokens = await this.tokenManager.getTokens();
+        console.log(`[getAuthHeaders] Tokens received:`, tokens ? 'Valid tokens object' : 'No tokens');
+
         if (!tokens) {
+            console.error('[getAuthHeaders] No authentication tokens found');
             throw new Error('No authentication tokens found');
         }
 
+        console.log(`[getAuthHeaders] Creating headers with tokens`);
         const headers = new Headers();
         headers.append('Authorization', `Bearer ${tokens.accessToken}`);
         headers.append('X-Refresh-Token', tokens.refreshToken);
         headers.append('X-Id-Token', tokens.idToken);
         headers.append('X-Token-Expires', tokens.expiresIn.toString());
+        
+        console.log(`[getAuthHeaders] Headers created successfully`);
         return headers;
     }
 
@@ -113,19 +260,59 @@ class BackendManager {
      * @param body - The request body (optional)
      */
     public async sendRequest(url: string, method: string, body?: any): Promise<any> {
+        console.log(`[sendRequest] Starting request: ${method} ${url}`);
         try {
+            console.log(`[sendRequest] Getting auth headers`);
             const headers = await this.getAuthHeaders();
+            console.log(`[sendRequest] Headers retrieved successfully`);
+
             const options: RequestInit = {
                 method: method,
                 headers: headers,
             };
+
+            console.log(`[sendRequest] Request options initialized:`, {
+                method: options.method,
+                headers: Array.from(headers.entries())
+            });
             
             if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+                console.log(`[sendRequest] Adding Content-Type and body to request`);
                 headers.append('Content-Type', 'application/json');
                 options.body = JSON.stringify(body);
+                console.log(`[sendRequest] Body size:`, options.body.length, 'characters');
+                
+                // log first 100 chars of body
+                console.log(`[sendRequest] Body preview:`, options.body.substring(0, 100) + '...');
+
             }
+            const fullUrl = `${API_URL}${url}`;
+            console.log(`[sendRequest] Sending fetch request to: ${fullUrl}`);
+            console.time('[sendRequest] Request time');
             
             const response = await fetch(`${API_URL}${url}`, options);
+            console.timeEnd('[sendRequest] Request time');
+
+
+            console.log(`[sendRequest] Response received:`, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Array.from(response.headers.entries()),
+                ok: response.ok
+            });
+
+            // clone response for logging
+            if (!response.ok) {
+                console.error(`[sendRequest] Error response: ${response.status} ${response.statusText}`);
+                try {
+                    // Clone the response so we can read it twice
+                    const responseClone = response.clone();
+                    const errorText = await responseClone.text();
+                    console.error(`[sendRequest] Error response body:`, errorText);
+                } catch (textError) {
+                    console.error(`[sendRequest] Couldn't read error response body:`, textError);
+                }
+            }
 
             return response;
         } catch (error) {
@@ -148,6 +335,8 @@ class BackendManager {
             const data = await response.json();
             return data.message;
         } catch (error) {
+            console.error('[sendRequest] Backend error:', error);
+            console.error('[sendRequest] Error stack:', error.stack);
             console.error('Backend error:', error);
             throw error;
         }
@@ -216,37 +405,209 @@ class BackendManager {
           console.error('Error fetching profile picture:', error);
           throw error;
         }
-    }
-      
-    /**
-     * Submit a user application
-     * 
-     * @param applicationData - The application data to submit
-     * @returns The response from the API
-     */
-    public async submitApplication(applicationData: {
-        user_type: string;
-        name: string;
-        skills: string[];
-        experience: string;
-        availability: string;
-        bio: string;
-    }): Promise<any> {
-        try {
-            const response = await this.sendRequest('/api/users/submit_application', 'POST', applicationData);
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to submit application');
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.error('Error submitting application:', error);
-            throw error;
-        }
-    }
+      }
 
+   /**
+ * Submit any type of application (mentor or mentee)
+ * 
+ * @param applicationType - The type of application ('mentor' or 'mentee')
+ * @param applicationData - The complete application data
+ * @returns The response from the API
+ */
+public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', applicationData: MentorApplicationData | MenteeApplicationData): Promise<any> {
+    try {
+      let apiData: any = {
+        user_type: applicationType
+      };
+      
+      try {
+        // Try to process as mentor data first
+        if (applicationType === 'MENTOR') {
+          const mentorData = applicationData as MentorApplicationData;
+          
+          // Extract specializations as an array of strings
+          const specializations = [];
+          if (mentorData.classroomManagement) specializations.push('Classroom Management Strategies');
+          if (mentorData.technologyIntegration) specializations.push('Technology Integration');
+          if (mentorData.assessmentDataAnalysis) specializations.push('Assessment and Data Analysis');
+          if (mentorData.curriculumDevelopment) specializations.push('Curriculum Development');
+          if (mentorData.studentEngagement) specializations.push('Student Engagement Techniques');
+          if (mentorData.differentiatedInstruction) specializations.push('Differentiated Instruction');
+          if (mentorData.crisisResponse) specializations.push('Crisis Response/Trauma-Informed Teaching');
+          if (mentorData.specialEducation) specializations.push('Special Education Integration');
+          
+          // Add any additional specializations the user entered
+          if (mentorData.additionalSpecializations) {
+            const additionalItems = mentorData.additionalSpecializations
+              .split(',')
+              .map(item => item.trim())
+              .filter(item => item.length > 0);
+            specializations.push(...additionalItems);
+          }
+          
+          // Add all fields directly to apiData without nesting
+          apiData = {
+            ...apiData,
+            // Personal Information
+            firstName: mentorData.firstName,
+            lastName: mentorData.lastName,
+            phoneNumber: mentorData.phoneNumber,
+            
+            // Geographic Information
+            country: mentorData.country,
+            state_province: mentorData.stateProvince,
+            county: mentorData.county,
+            school_district: mentorData.schoolDistrict,
+            time_zone: mentorData.timeZone,
+            
+            // Teaching Experience
+            primary_subject: mentorData.primarySubject,
+            education_certifications: mentorData.educationCertifications,
+            specialized_programs: mentorData.specializedPrograms,
+            school_type: mentorData.schoolType,
+            current_grade_levels: mentorData.currentGradeLevels,
+            previous_grade_levels: mentorData.previousGradeLevels,
+            expertise_grade_levels: mentorData.expertiseGradeLevels,
+            
+            // Experience Years (convert to numbers)
+            education_years: parseInt(mentorData.yearsInEducation) || 0,
+            current_role_years: parseInt(mentorData.yearsInCurrentRole) || 0,
+            current_grade_level_years: parseInt(mentorData.yearsInCurrentGradeLevel) || 0,
+            current_subject_years: parseInt(mentorData.yearsInCurrentSubject) || 0,
+            
+            // Student Demographics
+            racial_demographic: mentorData.racialDemographic,
+            secondary_demographic: mentorData.secondaryDemographic,
+            socioeconomic_demographic: mentorData.socioeconomicDemographic,
+            ell_percentage: mentorData.ellPercentage,
+            
+            // Qualifications
+            teaching_certifications: mentorData.teachingCertifications,
+            advanced_degrees: mentorData.advancedDegrees,
+            pd_leadership_experience: mentorData.pdLeadershipExperience,
+            pedagogical_expertise: mentorData.pedagogicalExpertise,
+            
+            // Mentorship Experience
+            previous_mentoring_experience: mentorData.previousMentoringExperience,
+            teachers_mentored: parseInt(mentorData.numTeachersMentored) || 0,
+            mentoring_style: mentorData.mentoringStyle,
+            max_mentees: parseInt(mentorData.maxMentees) || 1,
+            
+            // Specializations
+            specializations: specializations,
+            
+            // Availability
+            availability_frequency: mentorData.availabilityFrequency,
+            preferred_contact_method: mentorData.preferredContactMethod,
+            
+            // Philosophy
+            mentoring_philosophy: mentorData.mentoringPhilosophy,
+            success_metrics: mentorData.successMetrics
+          };
+        } else {
+          // Process as mentee data
+          const menteeData = applicationData as MenteeApplicationData;
+          apiData = {
+            ...apiData,
+            // Personal Information
+            firstName: menteeData.firstName,
+            lastName: menteeData.lastName,
+            phoneNumber: menteeData.phoneNumber,
+            
+            // Geographic Information
+            country: menteeData.country,
+            state_province: menteeData.stateProvince,
+            county: menteeData.county,
+            school_district: menteeData.schoolDistrict,
+            time_zone: menteeData.timeZone,
+            
+            // Teaching Experience
+            primary_subject: menteeData.primarySubject,
+            education_certifications: menteeData.educationCertifications,
+            specialized_programs: menteeData.specializedPrograms,
+            school_type: menteeData.schoolType,
+            current_grade_levels: menteeData.currentGradeLevels,
+            previous_grade_levels: menteeData.previousGradeLevels,
+            
+            // Experience Years (convert to numbers)
+            education_years: parseInt(menteeData.yearsInEducation) || 0,
+            current_role_years: parseInt(menteeData.yearsInCurrentRole) || 0,
+            current_grade_level_years: parseInt(menteeData.yearsInCurrentGradeLevel) || 0,
+            current_subject_years: parseInt(menteeData.yearsInCurrentSubject) || 0,
+            
+            // Student Demographics
+            racial_demographic: menteeData.racialDemographic,
+            secondary_demographic: menteeData.secondaryDemographic,
+            socioeconomic_demographic: menteeData.socioeconomicDemographic,
+            ell_percentage: menteeData.ellPercentage,
+            
+            // Community Context
+            socioeconomic_designation: menteeData.schoolSocioeconomicDesignation,
+            free_reduced_lunch: menteeData.freeReducedLunchPercentage,
+            primary_languages: menteeData.primaryLanguages,
+            major_industries: menteeData.majorIndustries,
+            student_barriers: menteeData.studentBarriers,
+            household_income_range: menteeData.householdIncomeRange,
+            housing_insecurity: menteeData.housingInsecurityPercentage,
+            technology_access: menteeData.technologyAccess,
+            
+            // Mentorship Goals
+            support_areas: menteeData.supportAreas,
+            immediate_challenges: menteeData.immediateChallenges,
+            mentorship_goals: menteeData.mentorshipGoals,
+            improvement_timeline: menteeData.improvementTimeline,
+            session_frequency: menteeData.sessionFrequency,
+            desired_mentor_characteristics: menteeData.desiredMentorCharacteristics,
+            
+            // Professional Goals
+            short_term_goals: menteeData.shortTermGoals,
+            long_term_goals: menteeData.longTermGoals,
+            professional_growth_areas: menteeData.professionalGrowthAreas,
+            skills_to_develop: menteeData.skillsToDevelop,
+            
+            // Current Resources
+            current_support_systems: menteeData.currentSupportSystems,
+            previous_mentorship: menteeData.previousMentorship,
+            professional_development_access: menteeData.professionalDevelopmentAccess,
+            district_constraints: menteeData.districtConstraints
+          };
+        }
+      } catch (formattingError) {
+        console.error(`Error formatting ${applicationType} data:`, formattingError);
+        throw new Error(`Failed to format ${applicationType} application data: ${formattingError.message}`);
+      }
+  
+      // Use unified endpoint for both application types
+      const endpoint = '/api/users/submit_application';
+      console.log(`Submitting ${applicationType} application to ${endpoint}`);
+
+      console.log('Application data being sent:', JSON.stringify(apiData, null, 2));
+      
+      // Send the request
+      console.log(`[submitApplication] Calling sendRequest with endpoint: ${endpoint}`);
+      const response = await this.sendRequest(endpoint, 'POST', apiData);
+      console.log(`[submitApplication] Response received from sendRequest:`, response);
+      console.log(`[submitApplication] Response status:`, response.status, response.statusText);
+
+      // Check for errors
+      if (!response.ok) {
+        let errorMessage = 'Failed to submit application';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      // Return the successful response
+      return await response.json();
+    } catch (error) {
+      console.error(`Error submitting ${applicationType} application:`, error);
+      throw error;
+    }
+  }
     /**
      * Update a user application
      * 
