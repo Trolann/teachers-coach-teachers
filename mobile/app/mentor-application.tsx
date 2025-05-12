@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput, Platform } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Alert, ScrollView, TextInput, Platform, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -7,6 +8,8 @@ import BackendManager from './auth/BackendManager';
 
 export default function MentorApplicationScreen() {
   const router = useRouter();
+  const [selectedImage, setSelectedImage] = useState(null);
+  
   const [formData, setFormData] = useState({
     // Personal Information
     firstName: '',
@@ -75,6 +78,24 @@ export default function MentorApplicationScreen() {
     successMetrics: '',
   });
 
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission denied", "Permission to access your media is required.");
+      return;
+    }
+  
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 1,
+    });
+  
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      setSelectedImage(asset);
+    }
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -103,29 +124,34 @@ export default function MentorApplicationScreen() {
     if (!validateForm()) return;
 
     try {
-    // Verify BackendManager exists and is initialized
-    const backendManager = BackendManager.getInstance();
-    console.log('BackendManager instance:', backendManager);
-    
-    if (!backendManager || typeof backendManager.submitApplication !== 'function') {
-      console.error('BackendManager is not properly initialized or missing submitApplication method');
-      Alert.alert("Error", "Backend service is not available. Please try again later.");
-      return;
-    }
-    
-    // Log the form data being submitted
-    console.log('Submitting form data:', formData);
-    
-    // Call the unified submitApplication method with the form data
-    await backendManager.submitApplication('MENTOR', formData);
+      // Verify BackendManager exists and is initialized
+      const backendManager = BackendManager.getInstance();
+      console.log('BackendManager instance:', backendManager);
 
-    console.log('Mentor profile stored successfully');
-    
-    Alert.alert(
-      "Success",
-      "Your mentor profile has been saved successfully!",
-      [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
-    );
+      // Upload image if selected
+      if (selectedImage) {
+        await backendManager.submitPicture(selectedImage.uri);
+      }
+
+      if (!backendManager || typeof backendManager.submitApplication !== 'function') {
+        console.error('BackendManager is not properly initialized or missing submitApplication method');
+        Alert.alert("Error", "Backend service is not available. Please try again later.");
+        return;
+      }
+      
+      // Log the form data being submitted
+      console.log('Submitting form data:', formData);
+      
+      // Call the unified submitApplication method with the form data
+      await backendManager.submitApplication('MENTOR', formData);
+
+      console.log('Mentor profile stored successfully');
+      
+      Alert.alert(
+        "Success",
+        "Your mentor profile has been saved successfully!",
+        [{ text: "Continue", onPress: () => router.replace('/(tabs)') }]
+      );
     } catch (error) {
       console.error('Profile submission failed:', error);
       Alert.alert("Error", error.message || "Failed to save your profile. Please try again.");
@@ -175,7 +201,7 @@ export default function MentorApplicationScreen() {
         {/* Header */}
         <View style={styles.headerContainer}>
           <ThemedText style={styles.headerText}>
-          🍎 Become a Mentor
+          🍎 Mentor Application
           </ThemedText>
           <ThemedText style={styles.subHeaderText}>
             Share your expertise and guide the next generation of educators.
@@ -613,6 +639,22 @@ export default function MentorApplicationScreen() {
             />
           </View>
         </View>
+
+        {/* Image Picker */}
+        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <TouchableOpacity onPress={pickImage}>
+              {selectedImage ? (
+                <Image
+                  source={{ uri: selectedImage.uri }}
+                  style={{ width: 100, height: 100, borderRadius: 50 }}
+                />
+              ) : (
+                <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' }}>
+                  <ThemedText>Pick Image</ThemedText>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
 
         {/* Submit Button */}
         <TouchableOpacity 

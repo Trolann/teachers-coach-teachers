@@ -49,7 +49,9 @@ export default function MenteeLandingScreen() {
           name: `${mentor.firstName} ${mentor.lastName}`,
           subject: mentor.primarySubject,
           location: `${mentor.county}, ${mentor.state_province}, ${mentor.country}`,
-          image: { uri: mentor.picture }
+          image: mentor.picture
+          ? { uri: mentor.picture }
+          : require('../../assets/images/user-without-picture.png')
         }));
 
         setMentorList(formatted);
