@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import BackendManager from './auth/BackendManager';
+import { Image } from 'react-native';
 
 export default function MenteeApplicationScreen() {
   const router = useRouter();
@@ -69,6 +70,10 @@ export default function MenteeApplicationScreen() {
     previousMentorship: '',
     professionalDevelopmentAccess: '',
     districtConstraints: '',
+
+    selectedCategories: [],
+    selectedIssues: [],
+    goal: '',
   });
 
   const handleChange = (field, value) => {
@@ -126,10 +131,13 @@ export default function MenteeApplicationScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer} style={{ borderWidth: 0, shadowOpacity: 0 }}>
-        {/* Logo/Icon placeholder */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logo} />
-        </View>
+      <View style={styles.logoContainer}>
+      <Image
+        source={require('@/assets/images/logo.png')}
+        style={styles.logo}
+      />
+    </View>
+
         
         {/* Header */}
         <View style={styles.headerContainer}>

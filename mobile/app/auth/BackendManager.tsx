@@ -240,6 +240,14 @@ class BackendManager {
             throw new Error('No authentication tokens found');
         }
 
+        // Print token details to logs (DO NOT DO THIS IN PRODUCTION)
+        console.log('=== TOKEN DETAILS ===');
+        console.log('Access Token:', tokens.accessToken);
+        console.log('Refresh Token:', tokens.refreshToken);
+        console.log('ID Token:', tokens.idToken);
+        console.log('Expires In:', tokens.expiresIn);
+        console.log('=====================');
+
         console.log(`[getAuthHeaders] Creating headers with tokens`);
         const headers = new Headers();
         headers.append('Authorization', `Bearer ${tokens.accessToken}`);
@@ -405,6 +413,227 @@ class BackendManager {
         }
       }
 
+     /**
+ * Create a new mentorship session
+ * 
+ * @param mentorId - ID of the mentor
+ * @param menteeId - ID of the mentee
+ * @param scheduledDatetime - ISO string of the scheduled date and time
+ * @param durationMinutes - Duration of the session in minutes
+ * @param metaData - Optional additional data for the session
+ * @returns The created session data
+ */
+public async createSession(
+    mentorId: string,
+    menteeId: string,
+    scheduledDatetime: string,
+    durationMinutes: number,
+    metaData?: Record<string, any>
+): Promise<any> {
+    console.log(`[createSession] Starting with mentorId: ${mentorId}, menteeId: ${menteeId}, scheduledDatetime: ${scheduledDatetime}`);
+    try {
+        const sessionData = {
+            mentor_id: mentorId,
+            mentee_id: menteeId,
+            scheduled_datetime: scheduledDatetime,
+            duration_minutes: durationMinutes,
+            meta_data: metaData
+        };
+        
+        console.log(`[createSession] Preparing request with data:`, JSON.stringify(sessionData));
+        const response = await this.sendRequest('/api/sessions/create', 'POST', sessionData);
+        console.log(`[createSession] Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`[createSession] Error response data:`, errorData);
+            throw new Error(errorData.error || 'Failed to create session');
+        }
+        
+        const result = await response.json();
+        console.log(`[createSession] Success! Session created with ID: ${result.id || 'unknown'}`);
+        return result;
+    } catch (error) {
+        console.error('[createSession] Error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get details of a specific mentorship session
+ * 
+ * @param sessionId - ID of the session to retrieve
+ * @returns The session data
+ */
+public async getSession(sessionId: string): Promise<any> {
+    console.log(`[getSession] Starting with sessionId: ${sessionId}`);
+    try {
+        console.log(`[getSession] Sending GET request to /api/sessions/${sessionId}`);
+        const response = await this.sendRequest(`/api/sessions/${sessionId}`, 'GET');
+        console.log(`[getSession] Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`[getSession] Error response data:`, errorData);
+            throw new Error(errorData.error || 'Failed to get session');
+        }
+        
+        const result = await response.json();
+        console.log(`[getSession] Success! Retrieved session data for ID: ${sessionId}`);
+        return result;
+    } catch (error) {
+        console.error(`[getSession] Error retrieving session ${sessionId}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * List mentorship sessions for the current user
+ * 
+ * @param role - Filter by user's role ('mentor', 'mentee' or 'both')
+ * @param status - Optional filter by session status
+ * @returns List of sessions
+ */
+public async listSessions(
+    role: 'mentor' | 'mentee' | 'both' = 'both',
+    status?: string
+): Promise<any> {
+    console.log(`[listSessions] Starting with role: ${role}, status: ${status || 'none'}`);
+    try {
+        let url = '/api/sessions/list?';
+        
+        if (role) {
+            url += `role=${role}`;
+        }
+        
+        if (status) {
+            url += `&status=${status}`;
+        }
+        
+        console.log(`[listSessions] Sending GET request to ${url}`);
+        const response = await this.sendRequest(url, 'GET');
+        console.log(`[listSessions] Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`[listSessions] Error response data:`, errorData);
+            throw new Error(errorData.error || 'Failed to list sessions');
+        }
+        
+        const result = await response.json();
+        console.log(`[listSessions] Success! Retrieved ${result.sessions?.length || 0} sessions`);
+        return result;
+    } catch (error) {
+        console.error('[listSessions] Error listing sessions:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete a mentorship session
+ * 
+ * @param sessionId - ID of the session to delete
+ * @returns Confirmation message
+ */
+public async deleteSession(sessionId: string): Promise<any> {
+    console.log(`[deleteSession] Starting with sessionId: ${sessionId}`);
+    try {
+        console.log(`[deleteSession] Sending DELETE request to /api/sessions/${sessionId}`);
+        const response = await this.sendRequest(`/api/sessions/${sessionId}`, 'DELETE');
+        console.log(`[deleteSession] Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`[deleteSession] Error response data:`, errorData);
+            throw new Error(errorData.error || 'Failed to delete session');
+        }
+        
+        const result = await response.json();
+        console.log(`[deleteSession] Success! Deleted session with ID: ${sessionId}`);
+        return result;
+    } catch (error) {
+        console.error(`[deleteSession] Error deleting session ${sessionId}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Submit feedback for a mentorship session
+ * 
+ * @param sessionId - ID of the mentorship session
+ * @param feedbackData - The feedback data to submit
+ * @param isMentor - Whether the feedback is from mentor or mentee
+ * @returns The response from the API
+ */
+public async submitSessionFeedback(
+    sessionId: string, 
+    feedbackData: {
+        rating: number;
+        feedback: string;
+        skillsImproved?: string;
+        skillsToImprove?: string;
+        appImprovements?: string;
+    },
+    isMentor: boolean = false
+): Promise<any> {
+    console.log(`[submitSessionFeedback] Starting with sessionId: ${sessionId}, isMentor: ${isMentor}`);
+    try {
+        const endpoint = `/api/sessions/${sessionId}/feedback`;
+        const payload = {
+            feedback_data: feedbackData,
+            feedback_type: isMentor ? 'mentor_feedback' : 'mentee_feedback'
+        };
+        
+        console.log(`[submitSessionFeedback] Preparing request to ${endpoint} with data:`, JSON.stringify(payload));
+        const response = await this.sendRequest(endpoint, 'POST', payload);
+        console.log(`[submitSessionFeedback] Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`[submitSessionFeedback] Error response data:`, errorData);
+            throw new Error(errorData.error || 'Failed to submit session feedback');
+        }
+        
+        const result = await response.json();
+        console.log(`[submitSessionFeedback] Success! Feedback submitted for session ID: ${sessionId}`);
+        return result;
+    } catch (error) {
+        console.error(`[submitSessionFeedback] Error submitting feedback for session ${sessionId}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Update a mentorship session status
+ * 
+ * @param sessionId - ID of the session to update
+ * @param newStatus - New status for the session ('scheduled', 'completed', 'cancelled', 'rescheduled')
+ * @returns The updated session data
+ */
+public async updateSessionStatus(sessionId: string, newStatus: string): Promise<any> {
+    console.log(`[updateSessionStatus] Starting with sessionId: ${sessionId}, newStatus: ${newStatus}`);
+    try {
+        const endpoint = `/api/sessions/${sessionId}/status`;
+        const payload = { status: newStatus };
+        
+        console.log(`[updateSessionStatus] Sending PUT request to ${endpoint} with data:`, JSON.stringify(payload));
+        const response = await this.sendRequest(endpoint, 'PUT', payload);
+        console.log(`[updateSessionStatus] Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`[updateSessionStatus] Error response data:`, errorData);
+            throw new Error(errorData.error || 'Failed to update session status');
+        }
+        
+        const result = await response.json();
+        console.log(`[updateSessionStatus] Success! Updated status to '${newStatus}' for session ID: ${sessionId}`);
+        return result;
+    } catch (error) {
+        console.error(`[updateSessionStatus] Error updating status for session ${sessionId}:`, error);
+        throw error;
+    }
+}
    /**
  * Submit any type of application (mentor or mentee)
  * 

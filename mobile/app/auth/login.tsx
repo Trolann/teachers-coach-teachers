@@ -6,6 +6,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import TokenManager from './TokenManager';
+import { Image } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -34,10 +35,13 @@ export default function LoginScreen() {
         style={styles.keyboardView}
       >
         <View style={styles.card}>
-          {/* Logo/Icon placeholder */}
           <View style={styles.logoContainer}>
-            <View style={styles.logo} />
-          </View>
+        <Image
+          source={require('@/assets/images/logo.png')}
+          style={styles.logo}
+        />
+      </View>
+
 
           {/* Welcome Text */}
           <View style={styles.welcomeContainer}>
