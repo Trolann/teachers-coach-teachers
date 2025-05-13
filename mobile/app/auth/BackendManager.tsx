@@ -881,18 +881,25 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
      */
     public async findMatches(searchCriteria: Record<string, string>, limit?: number): Promise<any> {
         try {
-            let url = '/matching/find_matches';
+            const headers = await this.getAuthHeaders();
+            headers.set('Content-Type', 'application/json');
+
+            let url = `${API_URL}/api/matching/find_matches`;
             if (limit) {
                 url += `?limit=${limit}`;
             }
-            
-            const response = await this.sendRequest(url, 'POST', searchCriteria);
-            
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(searchCriteria),
+            });
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to find matches');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error finding matches:', error);

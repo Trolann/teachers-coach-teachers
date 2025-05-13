@@ -33,16 +33,14 @@ def find_matches():
     """
     try:
         # Get the current user from the token
-        token_info = parse_headers(request.headers)
-        if not token_info or 'access_token' not in token_info:
-            return jsonify({"error": "No valid authentication token provided"}), 401
+        user = get_user_from_token(request.headers)
+        if not user or not hasattr(user, 'cognito_sub'):
+            return jsonify({"error": "Could not retrieve user from token"}), 401
+
+        user_id = user.cognito_sub
+        logger.info(f"Finding matches for user {user_id}")
         
-        # Get user attributes from the token
-        user_info = verifier.get_user_attributes(token_info['access_token'])
-        if not user_info or 'sub' not in user_info:
-            return jsonify({"error": "Could not retrieve user information"}), 401
-        
-        user_id = user_info['user_id']
+        user_id = user.cognito_sub
         logger.info(f"Finding matches for user {user_id}")
         
         # Get the search criteria from the request body

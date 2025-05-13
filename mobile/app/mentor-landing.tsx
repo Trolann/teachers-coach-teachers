@@ -90,7 +90,9 @@ const MentorLandingScreen = () => {
         name: `${mentee.firstName} ${mentee.lastName}`,
         primarySubject: mentee.primarySubject,
         location: `${mentee.county}, ${mentee.state_province}, ${mentee.country}`,
-        image: { uri: mentee.picture }
+        image: mentee.picture
+        ? { uri: mentee.picture }
+        : require('../../assets/images/user-without-picture.png')
       }));
 
       setMentees(formatted);
