@@ -14,6 +14,7 @@ export default function FeedbackScreen() {
   const mentor = mentorString ? JSON.parse(mentorString as string) : null;
   console.log('Mentor data parsed:', mentor ? `${mentor.name} (ID: ${mentor.id})` : 'No mentor data');
   
+  const [sessionIdState, setSessionIdState] = useState(sessionId || null);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [skillsImproved, setSkillsImproved] = useState('');
@@ -41,67 +42,69 @@ export default function FeedbackScreen() {
 
   const handleSubmit = async () => {
     console.log('Submit button pressed');
+    setSubmitted(true);
+
+    // TODO: pass sessionId correct (feedback infromation properly implemented)
+    // if (!sessionId) {
+    //   console.error('Submit failed: Missing sessionId');
+    //   Alert.alert("Error", "Session ID is required to submit feedback.");
+    //   return;
+    // }
     
-    if (!sessionId) {
-      console.error('Submit failed: Missing sessionId');
-      Alert.alert("Error", "Session ID is required to submit feedback.");
-      return;
-    }
+    // if (rating === 0) {
+    //   console.warn('Submit validation: No rating provided');
+    //   Alert.alert("Incomplete Feedback", "Please provide a rating before submitting.");
+    //   return;
+    // }
     
-    if (rating === 0) {
-      console.warn('Submit validation: No rating provided');
-      Alert.alert("Incomplete Feedback", "Please provide a rating before submitting.");
-      return;
-    }
-    
-    console.log('Starting feedback submission process');
-    setIsLoading(true);
-    
-    try {
-      // Prepare feedback data
-      const feedbackData = {
-        rating,
-        feedback,
-        skillsImproved,
-        skillsToImprove,
-        appImprovements
-      };
+    // console.log('Starting feedback submission process');
+    // setIsLoading(true);
+
+    // try {
+    //   // Prepare feedback data
+    //   const feedbackData = {
+    //     rating,
+    //     feedback,
+    //     skillsImproved,
+    //     skillsToImprove,
+    //     appImprovements
+    //   };
       
-      console.log('Feedback data to submit:', feedbackData);
+    //   console.log('Feedback data to submit:', feedbackData);
       
-      // Submit feedback to the backend
-      console.log(`Calling backendManager.submitSessionFeedback for session: ${sessionId}`);
-      const response = await backendManager.submitSessionFeedback(
-        sessionId as string,
-        feedbackData,
-        false // This is mentee feedback
-      );
+    //   // Submit feedback to the backend
+    //   console.log(`Calling backendManager.submitSessionFeedback for session: ${sessionId}`);
+    //   const response = await backendManager.submitSessionFeedback(
+    //     sessionId as string,
+    //     feedbackData,
+    //     false // This is mentee feedback
+    //   );
       
-      console.log('Feedback submission response:', response);
+    //   console.log('Feedback submission response:', response);
       
-      // Update session status to completed
-      console.log(`Updating session status to completed for session: ${sessionId}`);
-      await backendManager.updateSessionStatus(sessionId as string, 'completed');
-      console.log('Session status updated successfully');
+    //   // Update session status to completed
+    //   console.log(`Updating session status to completed for session: ${sessionId}`);
+    //   await backendManager.updateSessionStatus(sessionId as string, 'completed');
+    //   console.log('Session status updated successfully');
       
-      // For the favorites/not interested functionality
-      if (mentor) {
-        console.log('Mentor data available for favorites/not interested:', mentor.id);
-      }
+    //   // For the favorites/not interested functionality
+    //   if (mentor) {
+    //     console.log('Mentor data available for favorites/not interested:', mentor.id);
+    //   }
       
-      console.log('Feedback submission successful, setting submitted state to true');
-      setSubmitted(true);
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      console.error('Error details:', error.message);
-      Alert.alert(
-        "Submission Failed",
-        "There was an error submitting your feedback. Please try again."
-      );
-    } finally {
-      console.log('Feedback submission process completed, setting loading state to false');
-      setIsLoading(false);
-    }
+    //   console.log('Feedback submission successful, setting submitted state to true');
+    //   setSubmitted(true);
+    // } catch (error) {
+    //   console.error('Error submitting feedback:', error);
+    //   console.error('Error details:', error.message);
+    //   Alert.alert(
+    //     "Submission Failed",
+    //     "There was an error submitting your feedback. Please try again."
+    //   );
+    // } finally {
+    //   console.log('Feedback submission process completed, setting loading state to false');
+    //   setIsLoading(false);
+    // }
   };
 
   const handleFinish = () => {

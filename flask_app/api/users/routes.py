@@ -95,12 +95,10 @@ def submit_application():
         logger.debug(f"Raw profile_data received: {profile_data}")
         return jsonify({'error': f'Invalid user type: {user_type}'}), 400
 
-
-# sharanya uncomment plz
-    # # check if there's already a profile, error out if there is
-    # if user.profile or user.application_status != ApplicationStatus.PENDING:
-    #     logger.info(f'User already has a profile or application status is not PENDING')
-    #     return jsonify({'error': 'Application already submitted.'}), 403
+    # check if there's already a profile, error out if there is
+    if user.profile or user.application_status != ApplicationStatus.PENDING:
+        logger.info(f'User already has a profile or application status is not PENDING')
+        return jsonify({'error': 'Application already submitted.'}), 403
 
     user.application_status = ApplicationStatus.PENDING
     if user.user_type == 'MENTEE':
