@@ -92,7 +92,7 @@ const MentorLandingScreen = () => {
         location: `${mentee.county}, ${mentee.state_province}, ${mentee.country}`,
         image: mentee.picture
         ? { uri: mentee.picture }
-        : require('../../assets/images/user-without-picture.png')
+        : require('../assets/images/user-without-picture.png')
       }));
 
       setMentees(formatted);

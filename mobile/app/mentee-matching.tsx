@@ -51,7 +51,7 @@ export default function MenteeLandingScreen() {
           location: `${mentor.county}, ${mentor.state_province}, ${mentor.country}`,
           image: mentor.picture
           ? { uri: mentor.picture }
-          : require('../../assets/images/user-without-picture.png')
+          : require('../assets/images/user-without-picture.png')
         }));
 
         setMentorList(formatted);
