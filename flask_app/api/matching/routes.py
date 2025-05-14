@@ -55,15 +55,20 @@ def find_matches():
                 limit = 10  # Reset to default if out of reasonable range
         except ValueError:
             limit = 10
+
+        logger.error(f'Search criteria: {search_criteria}')
         
         # Find matches using the algorithm
         matches = the_algorithm.get_closest_embeddings(user_id, search_criteria, limit)
+
+        logger.error(f'Found {len(matches)} matches for user {user_id}')
         
         # Format the response
         formatted_matches = []
         for match in matches:
             # Extract only necessary information to return to the client
             # TODO: Add additional data about the mentor (name, profile picture, etc.)
+            logger.error(f'Processing match: {match}')
             formatted_matches.append({
                 "user_id": match["user_id"],
                 "score": match["score"],
