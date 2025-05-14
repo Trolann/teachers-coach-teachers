@@ -69,15 +69,8 @@ def find_matches():
             # Extract only necessary information to return to the client
             # TODO: Add additional data about the mentor (name, profile picture, etc.)
             logger.error(f'Processing match: {match}')
-            formatted_matches.append({
-                "user_id": match["user_id"],
-                "score": match["score"],
-                "match_strength": len(matches) - formatted_matches.index({
-                    "user_id": match["user_id"],
-                    "score": match["score"]
-                }) if formatted_matches else len(matches),
-                "matched_on": [e.embedding_type for e in match["embeddings"]]
-            })
+            # Just return user_ids in a list
+            formatted_matches.append({"User_id": match["user_id"]})
         
         # Save mentor IDs for this mentee
         mentee_to_mentor_matches[user_id] = [match["user_id"] for match in formatted_matches]
