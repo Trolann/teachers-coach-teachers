@@ -54,6 +54,9 @@ export default function MenteeLandingScreen() {
           : require('../assets/images/user-without-picture.png')
         }));
 
+        // Debug
+        console.log("Data Variable in mentee-matching: " + formatted);
+
         setMentorList(formatted);
       } catch (error) {
         console.error('Failed to load mentor matches:', error);

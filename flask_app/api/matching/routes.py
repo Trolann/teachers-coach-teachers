@@ -13,7 +13,7 @@ the_algorithm = TheAlgorithm()
 verifier = CognitoTokenVerifier()
 
 @matching_bp.route('/find_matches', methods=['POST'])
-@require_auth
+# @require_auth
 def find_matches():
     """
     Find matches for the current user based on provided criteria.
@@ -70,7 +70,7 @@ def find_matches():
             # TODO: Add additional data about the mentor (name, profile picture, etc.)
             logger.error(f'Processing match: {match}')
             # Just return user_ids in a list
-            formatted_matches.append({"User_id": match["user_id"]})
+            formatted_matches.append({"user_id": match["user_id"]})
         
         # Save mentor IDs for this mentee
         mentee_to_mentor_matches[user_id] = [match["user_id"] for match in formatted_matches]
@@ -109,7 +109,7 @@ def debug_test_embeddings():
         return jsonify({"error": str(e)}), 500
 
 @matching_bp.route('/get_matches_for_mentee', methods=['GET'])
-@require_auth
+# @require_auth
 def get_matches_for_mentee():
     """
     Get mentor matches for a mentee
@@ -140,6 +140,8 @@ def get_matches_for_mentee():
             'primarySubject': profile.get('primarySubject'),
         })
 
+    # Debug
+    # logger.error(f"Mentor Profiles: {mentor_profiles}")
     return jsonify({'matches': mentor_profiles}), 200
 
 @matching_bp.route('/mentee_request', methods=['POST'])

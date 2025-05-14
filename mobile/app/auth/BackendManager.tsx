@@ -395,6 +395,10 @@ class BackendManager {
             headers,
           });
       
+          if (response.status === 404) {
+            return null;
+          }
+
           if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Failed to fetch profile picture');
@@ -403,7 +407,8 @@ class BackendManager {
           return await response.blob();
         } catch (error) {
           console.error('Error fetching profile picture:', error);
-          throw error;
+          return null;
+          // throw error;
         }
       }
 
@@ -994,12 +999,16 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
           }
       
           const data = await response.json();
-        
+
+          // Debug
+          // console.log("Data Variable in Backend Manager: " + data.matches);
+
           // For each mentor, fetch their picture and swipe card information
           const mentors = await Promise.all(
-            data.map(async (mentor: any) => {
+            data.matches.map(async (mentor: any) => {
               const pictureBlob = await this.getPicture(mentor.user_id);
               const pictureUrl = pictureBlob ? URL.createObjectURL(pictureBlob) : '';
+              //const pictureUrl = '';
       
               return {
                 ...mentor,

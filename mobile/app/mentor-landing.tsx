@@ -103,19 +103,33 @@ const MentorLandingScreen = () => {
     } finally {
       setIsLoading(false);
     }
-  };  
+  };
 
-  const Card = ({ name, primarySubject, location, image }) => (
-    <View style={styles.card}>
-      <ImageBackground source={image} style={styles.cardImage} imageStyle={{ borderRadius: 16 }}>
-        <View style={styles.cardOverlay}>
-          <Text style={styles.cardTitle}>{name}</Text>
-          <Text style={styles.cardText}>Primary Subject: {primarySubject}</Text>
-          <Text style={styles.cardText}>Location: {location}</Text>
-        </View>
-      </ImageBackground>
-    </View>
-  );
+  const Card = ({ name, primarySubject, location, image }) => {
+    const isImageProvided =
+      typeof image !== 'object' ||
+      (image.uri == null && image === require('../assets/images/user-without-picture.png')) ||
+      (image.uri && image.uri.includes('user-without-picture.png'));
+  
+    const cardImageStyle = isImageProvided ? styles.cardImageWithout : styles.cardImageWith;
+  
+    return (
+      <View style={styles.card}>
+        <ImageBackground
+          source={image}
+          style={cardImageStyle}
+          imageStyle={{ borderRadius: 16 }}
+        >
+          <View style={styles.cardOverlay}>
+            <Text style={styles.cardTitle}>{name}</Text>
+            <Text style={styles.cardText}>Primary Subject: {primarySubject}</Text>
+            <Text style={styles.cardText}>Location: {location}</Text>
+          </View>
+        </ImageBackground>
+      </View>
+    );
+  };
+  
 
   const handleAccept = () => {
     if (swiperRef.current) {
@@ -318,10 +332,18 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginLeft: -40,
   },
-  cardImage: {
+  cardImageWith: {
     width: '100%',
     height: '100%',
     justifyContent: 'flex-end',
+    padding: 16,
+  },
+  cardImageWithout: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
   },
   cardOverlay: {
     backgroundColor: 'rgba(0, 0, 0, 0.6)',

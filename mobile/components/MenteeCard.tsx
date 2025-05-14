@@ -13,7 +13,14 @@ const MenteeCard = ({
             <View style={styles.onlineIndicator} />
 
             {/* Mentor Image */}
-            <Image source={typeof mentor.image === 'string' ? { uri: mentor.image } : mentor.image} />
+            <Image source={typeof mentor.image === 'string' ? { uri: mentor.image } : mentor.image}
+                style={
+                    typeof mentor.image === 'string' && mentor.image.length > 0
+                        ? styles.mentorImageWith
+                        : styles.mentorImageWithout
+                }
+                resizeMode="cover"
+            />
             
             {/* Info Icon */}
             {/*
@@ -63,9 +70,16 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         paddingBottom: 10,
     },
-    mentorImage: {
+    mentorImageWith: {
         width: '100%',
-        height: '75%',
+        height: '65%',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+    },
+    mentorImageWithout: {
+        width: '100%',
+        height: '55%',
+        marginTop: 30,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
     },
