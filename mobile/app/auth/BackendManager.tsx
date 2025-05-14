@@ -1008,8 +1008,7 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
             data.matches.map(async (mentor: any) => {
               const pictureBlob = await this.getPicture(mentor.user_id);
               const pictureUrl = pictureBlob ? URL.createObjectURL(pictureBlob) : '';
-              //const pictureUrl = '';
-      
+              
               return {
                 ...mentor,
                 picture: pictureUrl,
