@@ -46,7 +46,7 @@ export function Header(props: { subtitle: string }) {
           backendManager.clearUserCache();
           router.push('/auth/login');
         } else {
-          setCredits(0); // Default credits on error
+          setCredits(13); // Default credits on error
         }
       } finally {
         setLoading(false);

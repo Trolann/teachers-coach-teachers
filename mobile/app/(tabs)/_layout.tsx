@@ -9,7 +9,6 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import SignupScreen from '../auth/signup';
 import TokenManager from '../auth/TokenManager';
-import BackendManager from '../auth/BackendManager';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();

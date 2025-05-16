@@ -236,7 +236,7 @@ PODS:
     - ExpoModulesCore
   - ExpoHaptics (14.0.1):
     - ExpoModulesCore
-  - ExpoHead (4.0.21):
+  - ExpoHead (4.0.20):
     - ExpoModulesCore
   - ExpoImagePicker (16.0.6):
     - ExpoModulesCore
@@ -269,7 +269,7 @@ PODS:
     - Yoga
   - ExpoSecureStore (14.0.1):
     - ExpoModulesCore
-  - ExpoSplashScreen (0.29.24):
+  - ExpoSplashScreen (0.29.22):
     - ExpoModulesCore
   - ExpoSymbols (0.2.2):
     - ExpoModulesCore
@@ -1931,7 +1931,7 @@ PODS:
     - React-logger
     - React-perflogger
     - React-utils (= 0.76.9)
-  - ReactNativeIncallManager (4.2.1):
+  - ReactNativeIncallManager (4.2.0):
     - React-Core
   - RNAWSCognito (6.3.15):
     - React-Core
@@ -2026,7 +2026,7 @@ PODS:
     - RNNotifee/NotifeeCore (= 9.1.8)
   - RNNotifee/NotifeeCore (9.1.8):
     - React-Core
-  - RNPermissions (5.4.0):
+  - RNPermissions (5.3.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2184,7 +2184,7 @@ PODS:
     - RNSound/Core (= 0.11.2)
   - RNSound/Core (0.11.2):
     - React-Core
-  - RNSVG (15.8.0):
+  - RNSVG (15.11.2):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2204,9 +2204,9 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNSVG/common (= 15.8.0)
+    - RNSVG/common (= 15.11.2)
     - Yoga
-  - RNSVG/common (15.8.0):
+  - RNSVG/common (15.11.2):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2228,10 +2228,10 @@ PODS:
     - ReactCommon/turbomodule/core
     - Yoga
   - SocketRocket (0.7.1)
-  - stream-react-native-webrtc (125.2.1):
+  - stream-react-native-webrtc (125.0.8):
     - React-Core
-    - StreamWebRTC (~> 125.6422.070)
-  - stream-video-react-native (1.12.0):
+    - WebRTC-SDK (~> 125.6422.07)
+  - stream-video-react-native (1.11.2):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2253,7 +2253,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - stream-react-native-webrtc
     - Yoga
-  - StreamWebRTC (125.6422.070)
+  - WebRTC-SDK (125.6422.07)
   - Yoga (0.0.0)
   - ZXingObjC/Core (3.6.9)
   - ZXingObjC/OneD (3.6.9):
@@ -2381,7 +2381,7 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - SocketRocket
-    - StreamWebRTC
+    - WebRTC-SDK
     - ZXingObjC
 
 EXTERNAL SOURCES:
@@ -2633,13 +2633,13 @@ SPEC CHECKSUMS:
   ExpoFileSystem: c8c19bf80d914c83dda3beb8569d7fb603be0970
   ExpoFont: 773955186469acc5108ff569712a2d243857475f
   ExpoHaptics: e01cce0741d68c281853118eb0267f88d42c6b7a
-  ExpoHead: 1b9a42c4b1a2627b8c9ef478a48af59a2fb8c684
+  ExpoHead: 15cd0b1168451650dafe3983b99beea3befb3590
   ExpoImagePicker: 482b2a6198b365dd18b5a0cb6d4caeec880cb8e1
   ExpoKeepAwake: 2a5f15dd4964cba8002c9a36676319a3394c85c7
   ExpoLinking: 0381341519ca7180a3a057d20edb1cf6a908aaf4
   ExpoModulesCore: dd965804a882f1dbb6036fceea4d912461aeaa0d
   ExpoSecureStore: d006eea5e316283099d46f80a6b10055b89a6008
-  ExpoSplashScreen: 0e176e85073dfb9686c100c7f9637975d00608dd
+  ExpoSplashScreen: 643666b96a84e8d97d55fac43926fb4183c692d9
   ExpoSymbols: b9f255ce49868d46a73f30e12859efeb8117bcad
   ExpoSystemUI: fb8213e39d19e0861320fa69eb60cad7a839c080
   ExpoWebBrowser: 6890a769e6c9d83da938dceb9a03e764afc3ec9c
@@ -2711,7 +2711,7 @@ SPEC CHECKSUMS:
   React-utils: 54df9ada708578c8ad40d92895d6fed03e0e8a9e
   ReactCodegen: 21a52ccddc6479448fc91903a437dd23ddc7366c
   ReactCommon: bfd3600989d79bc3acbe7704161b171a1480b9fd
-  ReactNativeIncallManager: 65a85aed033c1d9ec66f98a943cca51c61a210e9
+  ReactNativeIncallManager: bfc9c67358cd524882a7c4116dcb311ac2293d4b
   RNAWSCognito: b9249919f7e7950ceb546da677b2b5809bf5ef2f
   RNCAsyncStorage: ac02697867ba18d2cfd761ebb144417fe65b210e
   RNCClipboard: 35ef4f2427d4ecd633ad44bfbbc2c70b829fe554
@@ -2719,15 +2719,15 @@ SPEC CHECKSUMS:
   RNDeviceInfo: feea80a690d2bde1fe51461cf548039258bd03f2
   RNGestureHandler: 3e17c0c9ceb401041b0e64c8e4c8a057da978a9d
   RNNotifee: 4a6ee5c7deaf00e005050052d73ee6315dff7ec9
-  RNPermissions: 95fa8fb9675e050fc5d79e961e3019ea9cb7a728
+  RNPermissions: 6ffe6044b04aaa05106fdcbcef941e8847b58d30
   RNReanimated: 5ed2b66c32cb3d398e4c12591b3053594fe2fcb9
   RNScreens: 2856a2abe759a5a56946874f76372c9f033af19a
   RNSound: 6c156f925295bdc83e8e422e7d8b38d33bc71852
-  RNSVG: 81d52481cde97ce0dcc81a55b0310723817088d0
+  RNSVG: 2343e3c8afd2faa16055a34bf60c60c4338f1f17
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
-  stream-react-native-webrtc: 2a0d4992834ce47455282325a083366e45a7b1f2
-  stream-video-react-native: ff0839b6170e3aad70b16b409580bd1838a25f50
-  StreamWebRTC: a50ebd8beba4def8f4e378b4895824c3520f9889
+  stream-react-native-webrtc: fa8c053d074df975c7a21e1eea04a75b7d668e3d
+  stream-video-react-native: 525a51f4e7d48658d3283aef9e349b49f4c0e962
+  WebRTC-SDK: dff00a3892bc570b6014e046297782084071657e
   Yoga: 40f19fff64dce86773bf8b602c7070796c007970
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 

@@ -1,6 +1,6 @@
 // app/auth/login.tsx
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert, SafeAreaView, Image } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert, SafeAreaView, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -41,7 +41,12 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.card}>
+        <ScrollView 
+          style={styles.card} 
+          contentContainerStyle={styles.cardContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Logo/Icon placeholder */}
           <View style={styles.logoContainer}>
             <View style={styles.logo}>
@@ -113,7 +118,7 @@ export default function LoginScreen() {
           >
             <ThemedText style={styles.signUpButtonText}>Sign Up</ThemedText>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -133,8 +138,10 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     padding: 20,
     flex: 1,
-    justifyContent: 'center',
+  },
+  cardContent: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
   logoContainer: {
     alignItems: 'center',

@@ -47,7 +47,12 @@ export default function SignupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView style={styles.card}>
+        <ScrollView 
+          style={styles.card} 
+          contentContainerStyle={styles.cardContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Logo/Icon placeholder */}
           <View style={styles.logoContainer}>
             <Image
@@ -141,7 +146,7 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'white',
   },
   keyboardView: {
     flex: 1,
@@ -151,7 +156,6 @@ const styles = StyleSheet.create({
     margin: 20,
     borderRadius: 30,
     padding: 20,
-    alignItems: 'center',
   },
   logoContainer: {
     alignItems: 'center',
@@ -225,6 +229,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  cardContent: {
+    alignItems: 'center',
   },
   dividerContainer: {
     flexDirection: 'row',

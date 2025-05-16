@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Href, Link, useRouter } from 'expo-router';
 import Header from '@/components/Header';
 import MenteeCard from '@/components/MenteeCard';
+import TokenManager from './auth/TokenManager';
 
 export default function MenteeLandingScreen() {
   const router = useRouter();
@@ -30,6 +31,14 @@ export default function MenteeLandingScreen() {
       bio: "History geek with a knack for storytelling. Specializes in American and European history."
     },
   ]);
+
+  useEffect(() => {
+
+    TokenManager.getInstance().getTokens().then(tokens => {
+      console.log('📦 Tokens from SecureStore:', tokens);
+    });
+
+  }, []);
 
   const animatedValue = useRef(new Animated.Value(0)).current;
 
