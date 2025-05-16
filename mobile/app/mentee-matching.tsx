@@ -6,9 +6,11 @@ import { Href, Link, useRouter } from 'expo-router';
 import Header from '@/components/Header';
 import MenteeCard from '@/components/MenteeCard';
 import TokenManager from './auth/TokenManager';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function MenteeLandingScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [matchedMentor, setMatchedMentor] = useState(null);
 
   const [infoVisible, setInfoVisible] = useState(null);
@@ -194,6 +196,10 @@ export default function MenteeLandingScreen() {
                   params: {
                     mentor: JSON.stringify(selectedMentor),
                   },
+                  // pathname: '/feedback',
+                  // params: {
+                  //   sessionId: finalSessionId
+                  // }
                 });
               }}
             >

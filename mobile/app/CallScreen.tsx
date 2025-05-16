@@ -3,13 +3,14 @@ import {Button, StyleSheet, Text, View} from 'react-native';
 import {Call, StreamCall, useStreamVideoClient, CallContent} from '@stream-io/video-react-native-sdk';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
-type Props = {goToHomeScreen: () => void; callId: string};
+type Props = {goToHomeScreen: () => void; callId: string, sessionId?: string;};
 
-export const CallScreen = ({goToHomeScreen, callId}: Props) => {
+export const CallScreen = ({goToHomeScreen, callId, sessionId}: Props) => {
     const router = useRouter();
     const params = useLocalSearchParams();
     const mentorInfo = params.mentor; // Get mentor info from params
-    
+    const routeSessionId = params.sessionId; // Get sessionId from params
+    const finalSessionId = sessionId || routeSessionId; // use prop if provided, otherwise use route param
     const [call, setCall] = React.useState<Call | null>(null);
     const client = useStreamVideoClient();
 
@@ -29,7 +30,8 @@ export const CallScreen = ({goToHomeScreen, callId}: Props) => {
         router.push({
             pathname: '/feedback',
             params: {
-                mentor: mentorInfo // Pass the mentor information to the feedback screen
+                mentor: mentorInfo, // Pass the mentor information to the feedback screen
+                sessionId: finalSessionId
             }
         });
     };

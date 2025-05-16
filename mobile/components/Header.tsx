@@ -38,7 +38,7 @@ export function Header(props: { subtitle: string }) {
         setUserName(name || 'User');
 
       } catch (error: any) {
-        console.error('Error fetching data:', error);
+        console.error('Exxrror fetching data:', error);
   
         // Check if token expired
         if (error?.message?.includes('token is expired')) {
@@ -46,7 +46,7 @@ export function Header(props: { subtitle: string }) {
           backendManager.clearUserCache();
           router.push('/auth/login');
         } else {
-          setCredits(13); // Default credits on error
+          setCredits(0); // Default credits on error
         }
       } finally {
         setLoading(false);
@@ -60,14 +60,26 @@ export function Header(props: { subtitle: string }) {
     <>
       <View style={styles.header}>
         <View style={styles.headerText}>
+          {userRole === 'mentor' && (
           <Text style={styles.greeting}>
-            Hi, {userName || backendManager.getCachedUserName()} <Text style={styles.wave}>👋</Text>
-          </Text>
+            Hi, Melissa <Text style={styles.wave}>👋</Text>
+          </Text>          )}
+          {userRole === 'mentee' && (
+            <Text style={styles.greeting}>
+              Hi, {userName || backendManager.getCachedUserName()} <Text style={styles.wave}>👋</Text>
+            </Text>            
+          )}
+          
           <Text style={styles.subtitle}>{props.subtitle}</Text>
         </View>
 
         <TouchableOpacity style={styles.profileSection} onPress={() => setShowNav(true)}>
-          <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
+          {userRole === 'mentor' && (
+            <Image source={require('../assets/images/stock_mentor2.jpg')} style={styles.profileImage} />
+          )}
+          {userRole === 'mentee' && (
+            <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
+          )}
           {loading ? (
             <ActivityIndicator size="small" color="#666" style={styles.tokenLoader} />
           ) : (
@@ -93,8 +105,16 @@ export function Header(props: { subtitle: string }) {
                   <Text style={styles.navItem}>🤝  Matching</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity onPress={() => { setShowNav(false); router.push('/liked'); }}>
+                <TouchableOpacity onPress={() => { setShowNav(false); }}>
                   <Text style={styles.navItem}>❤️  Liked</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {userRole === 'mentor' && (
+              <>
+                <TouchableOpacity onPress={() => { setShowNav(false); router.push('/mentee-matching'); }}>
+                  <Text style={styles.navItem}>🤝  Matching</Text>
                 </TouchableOpacity>
               </>
             )}

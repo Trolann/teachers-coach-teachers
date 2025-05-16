@@ -11,19 +11,19 @@ const { callId } = STREAM_DEMO_CREDS;
 
 const mentees = [
   {
+    id: 2,
+    name: 'Jessica Gomez',
+    primarySubject: 'Science',
+    district: 'East Side Union High School District',
+    image: require('../assets/images/stock_pfp.jpeg'),
+  },
+  {
     id: 1,
     name: 'Alex Johnson',
     primarySubject: 'Math',
     district: 'Sacramento City Unified School District',
     image: require('../assets/images/stock_mentee2.png'),
-  },
-  {
-    id: 2,
-    name: 'Maria Gomez',
-    primarySubject: 'Science',
-    district: 'East Side Union High School District',
-    image: require('../assets/images/stock_mentee2.png'),
-  },
+  }
 ];
 
 const MentorLandingScreen = () => {

@@ -24,16 +24,20 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     const fetchData = async () => {
-      try { 
+      try {
         const tokens = await backendManager.getAvailableCredits();
-        const name = await backendManager.getUserName();
-        const application = await backendManager.getApplication();
-        setFullName(name || '');
-        setSchoolDistrict(application?.school_district || '');
-        setSubjectExpertise(application?.subject_expertise || '');
-        setLocation(application?.location || '');
-        setProfileImage(application?.profile_image || null);
         setCredits(tokens);
+
+        const name = await backendManager.getUserName();
+        console.log('Fetched name:', name);
+        setFullName(name || '');
+
+        // const picture = await backendManager.getPicture();
+        // setProfileImage(picture || null);
+
+        const district = await backendManager.getApplication();
+        console.log('Fetched district:', district);
+
 
       } catch (error) {
         console.error('Error fetching credits:', error);
@@ -42,8 +46,8 @@ export default function ProfileScreen() {
 
     fetchData();
   }
-  , []);
-  
+    , []);
+
 
   const handleImagePick = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -58,10 +62,45 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     console.log('Saving Profile:', { fullName, schoolDistrict, subjectExpertise, location, profileImage });
-    // Save logic here
+
+    try {
+      const [firstName, ...rest] = fullName.trim().split(' ');
+      const lastName = rest.join(' ') || '';
+
+      let uploadedImageUrl = null;
+
+      if (profileImage && !profileImage.startsWith('http')) {
+        console.log('Uploading image:', profileImage);
+        const uploadResult = await backendManager.submitPicture(profileImage);
+        console.log('Upload result:', uploadResult);
+
+        if (uploadResult?.url) {
+          uploadedImageUrl = uploadResult.url;
+        } else {
+          throw new Error('Image upload failed or returned no URL');
+        }
+      }
+
+      const updateData = {
+        firstName,
+        lastName,
+        school_district: schoolDistrict,
+        subject_expertise: subjectExpertise,
+        location: location,
+        ...(uploadedImageUrl && { profile_image: uploadedImageUrl }),
+      };
+
+      const result = await backendManager.updateApplication(updateData);
+      console.log('✅ Profile successfully updated:', result);
+      alert('Profile updated! 🎉');
+    } catch (error) {
+      console.error('❌ Error saving profile:', error);
+      alert('Oops! Couldn’t save profile. Try again later.');
+    }
   };
+
 
   return (
     <View style={styles.safeArea}>
@@ -84,7 +123,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
             <View style={{ alignItems: 'center', marginTop: 10 }}>
               <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#005F99' }}>
-              {credits ?? 0} 🪙
+                {credits ?? 0} 🪙
               </Text>
             </View>
           </View>
@@ -104,7 +143,7 @@ export default function ProfileScreen() {
             <TextInput
               style={styles.input}
               placeholder="Enter your school district"
-              value={schoolDistrict}
+              value={"East Side Union High School District"}
               onChangeText={setSchoolDistrict}
             />
           </View>
@@ -114,7 +153,7 @@ export default function ProfileScreen() {
             <TextInput
               style={styles.input}
               placeholder="e.g. Math, Science, History"
-              value={subjectExpertise}
+              value={"Science"}
               onChangeText={setSubjectExpertise}
             />
           </View>
@@ -124,7 +163,7 @@ export default function ProfileScreen() {
             <TextInput
               style={styles.input}
               placeholder="Enter your city or state"
-              value={location}
+              value={"San Jose, CA"}
               onChangeText={setLocation}
             />
           </View>

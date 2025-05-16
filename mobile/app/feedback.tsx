@@ -1,21 +1,40 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView, Image, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Header from '@/components/Header';
 import { Ionicons } from '@expo/vector-icons';
 import MenteeCard from '@/components/MenteeCard';
+import BackendManager from './auth/BackendManager';
 
 export default function FeedbackScreen() {
+  console.log('Rendering FeedbackScreen component');
   const router = useRouter();
-  const { mentor: mentorString } = useLocalSearchParams();
+  const { mentor: mentorString, sessionId } = useLocalSearchParams();
+  console.log('Session ID from params:', sessionId);
+
   const mentor = mentorString ? JSON.parse(mentorString as string) : null;
-  
+  console.log('Mentor data parsed:', mentor ? `${mentor.name} (ID: ${mentor.id})` : 'No mentor data');
+
+  const [sessionIdState, setSessionIdState] = useState(sessionId || null);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [skillsImproved, setSkillsImproved] = useState('');
   const [skillsToImprove, setSkillsToImprove] = useState('');
   const [appImprovements, setAppImprovements] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Log when component mounts
+  useEffect(() => {
+    console.log('FeedbackScreen mounted with sessionId:', sessionId);
+    return () => {
+      console.log('FeedbackScreen unmounted');
+    };
+  }, []);
+
+  // Create an instance of the BackendManager
+  const backendManager = BackendManager.getInstance();
+  console.log('BackendManager instance created');
 
 
   const [infoVisible, setInfoVisible] = useState(null);
@@ -25,40 +44,126 @@ export default function FeedbackScreen() {
   };
 
   const handleRating = (selectedRating) => {
+    console.log('Rating selected:', selectedRating);
     setRating(selectedRating);
   };
 
-  const handleSubmit = () => {
-    // Here you would typically send the feedback to your backend
-    console.log('Submitting feedback:', { 
-      mentorId: mentor?.id, 
-      rating, 
-      feedback,
-      skillsImproved,
-      skillsToImprove,
-      appImprovements
-    });
-    
-    // For now, just mark as submitted
+  const handleSubmit = async () => {
+    console.log('Submit button pressed');
     setSubmitted(true);
+
+    // TODO: pass sessionId correct (feedback infromation properly implemented)
+    // if (!sessionId) {
+    //   console.error('Submit failed: Missing sessionId');
+    //   Alert.alert("Error", "Session ID is required to submit feedback.");
+    //   return;
+    // }
+
+    // if (rating === 0) {
+    //   console.warn('Submit validation: No rating provided');
+    //   Alert.alert("Incomplete Feedback", "Please provide a rating before submitting.");
+    //   return;
+    // }
+
+    // console.log('Starting feedback submission process');
+    // setIsLoading(true);
+
+    // try {
+    //   // Prepare feedback data
+    //   const feedbackData = {
+    //     rating,
+    //     feedback,
+    //     skillsImproved,
+    //     skillsToImprove,
+    //     appImprovements
+    //   };
+
+    //   console.log('Feedback data to submit:', feedbackData);
+
+    //   // Submit feedback to the backend
+    //   console.log(`Calling backendManager.submitSessionFeedback for session: ${sessionId}`);
+    //   const response = await backendManager.submitSessionFeedback(
+    //     sessionId as string,
+    //     feedbackData,
+    //     false // This is mentee feedback
+    //   );
+
+    //   console.log('Feedback submission response:', response);
+
+    //   // Update session status to completed
+    //   console.log(`Updating session status to completed for session: ${sessionId}`);
+    //   await backendManager.updateSessionStatus(sessionId as string, 'completed');
+    //   console.log('Session status updated successfully');
+
+    //   // For the favorites/not interested functionality
+    //   if (mentor) {
+    //     console.log('Mentor data available for favorites/not interested:', mentor.id);
+    //   }
+
+    //   console.log('Feedback submission successful, setting submitted state to true');
+    //   setSubmitted(true);
+    // } catch (error) {
+    //   console.error('Error submitting feedback:', error);
+    //   console.error('Error details:', error.message);
+    //   Alert.alert(
+    //     "Submission Failed",
+    //     "There was an error submitting your feedback. Please try again."
+    //   );
+    // } finally {
+    //   console.log('Feedback submission process completed, setting loading state to false');
+    //   setIsLoading(false);
+    // }
   };
 
   const handleFinish = () => {
-    // Navigate back to mentee matching or dashboard
+    console.log('Finish button pressed, navigating to mentee-matching');
     router.push('/mentee-matching');
   };
 
-  const handleAddToFavorites = () => {
-    // Implementation for adding to favorites
-    console.log('Added to favorites:', mentor?.name);
+  const handleAddToFavorites = async () => {
+    console.log('Add to favorites button pressed');
+
+    if (!mentor?.id) {
+      console.error('Add to favorites failed: Missing mentor ID');
+      Alert.alert("Error", "Mentor information is missing.");
+      return;
+    }
+
+    try {
+      // TODO Implementation for adding to favorites would go here with corresponding backend API endpoint
+      console.log('Added mentor to favorites:', mentor.id, mentor.name);
+      Alert.alert("Success", `${mentor?.name} added to favorites!`);
+    } catch (error) {
+      console.error('Error adding to favorites:', error);
+      console.error('Error details:', error.message);
+      Alert.alert("Error", "Failed to add mentor to favorites.");
+    }
   };
 
-  const handleNotInterested = () => {
-    // Implementation for not interested
-    console.log('Not interested in:', mentor?.name);
+  const handleNotInterested = async () => {
+    console.log('Not interested button pressed');
+
+    if (!mentor?.id) {
+      console.error('Not interested failed: Missing mentor ID');
+      Alert.alert("Error", "Mentor information is missing.");
+      return;
+    }
+
+    try {
+      // TODO: Implementation for not interested would go here need corresponding backend API endpoint
+      console.log('Marked mentor as not interested:', mentor.id, mentor.name);
+      Alert.alert("Success", `${mentor?.name} marked as not interested.`);
+    } catch (error) {
+      console.error('Error marking as not interested:', error);
+      console.error('Error details:', error.message);
+      Alert.alert("Error", "Failed to mark mentor as not interested.");
+    }
   };
+
+  console.log('Current state - submitted:', submitted, 'rating:', rating, 'isLoading:', isLoading);
 
   if (submitted) {
+    console.log('Rendering thank you screen');
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
@@ -71,10 +176,12 @@ export default function FeedbackScreen() {
             <Text style={styles.buttonText}>Return to Home</Text>
           </TouchableOpacity>
         </View>
+        {/* Close SafeAreaView here */}
       </SafeAreaView>
     );
   }
 
+  console.log('Rendering main feedback form');
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -82,7 +189,7 @@ export default function FeedbackScreen() {
           <Text style={styles.headerTitle}>Session Feedback</Text>
           <Text style={styles.rateSessionText}>Rate your session with {mentor?.name || 'your mentor'}</Text>
         </View>
-        
+
         {/* Mentor Card */}
         <View style={styles.mentorCardContainer}>
           {mentor?.image && (
@@ -93,117 +200,132 @@ export default function FeedbackScreen() {
             />
           )}
         </View>
-        
+
         {/* Rating Stars */}
         <View style={styles.ratingContainer}>
           {[1, 2, 3, 4, 5].map((star) => (
-            <TouchableOpacity 
-              key={star} 
+            <TouchableOpacity
+              key={star}
               onPress={() => handleRating(star)}
               style={styles.starButton}
             >
-              <Ionicons 
-                name={rating >= star ? "star" : "star-outline"} 
-                size={30} 
-                color={rating >= star ? "#FFD700" : "#CCCCCC"} 
+              <Ionicons
+                name={rating >= star ? "star" : "star-outline"}
+                size={30}
+                color={rating >= star ? "#FFD700" : "#CCCCCC"}
               />
             </TouchableOpacity>
           ))}
         </View>
         <Text style={styles.selectRatingText}>Select a rating</Text>
-        
+
         {/* Feedback Text Area */}
-        <View style={styles.questionsContainer}>
-          <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackLabel}>Share your experience (optional)</Text>
-            <TextInput
-              style={styles.feedbackInput}
-              multiline
-              numberOfLines={5}
-              placeholder="What went well? What could be improved?"
-              value={feedback}
-              onChangeText={setFeedback}
-            />
-          </View>
-          
-          {/* Skills Improved Text Area */}
-          <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackLabel}>What skills did you improve on in this call?</Text>
-            <TextInput
-              style={styles.feedbackInput}
-              multiline
-              numberOfLines={3}
-              placeholder="e.g. Communication, Leadership, Technical skills"
-              value={skillsImproved}
-              onChangeText={setSkillsImproved}
-            />
-          </View>
-          
-          {/* Skills To Improve Text Area */}
-          <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackLabel}>What skills do you want to improve on in your next call?</Text>
-            <TextInput
-              style={styles.feedbackInput}
-              multiline
-              numberOfLines={3}
-              placeholder="e.g. Public speaking, Time management, Technical skills"
-              value={skillsToImprove}
-              onChangeText={setSkillsToImprove}
-            />
-          </View>
-          
-          {/* App Improvements Text Area */}
-          <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackLabel}>Any suggestions to improve our app?</Text>
-            <TextInput
-              style={styles.feedbackInput}
-              multiline
-              numberOfLines={3}
-              placeholder="Share your ideas to make our app better"
-              value={appImprovements}
-              onChangeText={setAppImprovements}
-            />
-          </View>
-        
-        
+        <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackLabel}>Share your experience</Text>
+          <TextInput
+            style={styles.feedbackInput}
+            multiline
+            numberOfLines={5}
+            placeholder="What went well? What could be improved?"
+            value={feedback}
+            onChangeText={(text) => {
+              console.log('Experience feedback updated');
+              setFeedback(text);
+            }}
+          />
+        </View>
+
+        {/* Skills Improved Text Area */}
+        <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackLabel}>What skills did you improve on in this call?</Text>
+          <TextInput
+            style={styles.feedbackInput}
+            multiline
+            numberOfLines={3}
+            placeholder="e.g. Communication, Leadership, Technical skills"
+            value={skillsImproved}
+            onChangeText={(text) => {
+              console.log('Skills improved updated');
+              setSkillsImproved(text);
+            }}
+          />
+        </View>
+
+        {/* Skills To Improve Text Area */}
+        <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackLabel}>What skills do you want to improve on in your next call?</Text>
+          <TextInput
+            style={styles.feedbackInput}
+            multiline
+            numberOfLines={3}
+            placeholder="e.g. Public speaking, Time management, Technical skills"
+            value={skillsToImprove}
+            onChangeText={(text) => {
+              console.log('Skills to improve updated');
+              setSkillsToImprove(text);
+            }}
+          />
+        </View>
+
+        {/* App Improvements Text Area */}
+        <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackLabel}>Any suggestions to improve our app?</Text>
+          <TextInput
+            style={styles.feedbackInput}
+            multiline
+            numberOfLines={3}
+            placeholder="Share your ideas to make our app better"
+            value={appImprovements}
+            onChangeText={(text) => {
+              console.log('App improvements updated');
+              setAppImprovements(text);
+            }}
+          />
+        </View>
+
         {/* Favorite/Not Interested Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity 
-            style={styles.favoriteButton} 
+          <TouchableOpacity
+            style={styles.favoriteButton}
             onPress={handleAddToFavorites}
           >
             <Ionicons name="heart" size={16} color="#FF4D4F" />
             <Text style={styles.favoriteButtonText}>Add to Favorites</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.notInterestedButton} 
+
+          <TouchableOpacity
+            style={styles.notInterestedButton}
             onPress={handleNotInterested}
           >
             <Ionicons name="close-circle" size={16} color="#0077B6" />
             <Text style={styles.notInterestedButtonText}>Not Interested</Text>
           </TouchableOpacity>
         </View>
-        
+
         {/* Submit Button */}
-        <TouchableOpacity 
-          style={[styles.submitButton, rating === 0 && styles.disabledButton]} 
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            (rating === 0 || isLoading) && styles.disabledButton
+          ]}
           onPress={handleSubmit}
-          disabled={rating === 0}
+          disabled={rating === 0 || isLoading}
         >
-          <Text style={styles.buttonText}>Submit Feedback</Text>
+          <Text style={styles.buttonText}>
+            {isLoading ? "Submitting..." : "Submit Feedback"}
+          </Text>
         </TouchableOpacity>
-        
+
         {/* Skip Button - Now Centered */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.skipButton}
           onPress={handleFinish}
+          disabled={isLoading}
         >
           <Text style={styles.skipButtonText}>Skip</Text>
         </TouchableOpacity>
-        </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
@@ -356,7 +478,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   submitButton: {
-    backgroundColor: '#28A745',
+    backgroundColor: '#00c851',
     paddingVertical: 14,
     paddingHorizontal: 30,
     borderRadius: 25,

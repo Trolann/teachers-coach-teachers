@@ -45,13 +45,16 @@ export default function TabLayout() {
           //   console.log("User role is not recognized. Redirecting to pre-application.");
           //   router.navigate('/pre-application');
           // }
-          if (userRole === 'mentor') {
-            console.log("User is a mentor. Redirecting to mentor landing."); 
-            router.navigate('/mentor-landing');
-          } else if (userRole === 'mentee') {
-            console.log("User is a mentee. Redirecting to mentee matching."); 
-            router.navigate('/mentee-matching');
-          }
+          // if (userRole === 'mentor') {
+          //   console.log("User is a mentor. Redirecting to mentor landing."); 
+          //   router.navigate('/mentor-landing');
+          // } else if (userRole === 'mentee') {
+          //   console.log("User is a mentee. Redirecting to mentee matching."); 
+          //   router.navigate('/mentee-matching');
+          // }
+
+          
+          router.replace('/mentee-matching');
           setIsAuthenticated(true);
         } else if (isMounted) {
           console.log("No valid token found. Showing signup.");

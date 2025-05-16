@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/ThemedText';
 import sendAlert from './utils/alerts';
 import TokenManager from './auth/TokenManager';
 import { Platform } from 'react-native';
+import { Image } from 'react-native';
 
 export default function PreApplicationScreen() {
   const router = useRouter();
@@ -56,10 +57,14 @@ export default function PreApplicationScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={styles.card}>
-        {/* Logo/Icon placeholder */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logo} />
-        </View>
+      <View style={styles.logoContainer}>
+          <Image
+            source={require('@/assets/images/logo.png')}
+            style={styles.logo}
+          />
+      </View>
+
+
 
         {/* Welcome Text */}
         <View style={styles.welcomeContainer}>
