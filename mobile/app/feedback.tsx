@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Scro
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Header from '@/components/Header';
 import { Ionicons } from '@expo/vector-icons';
+import MenteeCard from '@/components/MenteeCard';
 import BackendManager from './auth/BackendManager';
 
 export default function FeedbackScreen() {
@@ -10,10 +11,10 @@ export default function FeedbackScreen() {
   const router = useRouter();
   const { mentor: mentorString, sessionId } = useLocalSearchParams();
   console.log('Session ID from params:', sessionId);
-  
+
   const mentor = mentorString ? JSON.parse(mentorString as string) : null;
   console.log('Mentor data parsed:', mentor ? `${mentor.name} (ID: ${mentor.id})` : 'No mentor data');
-  
+
   const [sessionIdState, setSessionIdState] = useState(sessionId || null);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
@@ -35,6 +36,13 @@ export default function FeedbackScreen() {
   const backendManager = BackendManager.getInstance();
   console.log('BackendManager instance created');
 
+
+  const [infoVisible, setInfoVisible] = useState(null);
+
+  const toggleInfo = (mentorId) => {
+    setInfoVisible(infoVisible === mentorId ? null : mentorId);
+  };
+
   const handleRating = (selectedRating) => {
     console.log('Rating selected:', selectedRating);
     setRating(selectedRating);
@@ -50,13 +58,13 @@ export default function FeedbackScreen() {
     //   Alert.alert("Error", "Session ID is required to submit feedback.");
     //   return;
     // }
-    
+
     // if (rating === 0) {
     //   console.warn('Submit validation: No rating provided');
     //   Alert.alert("Incomplete Feedback", "Please provide a rating before submitting.");
     //   return;
     // }
-    
+
     // console.log('Starting feedback submission process');
     // setIsLoading(true);
 
@@ -69,9 +77,9 @@ export default function FeedbackScreen() {
     //     skillsToImprove,
     //     appImprovements
     //   };
-      
+
     //   console.log('Feedback data to submit:', feedbackData);
-      
+
     //   // Submit feedback to the backend
     //   console.log(`Calling backendManager.submitSessionFeedback for session: ${sessionId}`);
     //   const response = await backendManager.submitSessionFeedback(
@@ -79,19 +87,19 @@ export default function FeedbackScreen() {
     //     feedbackData,
     //     false // This is mentee feedback
     //   );
-      
+
     //   console.log('Feedback submission response:', response);
-      
+
     //   // Update session status to completed
     //   console.log(`Updating session status to completed for session: ${sessionId}`);
     //   await backendManager.updateSessionStatus(sessionId as string, 'completed');
     //   console.log('Session status updated successfully');
-      
+
     //   // For the favorites/not interested functionality
     //   if (mentor) {
     //     console.log('Mentor data available for favorites/not interested:', mentor.id);
     //   }
-      
+
     //   console.log('Feedback submission successful, setting submitted state to true');
     //   setSubmitted(true);
     // } catch (error) {
@@ -114,13 +122,13 @@ export default function FeedbackScreen() {
 
   const handleAddToFavorites = async () => {
     console.log('Add to favorites button pressed');
-    
+
     if (!mentor?.id) {
       console.error('Add to favorites failed: Missing mentor ID');
       Alert.alert("Error", "Mentor information is missing.");
       return;
     }
-    
+
     try {
       // TODO Implementation for adding to favorites would go here with corresponding backend API endpoint
       console.log('Added mentor to favorites:', mentor.id, mentor.name);
@@ -134,13 +142,13 @@ export default function FeedbackScreen() {
 
   const handleNotInterested = async () => {
     console.log('Not interested button pressed');
-    
+
     if (!mentor?.id) {
       console.error('Not interested failed: Missing mentor ID');
       Alert.alert("Error", "Mentor information is missing.");
       return;
     }
-    
+
     try {
       // TODO: Implementation for not interested would go here need corresponding backend API endpoint
       console.log('Marked mentor as not interested:', mentor.id, mentor.name);
@@ -168,6 +176,7 @@ export default function FeedbackScreen() {
             <Text style={styles.buttonText}>Return to Home</Text>
           </TouchableOpacity>
         </View>
+        {/* Close SafeAreaView here */}
       </SafeAreaView>
     );
   }
@@ -180,46 +189,36 @@ export default function FeedbackScreen() {
           <Text style={styles.headerTitle}>Session Feedback</Text>
           <Text style={styles.rateSessionText}>Rate your session with {mentor?.name || 'your mentor'}</Text>
         </View>
-        
+
         {/* Mentor Card */}
         <View style={styles.mentorCardContainer}>
           {mentor?.image && (
-            <View style={styles.mentorCard}>
-              <Image 
-                source={typeof mentor.image === 'string' ? { uri: mentor.image } : mentor.image} 
-                style={styles.mentorImage} 
-                onLoad={() => console.log('Mentor image loaded successfully')}
-                onError={(error) => console.error('Error loading mentor image:', error.nativeEvent.error)}
-              />
-              <View style={styles.mentorCardOverlay}>
-                <Text style={styles.mentorName}>{mentor?.name || 'Mentor Name'}</Text>
-                <View style={styles.locationContainer}>
-                  <Ionicons name="location-outline" size={14} color="#ffffff" />
-                  <Text style={styles.mentorLocation}>{mentor?.location || 'Location'}</Text>
-                </View>
-              </View>
-            </View>
+            <MenteeCard
+              mentor={mentor}
+              infoVisible={undefined}
+              toggleInfo={undefined}
+            />
           )}
         </View>
-        
+
         {/* Rating Stars */}
         <View style={styles.ratingContainer}>
           {[1, 2, 3, 4, 5].map((star) => (
-            <TouchableOpacity 
-              key={star} 
+            <TouchableOpacity
+              key={star}
               onPress={() => handleRating(star)}
               style={styles.starButton}
             >
-              <Ionicons 
-                name={rating >= star ? "star" : "star-outline"} 
-                size={30} 
-                color={rating >= star ? "#FFD700" : "#CCCCCC"} 
+              <Ionicons
+                name={rating >= star ? "star" : "star-outline"}
+                size={30}
+                color={rating >= star ? "#FFD700" : "#CCCCCC"}
               />
             </TouchableOpacity>
           ))}
         </View>
         <Text style={styles.selectRatingText}>Select a rating</Text>
-        
+
         {/* Feedback Text Area */}
         <View style={styles.feedbackContainer}>
           <Text style={styles.feedbackLabel}>Share your experience</Text>
@@ -235,7 +234,7 @@ export default function FeedbackScreen() {
             }}
           />
         </View>
-        
+
         {/* Skills Improved Text Area */}
         <View style={styles.feedbackContainer}>
           <Text style={styles.feedbackLabel}>What skills did you improve on in this call?</Text>
@@ -251,7 +250,7 @@ export default function FeedbackScreen() {
             }}
           />
         </View>
-        
+
         {/* Skills To Improve Text Area */}
         <View style={styles.feedbackContainer}>
           <Text style={styles.feedbackLabel}>What skills do you want to improve on in your next call?</Text>
@@ -267,7 +266,7 @@ export default function FeedbackScreen() {
             }}
           />
         </View>
-        
+
         {/* App Improvements Text Area */}
         <View style={styles.feedbackContainer}>
           <Text style={styles.feedbackLabel}>Any suggestions to improve our app?</Text>
@@ -283,32 +282,32 @@ export default function FeedbackScreen() {
             }}
           />
         </View>
-        
+
         {/* Favorite/Not Interested Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity 
-            style={styles.favoriteButton} 
+          <TouchableOpacity
+            style={styles.favoriteButton}
             onPress={handleAddToFavorites}
           >
             <Ionicons name="heart" size={16} color="#FF4D4F" />
             <Text style={styles.favoriteButtonText}>Add to Favorites</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.notInterestedButton} 
+
+          <TouchableOpacity
+            style={styles.notInterestedButton}
             onPress={handleNotInterested}
           >
-            <Ionicons name="close-circle" size={16} color="#666" />
+            <Ionicons name="close-circle" size={16} color="#0077B6" />
             <Text style={styles.notInterestedButtonText}>Not Interested</Text>
           </TouchableOpacity>
         </View>
-        
+
         {/* Submit Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
-            styles.submitButton, 
+            styles.submitButton,
             (rating === 0 || isLoading) && styles.disabledButton
-          ]} 
+          ]}
           onPress={handleSubmit}
           disabled={rating === 0 || isLoading}
         >
@@ -316,9 +315,9 @@ export default function FeedbackScreen() {
             {isLoading ? "Submitting..." : "Submit Feedback"}
           </Text>
         </TouchableOpacity>
-       
+
         {/* Skip Button - Now Centered */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.skipButton}
           onPress={handleFinish}
           disabled={isLoading}
@@ -326,54 +325,14 @@ export default function FeedbackScreen() {
           <Text style={styles.skipButtonText}>Skip</Text>
         </TouchableOpacity>
       </ScrollView>
-      
-      {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNavbar}>
-        <TouchableOpacity 
-          style={styles.navbarItem}
-          onPress={() => {
-            console.log('Home navigation button pressed');
-            // Add navigation logic here
-          }}
-        >
-          <Ionicons name="home" size={24} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navbarItem}
-          onPress={() => {
-            console.log('Time navigation button pressed');
-            // Add navigation logic here
-          }}
-        >
-          <Ionicons name="time" size={24} color="#666" />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navbarItem}
-          onPress={() => {
-            console.log('Heart navigation button pressed');
-            // Add navigation logic here
-          }}
-        >
-          <Ionicons name="heart" size={24} color="#666" />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navbarItem}
-          onPress={() => {
-            console.log('Profile navigation button pressed');
-            // Add navigation logic here
-          }}
-        >
-          <Ionicons name="person" size={24} color="#666" />
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'white',
   },
   scrollContainer: {
     flexGrow: 1,
@@ -391,9 +350,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 30,
     fontWeight: '600',
-    color: '#333',
+    color: '#005F99',
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -407,6 +366,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'white',
   },
   mentorCard: {
     width: '100%',
@@ -426,7 +388,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 16,
   },
   mentorName: {
     fontSize: 18,
@@ -446,7 +407,7 @@ const styles = StyleSheet.create({
   ratingContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginVertical: 10,
+    marginBottom: 15,
   },
   starButton: {
     marginHorizontal: 5,
@@ -482,13 +443,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginBottom: 30,
+    marginBottom: 20,
   },
   favoriteButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#FFEAEA',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 20,
@@ -497,14 +458,14 @@ const styles = StyleSheet.create({
   },
   favoriteButtonText: {
     marginLeft: 8,
-    color: '#333',
+    color: '#B22222',
     fontSize: 14,
   },
   notInterestedButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#E0F2FF',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 20,
@@ -513,7 +474,7 @@ const styles = StyleSheet.create({
   },
   notInterestedButtonText: {
     marginLeft: 8,
-    color: '#333',
+    color: '#005F99',
     fontSize: 14,
   },
   submitButton: {
@@ -522,10 +483,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     borderRadius: 25,
     marginHorizontal: 20,
-    marginBottom: 15,
+    marginBottom: 10,
   },
   disabledButton: {
-    backgroundColor: '#a0a0a0',
+    backgroundColor: '#28A745',
+    opacity: 0.75,
   },
   buttonText: {
     color: 'white',
@@ -536,7 +498,6 @@ const styles = StyleSheet.create({
   skipButton: {
     paddingVertical: 10,
     alignSelf: 'center',
-    marginBottom: 20,
   },
   skipButtonText: {
     color: '#666',
@@ -565,22 +526,13 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     width: '80%',
   },
-  bottomNavbar: {
-    flexDirection: 'row',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-    backgroundColor: 'white',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
   navbarItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  questionsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 5,
   },
 });

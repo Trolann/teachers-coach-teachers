@@ -33,7 +33,7 @@ def create_admin_blueprint():
         # Register credits routes
         from .credits import admin_credits_bp
         admin_bp.register_blueprint(admin_credits_bp, url_prefix='/credits')
-        logger.info('Registered credits routes at /credits prefix')
+        logger.info('Regposistered credits routes at /credits prefix')
 
         # Register logs routes
         from .logs import logs_bp

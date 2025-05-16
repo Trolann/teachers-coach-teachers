@@ -170,7 +170,7 @@ def get_application():
     logger.debug(f"Application retrieved for user: {user.cognito_sub}")
     logger.error(f'Application data being returned: {return_dict=}')
 
-    return return_dict
+    return jsonify(return_dict) # changed to be json (cuz error)
 
 @user_bp.route('/get_application_status', methods=['GET'])
 @require_auth

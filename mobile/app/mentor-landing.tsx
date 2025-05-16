@@ -1,108 +1,90 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, Switch, StyleSheet, Image, TouchableOpacity, ImageBackground } from 'react-native';
-import Swiper from 'react-native-deck-swiper';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, Switch, StyleSheet, Image, TouchableOpacity, Linking } from 'react-native';
+import SwipeCards from 'react-native-swipe-cards';
 import BackendManager from './auth/BackendManager';
+import Header from '@/components/Header';
+import { router } from 'expo-router';
+import Ionicons from '@expo/vector-icons/build/Ionicons';
+import { STREAM_DEMO_CREDS } from '../constants/StreamDemoCredentials';
 
-// Dummy mentees
+const { callId } = STREAM_DEMO_CREDS;
+
 const mentees = [
+  {
+    id: 2,
+    name: 'Jessica Gomez',
+    primarySubject: 'Science',
+    district: 'East Side Union High School District',
+    image: require('../assets/images/stock_pfp.jpeg'),
+  },
   {
     id: 1,
     name: 'Alex Johnson',
     primarySubject: 'Math',
     district: 'Sacramento City Unified School District',
-    //goal: 'Improve teaching skills in math',
-    image: require('../assets/images/mentor-profile-picture.png'),
-  },
-  {
-    id: 2,
-    name: 'Maria Gomez',
-    primarySubject: 'Science',
-    district: 'East Side Union High School District',
-    //goal: 'Explore science curriculum options',
-    image: require('../assets/images/mentor-profile-picture.png'),
-  },
+    image: require('../assets/images/stock_mentee2.png'),
+  }
 ];
 
 const MentorLandingScreen = () => {
   const [isOnline, setIsOnline] = useState(false);
-  const [acceptedMentee, setAcceptedMentee] = useState(null);
-  const swiperRef = useRef(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [allSwiped, setAllSwiped] = useState(false);
+  const [cards, setCards] = useState(mentees);
   const [buttonsDisabled, setButtonsDisabled] = useState(false);
-
-  const userName = 'Susie'; // Replace with dynamic username
+  const userName = 'Susie';
+  const swiperRef = useRef(null);
 
   const toggleSwitch = async (value: boolean) => {
-    // Update local state immediately
     setIsOnline(value);
-  
-    // Decide which endpoint to call
-    const path = value
-      ? '/api/mentor_status/set_online'
-      : '/api/mentor_status/set_offline';
-  
+    const path = value ? '/api/mentor_status/set_online' : '/api/mentor_status/set_offline';
     try {
-      // Make the authenticated POST
-      const response = await BackendManager
-        .getInstance()
-        .sendRequest(path, 'POST');
-  
+      const response = await BackendManager.getInstance().sendRequest(path, 'POST');
       if (!response.ok) {
         setIsOnline(!value);
-        const err = await response.json();
-        console.error('Status toggle failed:', err);
+        console.error('Status toggle failed:', await response.json());
       }
     } catch (error) {
       setIsOnline(!value);
       console.error('Error toggling status:', error);
     }
-  };  
+  };
 
   const Card = ({ name, primarySubject, district, image }) => (
     <View style={styles.card}>
-      <ImageBackground source={image} style={styles.cardImage} imageStyle={{ borderRadius: 16 }}>
-        <View style={styles.cardOverlay}>
-          <Text style={styles.cardTitle}>{name}</Text>
-          <Text style={styles.cardText}>Primary Subject: {primarySubject}</Text>
-          <Text style={styles.cardText}>School District: {district}</Text>
-        </View>
-      </ImageBackground>
+      <Image source={image} style={styles.mentorImage} />
+      <View style={styles.infoOverlay}>
+        <Text style={styles.mentorName}>{name}</Text>
+        <Text style={styles.mentorSubject}>{primarySubject}</Text>
+        <Text style={styles.mentorLocation}>{district}</Text>
+      </View>
     </View>
   );
 
-  const handleAccept = () => {
-    if (swiperRef.current) {
-      const mentee = mentees[currentIndex];
-      setAcceptedMentee(mentee);
-      setButtonsDisabled(true);
-      console.log('Accepted Mentee:', mentee);
-    }
-  };  
-  
-  const handleReject = () => {
-    if (!buttonsDisabled && swiperRef.current) {
-      swiperRef.current.swipeLeft();
-    }
+  const handleAccept = (card) => {
+    if (buttonsDisabled) return;
+    setButtonsDisabled(true);
+
+    const url = `https://getstream.io/video/demos/join/${callId}`;
+    Linking.openURL(url).catch((err) => {
+      console.error("Failed to open URL:", err);
+      setButtonsDisabled(false); // Re-enable if failed
+    });
   };
 
-  const renderCard = (cardData) => <Card {...cardData} />;
+  const handleReject = (card) => {
+    // Can be used for tracking or logic
+    console.log('Rejected:', card?.name);
+  };
+
+  const handleNoMoreCards = () => {
+    setCards([]);
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hi, {userName} 👋</Text>
-          <Text style={styles.subtext}>Are you ready to mentor?</Text>
-        </View>
-        <Image
-          source={require('../assets/images/mentor-profile-picture.png')} // Replace with profile picture of the user stored within our database
-          style={styles.profileImage}
-        />
+        <Header subtitle="Mentor Landing" />
       </View>
 
-      {/* Toggle */}
       <View style={styles.toggleContainer}>
         <Text style={styles.togglePrompt}>
           {isOnline ? 'Status: Online' : 'Status: Offline'}
@@ -113,66 +95,55 @@ const MentorLandingScreen = () => {
           </Text>
         )}
         <Switch
-          trackColor={{ false: '#767577', true: '#C7F9CC' }}
-          thumbColor={isOnline ? '#34C759' : '#f4f3f4'}
-          ios_backgroundColor="#3e3e3e"
+          trackColor={{ false: '#D1D5DB', true: '#C7F9CC' }} // light gray when off
+          thumbColor={isOnline ? '#34C759' : '#FFFFFF'} // green or white thumb
+          ios_backgroundColor="#D1D5DB" // ✅ light gray background for iOS
           onValueChange={toggleSwitch}
           value={isOnline}
         />
       </View>
 
-      {/* Mentee Cards */}
-      {isOnline && mentees.length > 0 && !allSwiped ? (
-        <View style={{ alignItems: 'center' }}>
+      {isOnline && cards.length > 0 ? (
+        <View style={styles.swiperWrapper}>
           <Text style={styles.noMatchesTitle}>Mentee Request ❤️</Text>
-          <View style={styles.swiperWrapper}>
-            <Swiper
-              ref={swiperRef}
-              cards={mentees}
-              cardIndex={currentIndex}
-              renderCard={renderCard}
-              onSwiped={(cardIndex) => {
-                setCurrentIndex(cardIndex + 1);
-                setButtonsDisabled(false);
-              }}
-              onSwipedAll={() => {
-                console.log('All mentee requests rejected');
-                setAllSwiped(true);
-              }}
-              stackSize={2}
-              backgroundColor="transparent"
-              cardVerticalMargin={20}
-              disableTopSwipe
-              disableBottomSwipe
-              containerStyle={styles.swiperContainer}
-              swipeBackCard={false}
-            />
-            {buttonsDisabled && (   // Disable swipe interaction when mentor clicks "Accept"
-              <View style={styles.overlayBlocker} pointerEvents="auto" />
+          <SwipeCards
+            cards={cards}
+            renderCard={(cardData) => <Card {...cardData} />}
+            renderNoMoreCards={() => (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyCardText}>No more mentees</Text>
+              </View>
             )}
-          </View>
+            handleYup={handleAccept}
+            handleNope={handleReject}
+            showYup
+            showNope
+            cardRemoved={() => setButtonsDisabled(false)}
+            cardStyle={styles.card}
+          />
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.rejectButton, buttonsDisabled && { opacity: 0.5 }]}
-              onPress={handleReject}
-              disabled={buttonsDisabled}
+              style={styles.rejectButton}
+              onPress={() => swiperRef.current?.nope()}
             >
               <Text style={styles.rejectButtonText}>Reject</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
-              style={[styles.acceptButton, buttonsDisabled && { opacity: 0.5 }]}
-              onPress={handleAccept}
-              disabled={buttonsDisabled}
+              style={styles.acceptButton}
+              onPress={() => {
+                const currentCard = cards[0];
+                if (currentCard) handleAccept(currentCard);
+              }}
             >
-              <Text style={styles.acceptButtonText}>Accept</Text>
+              <View style={styles.joinCallContent}>
+                <Text style={styles.acceptButtonText}>Join Call</Text>
+                <Ionicons name="videocam-outline" size={20} color="#fff" style={{ marginLeft: 8 }} />
+              </View>
             </TouchableOpacity>
           </View>
         </View>
-      ) : isOnline && mentees.length > 0 && allSwiped ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyCardText}>No more mentees</Text>
-        </View>
-      ) : isOnline && mentees.length === 0 ? (
+      ) : isOnline && cards.length === 0 ? (
         <View style={styles.noMatchesContainer}>
           <Text style={styles.noMatchesTitle}>No Mentee Matches 💔</Text>
           <Text style={styles.noMatchesText}>
@@ -190,32 +161,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 24,
+    paddingTop: 65,
     justifyContent: 'flex-start',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  greeting: {
-    fontSize: 28,
-    fontWeight: '600',
-  },
-  subtext: {
-    fontSize: 18,
-    color: '#555',
-  },
-  profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 44,
+    paddingHorizontal: 20,
   },
   toggleContainer: {
     alignItems: 'center',
     marginTop: 20,
-    marginBottom: 32,
+    marginBottom: 20,
   },
   togglePrompt: {
     fontSize: 24,
@@ -236,7 +191,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 12,
+    marginBottom: 30,
   },
   noMatchesText: {
     fontSize: 16,
@@ -245,53 +200,62 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   swiperWrapper: {
-    height: 360,
+    height: 500,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
   },
-  swiperContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    paddingHorizontal: 0,
-    marginHorizontal: 0,
-  },  
   card: {
-    width: '90%',
-    maxWidth: 320,
-    height: 320,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 16,
-    alignItems: 'center',
+    width: 320,
+    height: 440,
+    borderColor: 'black',
+    borderRadius: 20,
+    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowRadius: 20,
     elevation: 5,
+    alignItems: 'center',
     overflow: 'hidden',
     alignSelf: 'center',
-    marginLeft: -40,
   },
-  cardImage: {
+  mentorImage: {
+    width: '90%',
+    height: '70%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  infoOverlay: {
     width: '100%',
-    height: '100%',
-    justifyContent: 'flex-end',
+    height: '30%',
+    backgroundColor: '#fff',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  cardOverlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    padding: 16,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-  },
-  cardTitle: {
-    fontSize: 20,
+  mentorName: {
+    fontSize: 22,
     fontWeight: '700',
-    color: '#fff',
-    marginBottom: 4,
+    textAlign: 'center',
+    color: '#333',
   },
-  cardText: {
-    fontSize: 14,
-    color: '#ddd',
+  mentorSubject: {
+    fontSize: 18,
+    color: '#555',
+    marginTop: 4,
+  },
+  mentorLocation: {
+    fontSize: 16,
+    color: '#777',
+    marginTop: 2,
+  },
+  joinCallContent:{
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyCard: {
     justifyContent: 'center',
@@ -302,7 +266,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#ddd', 
     alignSelf: 'center',
     padding: 24,
   },
@@ -315,13 +279,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 32,
-    gap: 20,
+    gap: 20, // space between buttons
   },
   rejectButton: {
     paddingVertical: 12,
     paddingHorizontal: 40,
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#FF3B30', // red
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -334,7 +297,7 @@ const styles = StyleSheet.create({
   acceptButton: {
     paddingVertical: 12,
     paddingHorizontal: 40,
-    backgroundColor: '#34C759',
+    backgroundColor: '#34C759', // green
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -343,13 +306,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#fff',
     fontWeight: '600',
-  },
-  overlayBlocker: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 10,
   },
 });

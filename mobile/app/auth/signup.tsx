@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import sendAlert from '../utils/alerts';
 import TokenManager from './TokenManager';
-import { Image } from 'react-native';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
@@ -48,14 +47,20 @@ export default function SignupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.card}>
-        <View style={styles.logoContainer}>
-        <Image
-          source={require('@/assets/images/logo.png')}
-          style={styles.logo}
-        />
-      </View>
-
+        <ScrollView 
+          style={styles.card} 
+          contentContainerStyle={styles.cardContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Logo/Icon placeholder */}
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
 
           {/* Welcome Text */}
           <View style={styles.welcomeContainer}>
@@ -132,7 +137,7 @@ export default function SignupScreen() {
           >
             <ThemedText style={styles.loginButtonText}>Log In</ThemedText>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
   );
@@ -141,7 +146,7 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'white',
   },
   keyboardView: {
     flex: 1,
@@ -151,9 +156,6 @@ const styles = StyleSheet.create({
     margin: 20,
     borderRadius: 30,
     padding: 20,
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   logoContainer: {
     alignItems: 'center',
@@ -188,7 +190,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#666',
   },
-
+  logoImage: {
+    width: 180,
+    height: 180,
+  },
   inputContainer: {
     gap: 15,
     marginBottom: 20,
@@ -224,6 +229,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  cardContent: {
+    alignItems: 'center',
   },
   dividerContainer: {
     flexDirection: 'row',

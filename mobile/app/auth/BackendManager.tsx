@@ -15,14 +15,14 @@ export interface MentorApplicationData {
     firstName: string;
     lastName: string;
     phoneNumber: string;
-    
+
     // Geographic Information
     country: string;
     stateProvince: string;
     county: string;
     schoolDistrict: string;
     timeZone: string;
-    
+
     // Teaching Experience
     primarySubject: string;
     educationCertifications: string;
@@ -31,31 +31,31 @@ export interface MentorApplicationData {
     currentGradeLevels: string;
     previousGradeLevels: string;
     expertiseGradeLevels: string;
-    
+
     // Years of Experience
     yearsInEducation: string;
     yearsInCurrentRole: string;
     yearsInCurrentGradeLevel: string;
     yearsInCurrentSubject: string;
-    
+
     // Student Demographics
     racialDemographic: string;
     secondaryDemographic: string;
     socioeconomicDemographic: string;
     ellPercentage: string;
-    
+
     // Professional Qualifications
     teachingCertifications: string;
     advancedDegrees: string;
     pdLeadershipExperience: string;
     pedagogicalExpertise: string;
-    
+
     // Mentorship Experience
     previousMentoringExperience: string;
     numTeachersMentored: string;
     mentoringStyle: string;
     maxMentees: string;
-    
+
     // Specializations
     classroomManagement: boolean;
     technologyIntegration: boolean;
@@ -66,11 +66,11 @@ export interface MentorApplicationData {
     crisisResponse: boolean;
     specialEducation: boolean;
     additionalSpecializations: string;
-    
+
     // Availability
     availabilityFrequency: string;
     preferredContactMethod: string;
-    
+
     // Mentorship Philosophy
     mentoringPhilosophy: string;
     successMetrics: string;
@@ -81,14 +81,14 @@ export interface MenteeApplicationData {
     firstName: string;
     lastName: string;
     phoneNumber: string;
-    
+
     // Geographic Information
     country: string;
     stateProvince: string;
     county: string;
     schoolDistrict: string;
     timeZone: string;
-    
+
     // Teaching Experience
     primarySubject: string;
     educationCertifications: string;
@@ -96,19 +96,19 @@ export interface MenteeApplicationData {
     schoolType: string;
     currentGradeLevels: string;
     previousGradeLevels: string;
-    
+
     // Years of Experience
     yearsInEducation: string;
     yearsInCurrentRole: string;
     yearsInCurrentGradeLevel: string;
     yearsInCurrentSubject: string;
-    
+
     // Student Demographics
     racialDemographic: string;
     secondaryDemographic: string;
     socioeconomicDemographic: string;
     ellPercentage: string;
-    
+
     // Community Context
     schoolSocioeconomicDesignation: string;
     freeReducedLunchPercentage: string;
@@ -118,7 +118,7 @@ export interface MenteeApplicationData {
     householdIncomeRange: string;
     housingInsecurityPercentage: string;
     technologyAccess: string;
-    
+
     // Mentorship Goals
     supportAreas: string;
     immediateChallenges: string;
@@ -126,13 +126,13 @@ export interface MenteeApplicationData {
     improvementTimeline: string;
     sessionFrequency: string;
     desiredMentorCharacteristics: string;
-    
+
     // Professional Goals
     shortTermGoals: string;
     longTermGoals: string;
     professionalGrowthAreas: string;
     skillsToDevelop: string;
-    
+
     // Current Resources
     currentSupportSystems: string;
     previousMentorship: string;
@@ -255,7 +255,7 @@ class BackendManager {
         headers.append('X-Refresh-Token', tokens.refreshToken);
         headers.append('X-Id-Token', tokens.idToken);
         headers.append('X-Token-Expires', tokens.expiresIn.toString());
-        
+
         console.log(`[getAuthHeaders] Headers created successfully`);
         return headers;
     }
@@ -283,13 +283,13 @@ class BackendManager {
                 method: options.method,
                 headers: Array.from(headers.entries())
             });
-            
+
             if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
                 console.log(`[sendRequest] Adding Content-Type and body to request`);
                 headers.append('Content-Type', 'application/json');
                 options.body = JSON.stringify(body);
                 console.log(`[sendRequest] Body size:`, options.body.length, 'characters');
-                
+
                 // log first 100 chars of body
                 console.log(`[sendRequest] Body preview:`, options.body.substring(0, 100) + '...');
 
@@ -297,7 +297,7 @@ class BackendManager {
             const fullUrl = `${API_URL}${url}`;
             console.log(`[sendRequest] Sending fetch request to: ${fullUrl}`);
             console.time('[sendRequest] Request time');
-            
+
             const response = await fetch(`${API_URL}${url}`, options);
             console.timeEnd('[sendRequest] Request time');
 
@@ -359,17 +359,18 @@ class BackendManager {
     public async submitPicture(imageUri: string): Promise<any> {
         try {
             const headers = await this.getAuthHeaders();
-            headers.delete('Content-Type'); // Let fetch auto-set it for FormData
+            headers.delete('Content-Type'); // Let fetch auto-set for FormData
 
-            const res = await fetch(imageUri);
-            const blob = await res.blob();
+            const filename = 'profile.png'; // 🔥 Always upload as profile.png
+            const match = /\.(\w+)$/.exec(imageUri);
+            const type = match ? `image/${match[1]}` : 'image/png';
 
             const formData = new FormData();
-            const filename = imageUri.split('/').pop() || 'profile.png';
-            const match = /\.(\w+)$/.exec(filename ?? '');
-            const type = match ? `image/${match[1]}` : `image`;
-
-            formData.append('file', blob, filename);
+            formData.append('file', {
+                uri: imageUri,
+                name: filename,
+                type: type,
+            } as any);
 
             const response = await fetch(`${API_URL}/api/pictures/uploads`, {
                 method: 'POST',
@@ -378,16 +379,19 @@ class BackendManager {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to upload image');
+                const errorText = await response.text();
+                console.error('Upload failed:', errorText);
+                throw new Error('Failed to upload image');
             }
 
-            return await response.json();
+            console.log('✅ Profile picture uploaded successfully!');
+            return { url: `${API_URL}/assets/images/profile.png` }; // 🔥 Hardcoded path
         } catch (error) {
             console.error('Error uploading image:', error);
             throw error;
         }
     }
+
 
     /**
      * Get a user's picture by their user_id
@@ -418,430 +422,430 @@ class BackendManager {
           return null;
           // throw error;
         }
-      }
-
-     /**
- * Create a new mentorship session
- * 
- * @param mentorId - ID of the mentor
- * @param menteeId - ID of the mentee
- * @param scheduledDatetime - ISO string of the scheduled date and time
- * @param durationMinutes - Duration of the session in minutes
- * @param metaData - Optional additional data for the session
- * @returns The created session data
- */
-public async createSession(
-    mentorId: string,
-    menteeId: string,
-    scheduledDatetime: string,
-    durationMinutes: number,
-    metaData?: Record<string, any>
-): Promise<any> {
-    console.log(`[createSession] Starting with mentorId: ${mentorId}, menteeId: ${menteeId}, scheduledDatetime: ${scheduledDatetime}`);
-    try {
-        const sessionData = {
-            mentor_id: mentorId,
-            mentee_id: menteeId,
-            scheduled_datetime: scheduledDatetime,
-            duration_minutes: durationMinutes,
-            meta_data: metaData
-        };
-        
-        console.log(`[createSession] Preparing request with data:`, JSON.stringify(sessionData));
-        const response = await this.sendRequest('/api/sessions/create', 'POST', sessionData);
-        console.log(`[createSession] Response status: ${response.status}`);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`[createSession] Error response data:`, errorData);
-            throw new Error(errorData.error || 'Failed to create session');
-        }
-        
-        const result = await response.json();
-        console.log(`[createSession] Success! Session created with ID: ${result.id || 'unknown'}`);
-        return result;
-    } catch (error) {
-        console.error('[createSession] Error:', error);
-        throw error;
     }
-}
 
-/**
- * Get details of a specific mentorship session
- * 
- * @param sessionId - ID of the session to retrieve
- * @returns The session data
- */
-public async getSession(sessionId: string): Promise<any> {
-    console.log(`[getSession] Starting with sessionId: ${sessionId}`);
-    try {
-        console.log(`[getSession] Sending GET request to /api/sessions/${sessionId}`);
-        const response = await this.sendRequest(`/api/sessions/${sessionId}`, 'GET');
-        console.log(`[getSession] Response status: ${response.status}`);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`[getSession] Error response data:`, errorData);
-            throw new Error(errorData.error || 'Failed to get session');
-        }
-        
-        const result = await response.json();
-        console.log(`[getSession] Success! Retrieved session data for ID: ${sessionId}`);
-        return result;
-    } catch (error) {
-        console.error(`[getSession] Error retrieving session ${sessionId}:`, error);
-        throw error;
-    }
-}
-
-/**
- * List mentorship sessions for the current user
- * 
- * @param role - Filter by user's role ('mentor', 'mentee' or 'both')
- * @param status - Optional filter by session status
- * @returns List of sessions
- */
-public async listSessions(
-    role: 'mentor' | 'mentee' | 'both' = 'both',
-    status?: string
-): Promise<any> {
-    console.log(`[listSessions] Starting with role: ${role}, status: ${status || 'none'}`);
-    try {
-        let url = '/api/sessions/list?';
-        
-        if (role) {
-            url += `role=${role}`;
-        }
-        
-        if (status) {
-            url += `&status=${status}`;
-        }
-        
-        console.log(`[listSessions] Sending GET request to ${url}`);
-        const response = await this.sendRequest(url, 'GET');
-        console.log(`[listSessions] Response status: ${response.status}`);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`[listSessions] Error response data:`, errorData);
-            throw new Error(errorData.error || 'Failed to list sessions');
-        }
-        
-        const result = await response.json();
-        console.log(`[listSessions] Success! Retrieved ${result.sessions?.length || 0} sessions`);
-        return result;
-    } catch (error) {
-        console.error('[listSessions] Error listing sessions:', error);
-        throw error;
-    }
-}
-
-/**
- * Delete a mentorship session
- * 
- * @param sessionId - ID of the session to delete
- * @returns Confirmation message
- */
-public async deleteSession(sessionId: string): Promise<any> {
-    console.log(`[deleteSession] Starting with sessionId: ${sessionId}`);
-    try {
-        console.log(`[deleteSession] Sending DELETE request to /api/sessions/${sessionId}`);
-        const response = await this.sendRequest(`/api/sessions/${sessionId}`, 'DELETE');
-        console.log(`[deleteSession] Response status: ${response.status}`);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`[deleteSession] Error response data:`, errorData);
-            throw new Error(errorData.error || 'Failed to delete session');
-        }
-        
-        const result = await response.json();
-        console.log(`[deleteSession] Success! Deleted session with ID: ${sessionId}`);
-        return result;
-    } catch (error) {
-        console.error(`[deleteSession] Error deleting session ${sessionId}:`, error);
-        throw error;
-    }
-}
-
-/**
- * Submit feedback for a mentorship session
- * 
- * @param sessionId - ID of the mentorship session
- * @param feedbackData - The feedback data to submit
- * @param isMentor - Whether the feedback is from mentor or mentee
- * @returns The response from the API
- */
-public async submitSessionFeedback(
-    sessionId: string, 
-    feedbackData: {
-        rating: number;
-        feedback: string;
-        skillsImproved?: string;
-        skillsToImprove?: string;
-        appImprovements?: string;
-    },
-    isMentor: boolean = false
-): Promise<any> {
-    console.log(`[submitSessionFeedback] Starting with sessionId: ${sessionId}, isMentor: ${isMentor}`);
-    try {
-        const endpoint = `/api/sessions/${sessionId}/feedback`;
-        const payload = {
-            feedback_data: feedbackData,
-            feedback_type: isMentor ? 'mentor_feedback' : 'mentee_feedback'
-        };
-        
-        console.log(`[submitSessionFeedback] Preparing request to ${endpoint} with data:`, JSON.stringify(payload));
-        const response = await this.sendRequest(endpoint, 'POST', payload);
-        console.log(`[submitSessionFeedback] Response status: ${response.status}`);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`[submitSessionFeedback] Error response data:`, errorData);
-            throw new Error(errorData.error || 'Failed to submit session feedback');
-        }
-        
-        const result = await response.json();
-        console.log(`[submitSessionFeedback] Success! Feedback submitted for session ID: ${sessionId}`);
-        return result;
-    } catch (error) {
-        console.error(`[submitSessionFeedback] Error submitting feedback for session ${sessionId}:`, error);
-        throw error;
-    }
-}
-
-/**
- * Update a mentorship session status
- * 
- * @param sessionId - ID of the session to update
- * @param newStatus - New status for the session ('scheduled', 'completed', 'cancelled', 'rescheduled')
- * @returns The updated session data
- */
-public async updateSessionStatus(sessionId: string, newStatus: string): Promise<any> {
-    console.log(`[updateSessionStatus] Starting with sessionId: ${sessionId}, newStatus: ${newStatus}`);
-    try {
-        const endpoint = `/api/sessions/${sessionId}/status`;
-        const payload = { status: newStatus };
-        
-        console.log(`[updateSessionStatus] Sending PUT request to ${endpoint} with data:`, JSON.stringify(payload));
-        const response = await this.sendRequest(endpoint, 'PUT', payload);
-        console.log(`[updateSessionStatus] Response status: ${response.status}`);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`[updateSessionStatus] Error response data:`, errorData);
-            throw new Error(errorData.error || 'Failed to update session status');
-        }
-        
-        const result = await response.json();
-        console.log(`[updateSessionStatus] Success! Updated status to '${newStatus}' for session ID: ${sessionId}`);
-        return result;
-    } catch (error) {
-        console.error(`[updateSessionStatus] Error updating status for session ${sessionId}:`, error);
-        throw error;
-    }
-}
-   /**
- * Submit any type of application (mentor or mentee)
- * 
- * @param applicationType - The type of application ('mentor' or 'mentee')
- * @param applicationData - The complete application data
- * @returns The response from the API
- */
-public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', applicationData: MentorApplicationData | MenteeApplicationData): Promise<any> {
-    try {
-      let apiData: any = {
-        user_type: applicationType
-      };
-      
-      try {
-        // Try to process as mentor data first
-        if (applicationType === 'MENTOR') {
-          const mentorData = applicationData as MentorApplicationData;
-          
-          // Extract specializations as an array of strings
-          const specializations = [];
-          if (mentorData.classroomManagement) specializations.push('Classroom Management Strategies');
-          if (mentorData.technologyIntegration) specializations.push('Technology Integration');
-          if (mentorData.assessmentDataAnalysis) specializations.push('Assessment and Data Analysis');
-          if (mentorData.curriculumDevelopment) specializations.push('Curriculum Development');
-          if (mentorData.studentEngagement) specializations.push('Student Engagement Techniques');
-          if (mentorData.differentiatedInstruction) specializations.push('Differentiated Instruction');
-          if (mentorData.crisisResponse) specializations.push('Crisis Response/Trauma-Informed Teaching');
-          if (mentorData.specialEducation) specializations.push('Special Education Integration');
-          
-          // Add any additional specializations the user entered
-          if (mentorData.additionalSpecializations) {
-            const additionalItems = mentorData.additionalSpecializations
-              .split(',')
-              .map(item => item.trim())
-              .filter(item => item.length > 0);
-            specializations.push(...additionalItems);
-          }
-          
-          // Add all fields directly to apiData without nesting
-          apiData = {
-            ...apiData,
-            // Personal Information
-            firstName: mentorData.firstName,
-            lastName: mentorData.lastName,
-            phoneNumber: mentorData.phoneNumber,
-            
-            // Geographic Information
-            country: mentorData.country,
-            state_province: mentorData.stateProvince,
-            county: mentorData.county,
-            school_district: mentorData.schoolDistrict,
-            time_zone: mentorData.timeZone,
-            
-            // Teaching Experience
-            primary_subject: mentorData.primarySubject,
-            education_certifications: mentorData.educationCertifications,
-            specialized_programs: mentorData.specializedPrograms,
-            school_type: mentorData.schoolType,
-            current_grade_levels: mentorData.currentGradeLevels,
-            previous_grade_levels: mentorData.previousGradeLevels,
-            expertise_grade_levels: mentorData.expertiseGradeLevels,
-            
-            // Experience Years (convert to numbers)
-            education_years: parseInt(mentorData.yearsInEducation) || 0,
-            current_role_years: parseInt(mentorData.yearsInCurrentRole) || 0,
-            current_grade_level_years: parseInt(mentorData.yearsInCurrentGradeLevel) || 0,
-            current_subject_years: parseInt(mentorData.yearsInCurrentSubject) || 0,
-            
-            // Student Demographics
-            racial_demographic: mentorData.racialDemographic,
-            secondary_demographic: mentorData.secondaryDemographic,
-            socioeconomic_demographic: mentorData.socioeconomicDemographic,
-            ell_percentage: mentorData.ellPercentage,
-            
-            // Qualifications
-            teaching_certifications: mentorData.teachingCertifications,
-            advanced_degrees: mentorData.advancedDegrees,
-            pd_leadership_experience: mentorData.pdLeadershipExperience,
-            pedagogical_expertise: mentorData.pedagogicalExpertise,
-            
-            // Mentorship Experience
-            previous_mentoring_experience: mentorData.previousMentoringExperience,
-            teachers_mentored: parseInt(mentorData.numTeachersMentored) || 0,
-            mentoring_style: mentorData.mentoringStyle,
-            max_mentees: parseInt(mentorData.maxMentees) || 1,
-            
-            // Specializations
-            specializations: specializations,
-            
-            // Availability
-            availability_frequency: mentorData.availabilityFrequency,
-            preferred_contact_method: mentorData.preferredContactMethod,
-            
-            // Philosophy
-            mentoring_philosophy: mentorData.mentoringPhilosophy,
-            success_metrics: mentorData.successMetrics
-          };
-        } else {
-          // Process as mentee data
-          const menteeData = applicationData as MenteeApplicationData;
-          apiData = {
-            ...apiData,
-            // Personal Information
-            firstName: menteeData.firstName,
-            lastName: menteeData.lastName,
-            phoneNumber: menteeData.phoneNumber,
-            
-            // Geographic Information
-            country: menteeData.country,
-            state_province: menteeData.stateProvince,
-            county: menteeData.county,
-            school_district: menteeData.schoolDistrict,
-            time_zone: menteeData.timeZone,
-            
-            // Teaching Experience
-            primary_subject: menteeData.primarySubject,
-            education_certifications: menteeData.educationCertifications,
-            specialized_programs: menteeData.specializedPrograms,
-            school_type: menteeData.schoolType,
-            current_grade_levels: menteeData.currentGradeLevels,
-            previous_grade_levels: menteeData.previousGradeLevels,
-            
-            // Experience Years (convert to numbers)
-            education_years: parseInt(menteeData.yearsInEducation) || 0,
-            current_role_years: parseInt(menteeData.yearsInCurrentRole) || 0,
-            current_grade_level_years: parseInt(menteeData.yearsInCurrentGradeLevel) || 0,
-            current_subject_years: parseInt(menteeData.yearsInCurrentSubject) || 0,
-            
-            // Student Demographics
-            racial_demographic: menteeData.racialDemographic,
-            secondary_demographic: menteeData.secondaryDemographic,
-            socioeconomic_demographic: menteeData.socioeconomicDemographic,
-            ell_percentage: menteeData.ellPercentage,
-            
-            // Community Context
-            socioeconomic_designation: menteeData.schoolSocioeconomicDesignation,
-            free_reduced_lunch: menteeData.freeReducedLunchPercentage,
-            primary_languages: menteeData.primaryLanguages,
-            major_industries: menteeData.majorIndustries,
-            student_barriers: menteeData.studentBarriers,
-            household_income_range: menteeData.householdIncomeRange,
-            housing_insecurity: menteeData.housingInsecurityPercentage,
-            technology_access: menteeData.technologyAccess,
-            
-            // Mentorship Goals
-            support_areas: menteeData.supportAreas,
-            immediate_challenges: menteeData.immediateChallenges,
-            mentorship_goals: menteeData.mentorshipGoals,
-            improvement_timeline: menteeData.improvementTimeline,
-            session_frequency: menteeData.sessionFrequency,
-            desired_mentor_characteristics: menteeData.desiredMentorCharacteristics,
-            
-            // Professional Goals
-            short_term_goals: menteeData.shortTermGoals,
-            long_term_goals: menteeData.longTermGoals,
-            professional_growth_areas: menteeData.professionalGrowthAreas,
-            skills_to_develop: menteeData.skillsToDevelop,
-            
-            // Current Resources
-            current_support_systems: menteeData.currentSupportSystems,
-            previous_mentorship: menteeData.previousMentorship,
-            professional_development_access: menteeData.professionalDevelopmentAccess,
-            district_constraints: menteeData.districtConstraints
-          };
-        }
-      } catch (formattingError) {
-        console.error(`Error formatting ${applicationType} data:`, formattingError);
-        throw new Error(`Failed to format ${applicationType} application data: ${formattingError.message}`);
-      }
-  
-      // Use unified endpoint for both application types
-      const endpoint = '/api/users/submit_application';
-      console.log(`Submitting ${applicationType} application to ${endpoint}`);
-
-      console.log('Application data being sent:', JSON.stringify(apiData, null, 2));
-      
-      // Send the request
-      console.log(`[submitApplication] Calling sendRequest with endpoint: ${endpoint}`);
-      const response = await this.sendRequest(endpoint, 'POST', apiData);
-      console.log(`[submitApplication] Response received from sendRequest:`, response);
-      console.log(`[submitApplication] Response status:`, response.status, response.statusText);
-
-      // Check for errors
-      if (!response.ok) {
-        let errorMessage = 'Failed to submit application';
+    /**
+* Create a new mentorship session
+* 
+* @param mentorId - ID of the mentor
+* @param menteeId - ID of the mentee
+* @param scheduledDatetime - ISO string of the scheduled date and time
+* @param durationMinutes - Duration of the session in minutes
+* @param metaData - Optional additional data for the session
+* @returns The created session data
+*/
+    public async createSession(
+        mentorId: string,
+        menteeId: string,
+        scheduledDatetime: string,
+        durationMinutes: number,
+        metaData?: Record<string, any>
+    ): Promise<any> {
+        console.log(`[createSession] Starting with mentorId: ${mentorId}, menteeId: ${menteeId}, scheduledDatetime: ${scheduledDatetime}`);
         try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (jsonError) {
-          errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
+            const sessionData = {
+                mentor_id: mentorId,
+                mentee_id: menteeId,
+                scheduled_datetime: scheduledDatetime,
+                duration_minutes: durationMinutes,
+                meta_data: metaData
+            };
+
+            console.log(`[createSession] Preparing request with data:`, JSON.stringify(sessionData));
+            const response = await this.sendRequest('/api/sessions/create', 'POST', sessionData);
+            console.log(`[createSession] Response status: ${response.status}`);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`[createSession] Error response data:`, errorData);
+                throw new Error(errorData.error || 'Failed to create session');
+            }
+
+            const result = await response.json();
+            console.log(`[createSession] Success! Session created with ID: ${result.id || 'unknown'}`);
+            return result;
+        } catch (error) {
+            console.error('[createSession] Error:', error);
+            throw error;
         }
-        throw new Error(errorMessage);
-      }
-      
-      // Return the successful response
-      return await response.json();
-    } catch (error) {
-      console.error(`Error submitting ${applicationType} application:`, error);
-      throw error;
     }
-  }
+
+    /**
+     * Get details of a specific mentorship session
+     * 
+     * @param sessionId - ID of the session to retrieve
+     * @returns The session data
+     */
+    public async getSession(sessionId: string): Promise<any> {
+        console.log(`[getSession] Starting with sessionId: ${sessionId}`);
+        try {
+            console.log(`[getSession] Sending GET request to /api/sessions/${sessionId}`);
+            const response = await this.sendRequest(`/api/sessions/${sessionId}`, 'GET');
+            console.log(`[getSession] Response status: ${response.status}`);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`[getSession] Error response data:`, errorData);
+                throw new Error(errorData.error || 'Failed to get session');
+            }
+
+            const result = await response.json();
+            console.log(`[getSession] Success! Retrieved session data for ID: ${sessionId}`);
+            return result;
+        } catch (error) {
+            console.error(`[getSession] Error retrieving session ${sessionId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * List mentorship sessions for the current user
+     * 
+     * @param role - Filter by user's role ('mentor', 'mentee' or 'both')
+     * @param status - Optional filter by session status
+     * @returns List of sessions
+     */
+    public async listSessions(
+        role: 'mentor' | 'mentee' | 'both' = 'both',
+        status?: string
+    ): Promise<any> {
+        console.log(`[listSessions] Starting with role: ${role}, status: ${status || 'none'}`);
+        try {
+            let url = '/api/sessions/list?';
+
+            if (role) {
+                url += `role=${role}`;
+            }
+
+            if (status) {
+                url += `&status=${status}`;
+            }
+
+            console.log(`[listSessions] Sending GET request to ${url}`);
+            const response = await this.sendRequest(url, 'GET');
+            console.log(`[listSessions] Response status: ${response.status}`);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`[listSessions] Error response data:`, errorData);
+                throw new Error(errorData.error || 'Failed to list sessions');
+            }
+
+            const result = await response.json();
+            console.log(`[listSessions] Success! Retrieved ${result.sessions?.length || 0} sessions`);
+            return result;
+        } catch (error) {
+            console.error('[listSessions] Error listing sessions:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Delete a mentorship session
+     * 
+     * @param sessionId - ID of the session to delete
+     * @returns Confirmation message
+     */
+    public async deleteSession(sessionId: string): Promise<any> {
+        console.log(`[deleteSession] Starting with sessionId: ${sessionId}`);
+        try {
+            console.log(`[deleteSession] Sending DELETE request to /api/sessions/${sessionId}`);
+            const response = await this.sendRequest(`/api/sessions/${sessionId}`, 'DELETE');
+            console.log(`[deleteSession] Response status: ${response.status}`);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`[deleteSession] Error response data:`, errorData);
+                throw new Error(errorData.error || 'Failed to delete session');
+            }
+
+            const result = await response.json();
+            console.log(`[deleteSession] Success! Deleted session with ID: ${sessionId}`);
+            return result;
+        } catch (error) {
+            console.error(`[deleteSession] Error deleting session ${sessionId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Submit feedback for a mentorship session
+     * 
+     * @param sessionId - ID of the mentorship session
+     * @param feedbackData - The feedback data to submit
+     * @param isMentor - Whether the feedback is from mentor or mentee
+     * @returns The response from the API
+     */
+    public async submitSessionFeedback(
+        sessionId: string,
+        feedbackData: {
+            rating: number;
+            feedback: string;
+            skillsImproved?: string;
+            skillsToImprove?: string;
+            appImprovements?: string;
+        },
+        isMentor: boolean = false
+    ): Promise<any> {
+        console.log(`[submitSessionFeedback] Starting with sessionId: ${sessionId}, isMentor: ${isMentor}`);
+        try {
+            const endpoint = `/api/sessions/${sessionId}/feedback`;
+            const payload = {
+                feedback_data: feedbackData,
+                feedback_type: isMentor ? 'mentor_feedback' : 'mentee_feedback'
+            };
+
+            console.log(`[submitSessionFeedback] Preparing request to ${endpoint} with data:`, JSON.stringify(payload));
+            const response = await this.sendRequest(endpoint, 'POST', payload);
+            console.log(`[submitSessionFeedback] Response status: ${response.status}`);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`[submitSessionFeedback] Error response data:`, errorData);
+                throw new Error(errorData.error || 'Failed to submit session feedback');
+            }
+
+            const result = await response.json();
+            console.log(`[submitSessionFeedback] Success! Feedback submitted for session ID: ${sessionId}`);
+            return result;
+        } catch (error) {
+            console.error(`[submitSessionFeedback] Error submitting feedback for session ${sessionId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update a mentorship session status
+     * 
+     * @param sessionId - ID of the session to update
+     * @param newStatus - New status for the session ('scheduled', 'completed', 'cancelled', 'rescheduled')
+     * @returns The updated session data
+     */
+    public async updateSessionStatus(sessionId: string, newStatus: string): Promise<any> {
+        console.log(`[updateSessionStatus] Starting with sessionId: ${sessionId}, newStatus: ${newStatus}`);
+        try {
+            const endpoint = `/api/sessions/${sessionId}/status`;
+            const payload = { status: newStatus };
+
+            console.log(`[updateSessionStatus] Sending PUT request to ${endpoint} with data:`, JSON.stringify(payload));
+            const response = await this.sendRequest(endpoint, 'PUT', payload);
+            console.log(`[updateSessionStatus] Response status: ${response.status}`);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`[updateSessionStatus] Error response data:`, errorData);
+                throw new Error(errorData.error || 'Failed to update session status');
+            }
+
+            const result = await response.json();
+            console.log(`[updateSessionStatus] Success! Updated status to '${newStatus}' for session ID: ${sessionId}`);
+            return result;
+        } catch (error) {
+            console.error(`[updateSessionStatus] Error updating status for session ${sessionId}:`, error);
+            throw error;
+        }
+    }
+    /**
+  * Submit any type of application (mentor or mentee)
+  * 
+  * @param applicationType - The type of application ('mentor' or 'mentee')
+  * @param applicationData - The complete application data
+  * @returns The response from the API
+  */
+    public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', applicationData: MentorApplicationData | MenteeApplicationData): Promise<any> {
+        try {
+            let apiData: any = {
+                user_type: applicationType
+            };
+
+            try {
+                // Try to process as mentor data first
+                if (applicationType === 'MENTOR') {
+                    const mentorData = applicationData as MentorApplicationData;
+
+                    // Extract specializations as an array of strings
+                    const specializations = [];
+                    if (mentorData.classroomManagement) specializations.push('Classroom Management Strategies');
+                    if (mentorData.technologyIntegration) specializations.push('Technology Integration');
+                    if (mentorData.assessmentDataAnalysis) specializations.push('Assessment and Data Analysis');
+                    if (mentorData.curriculumDevelopment) specializations.push('Curriculum Development');
+                    if (mentorData.studentEngagement) specializations.push('Student Engagement Techniques');
+                    if (mentorData.differentiatedInstruction) specializations.push('Differentiated Instruction');
+                    if (mentorData.crisisResponse) specializations.push('Crisis Response/Trauma-Informed Teaching');
+                    if (mentorData.specialEducation) specializations.push('Special Education Integration');
+
+                    // Add any additional specializations the user entered
+                    if (mentorData.additionalSpecializations) {
+                        const additionalItems = mentorData.additionalSpecializations
+                            .split(',')
+                            .map(item => item.trim())
+                            .filter(item => item.length > 0);
+                        specializations.push(...additionalItems);
+                    }
+
+                    // Add all fields directly to apiData without nesting
+                    apiData = {
+                        ...apiData,
+                        // Personal Information
+                        firstName: mentorData.firstName,
+                        lastName: mentorData.lastName,
+                        phoneNumber: mentorData.phoneNumber,
+
+                        // Geographic Information
+                        country: mentorData.country,
+                        state_province: mentorData.stateProvince,
+                        county: mentorData.county,
+                        school_district: mentorData.schoolDistrict,
+                        time_zone: mentorData.timeZone,
+
+                        // Teaching Experience
+                        primary_subject: mentorData.primarySubject,
+                        education_certifications: mentorData.educationCertifications,
+                        specialized_programs: mentorData.specializedPrograms,
+                        school_type: mentorData.schoolType,
+                        current_grade_levels: mentorData.currentGradeLevels,
+                        previous_grade_levels: mentorData.previousGradeLevels,
+                        expertise_grade_levels: mentorData.expertiseGradeLevels,
+
+                        // Experience Years (convert to numbers)
+                        education_years: parseInt(mentorData.yearsInEducation) || 0,
+                        current_role_years: parseInt(mentorData.yearsInCurrentRole) || 0,
+                        current_grade_level_years: parseInt(mentorData.yearsInCurrentGradeLevel) || 0,
+                        current_subject_years: parseInt(mentorData.yearsInCurrentSubject) || 0,
+
+                        // Student Demographics
+                        racial_demographic: mentorData.racialDemographic,
+                        secondary_demographic: mentorData.secondaryDemographic,
+                        socioeconomic_demographic: mentorData.socioeconomicDemographic,
+                        ell_percentage: mentorData.ellPercentage,
+
+                        // Qualifications
+                        teaching_certifications: mentorData.teachingCertifications,
+                        advanced_degrees: mentorData.advancedDegrees,
+                        pd_leadership_experience: mentorData.pdLeadershipExperience,
+                        pedagogical_expertise: mentorData.pedagogicalExpertise,
+
+                        // Mentorship Experience
+                        previous_mentoring_experience: mentorData.previousMentoringExperience,
+                        teachers_mentored: parseInt(mentorData.numTeachersMentored) || 0,
+                        mentoring_style: mentorData.mentoringStyle,
+                        max_mentees: parseInt(mentorData.maxMentees) || 1,
+
+                        // Specializations
+                        specializations: specializations,
+
+                        // Availability
+                        availability_frequency: mentorData.availabilityFrequency,
+                        preferred_contact_method: mentorData.preferredContactMethod,
+
+                        // Philosophy
+                        mentoring_philosophy: mentorData.mentoringPhilosophy,
+                        success_metrics: mentorData.successMetrics
+                    };
+                } else {
+                    // Process as mentee data
+                    const menteeData = applicationData as MenteeApplicationData;
+                    apiData = {
+                        ...apiData,
+                        // Personal Information
+                        firstName: menteeData.firstName,
+                        lastName: menteeData.lastName,
+                        phoneNumber: menteeData.phoneNumber,
+
+                        // Geographic Information
+                        country: menteeData.country,
+                        state_province: menteeData.stateProvince,
+                        county: menteeData.county,
+                        school_district: menteeData.schoolDistrict,
+                        time_zone: menteeData.timeZone,
+
+                        // Teaching Experience
+                        primary_subject: menteeData.primarySubject,
+                        education_certifications: menteeData.educationCertifications,
+                        specialized_programs: menteeData.specializedPrograms,
+                        school_type: menteeData.schoolType,
+                        current_grade_levels: menteeData.currentGradeLevels,
+                        previous_grade_levels: menteeData.previousGradeLevels,
+
+                        // Experience Years (convert to numbers)
+                        education_years: parseInt(menteeData.yearsInEducation) || 0,
+                        current_role_years: parseInt(menteeData.yearsInCurrentRole) || 0,
+                        current_grade_level_years: parseInt(menteeData.yearsInCurrentGradeLevel) || 0,
+                        current_subject_years: parseInt(menteeData.yearsInCurrentSubject) || 0,
+
+                        // Student Demographics
+                        racial_demographic: menteeData.racialDemographic,
+                        secondary_demographic: menteeData.secondaryDemographic,
+                        socioeconomic_demographic: menteeData.socioeconomicDemographic,
+                        ell_percentage: menteeData.ellPercentage,
+
+                        // Community Context
+                        socioeconomic_designation: menteeData.schoolSocioeconomicDesignation,
+                        free_reduced_lunch: menteeData.freeReducedLunchPercentage,
+                        primary_languages: menteeData.primaryLanguages,
+                        major_industries: menteeData.majorIndustries,
+                        student_barriers: menteeData.studentBarriers,
+                        household_income_range: menteeData.householdIncomeRange,
+                        housing_insecurity: menteeData.housingInsecurityPercentage,
+                        technology_access: menteeData.technologyAccess,
+
+                        // Mentorship Goals
+                        support_areas: menteeData.supportAreas,
+                        immediate_challenges: menteeData.immediateChallenges,
+                        mentorship_goals: menteeData.mentorshipGoals,
+                        improvement_timeline: menteeData.improvementTimeline,
+                        session_frequency: menteeData.sessionFrequency,
+                        desired_mentor_characteristics: menteeData.desiredMentorCharacteristics,
+
+                        // Professional Goals
+                        short_term_goals: menteeData.shortTermGoals,
+                        long_term_goals: menteeData.longTermGoals,
+                        professional_growth_areas: menteeData.professionalGrowthAreas,
+                        skills_to_develop: menteeData.skillsToDevelop,
+
+                        // Current Resources
+                        current_support_systems: menteeData.currentSupportSystems,
+                        previous_mentorship: menteeData.previousMentorship,
+                        professional_development_access: menteeData.professionalDevelopmentAccess,
+                        district_constraints: menteeData.districtConstraints
+                    };
+                }
+            } catch (formattingError) {
+                console.error(`Error formatting ${applicationType} data:`, formattingError);
+                throw new Error(`Failed to format ${applicationType} application data: ${formattingError.message}`);
+            }
+
+            // Use unified endpoint for both application types
+            const endpoint = '/api/users/submit_application';
+            console.log(`Submitting ${applicationType} application to ${endpoint}`);
+
+            console.log('Application data being sent:', JSON.stringify(apiData, null, 2));
+
+            // Send the request
+            console.log(`[submitApplication] Calling sendRequest with endpoint: ${endpoint}`);
+            const response = await this.sendRequest(endpoint, 'POST', apiData);
+            console.log(`[submitApplication] Response received from sendRequest:`, response);
+            console.log(`[submitApplication] Response status:`, response.status, response.statusText);
+
+            // Check for errors
+            if (!response.ok) {
+                let errorMessage = 'Failed to submit application';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
+                } catch (jsonError) {
+                    errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Return the successful response
+            return await response.json();
+        } catch (error) {
+            console.error(`Error submitting ${applicationType} application:`, error);
+            throw error;
+        }
+    }
     /**
      * Update a user application
      * 
@@ -851,12 +855,12 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
     public async updateApplication(updateData: Record<string, any>): Promise<any> {
         try {
             const response = await this.sendRequest('/api/users/update_application', 'POST', updateData);
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to update application');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error updating application:', error);
@@ -875,25 +879,25 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
             if (this.cachedUserData) {
                 return this.cachedUserData;
             }
-            
+
             const response = await this.sendRequest('/api/users/get_application', 'GET');
 
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to get application');
             }
-            
+
             const data = await response.json();
             // Cache the user data
             this.cachedUserData = data;
-            
+
             // Cache the user name if available
             if (data && data.profile_data && data.profile_data.firstName) {
                 this.cachedUserName = data.profile_data.firstName;
                 // Store in persistent storage
                 await this.setStorageItem(this.USER_NAME_KEY, data.profile_data.firstName);
             }
-            
+
             return data;
         } catch (error) {
             console.error('Error getting application:', error);
@@ -909,12 +913,12 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
     public async getApplicationStatus(): Promise<any> {
         try {
             const response = await this.sendRequest('/api/users/get_application_status', 'GET');
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to get application status');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error getting application status:', error);
@@ -930,17 +934,17 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
      */
     public async listCreditPools(userEmail?: string): Promise<any> {
         try {
-            const url = userEmail 
+            const url = userEmail
                 ? `/api/credits/pools?user_email=${encodeURIComponent(userEmail)}`
                 : '/api/credits/pools';
-                
+
             const response = await this.sendRequest(url, 'GET');
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to list credit pools');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error listing credit pools:', error);
@@ -961,14 +965,14 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
                 name: name,
                 initial_credits: initialCredits || 0
             };
-            
+
             const response = await this.sendRequest('/api/credits/pools', 'POST', poolData);
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to create credit pool');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error creating credit pool:', error);
@@ -983,15 +987,15 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
      * @param updateData - Data to update (name, is_active)
      * @returns The updated pool data
      */
-    public async updateCreditPool(poolId: string, updateData: {name?: string, is_active?: boolean}): Promise<any> {
+    public async updateCreditPool(poolId: string, updateData: { name?: string, is_active?: boolean }): Promise<any> {
         try {
             const response = await this.sendRequest(`/api/credits/pools/${poolId}`, 'PUT', updateData);
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to update credit pool');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error updating credit pool:', error);
@@ -1012,14 +1016,14 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
                 user_email: userEmail,
                 pool_code: poolCode
             };
-            
+
             const response = await this.sendRequest('/api/credits/pools/access', 'POST', accessData);
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to add user to pool');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error adding user to pool:', error);
@@ -1040,14 +1044,14 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
                 num_codes: numCodes,
                 credits_per_code: creditsPerCode
             };
-            
+
             const response = await this.sendRequest('/api/credits/generate', 'POST', generateData);
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to generate credits');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error generating credits:', error);
@@ -1068,14 +1072,14 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
                 code: code,
                 pool_id: poolId
             };
-            
+
             const response = await this.sendRequest('/api/credits/redeem', 'POST', redeemData);
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to redeem credit');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error redeeming credit:', error);
@@ -1093,12 +1097,12 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
     public async removeUserFromPool(poolId: number, userId: number): Promise<any> {
         try {
             const response = await this.sendRequest(`/api/credits/pools/${poolId}/users/${userId}`, 'DELETE');
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to remove user from pool');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error removing user from pool:', error);
@@ -1122,6 +1126,7 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
             if (limit) {
                 url += `?limit=${limit}`;
             }
+
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -1149,12 +1154,12 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
     public async getAvailableCredits(): Promise<number> {
         try {
             const response = await this.sendRequest('/api/credits/available', 'GET');
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to get available credits');
             }
-            
+
             const data = await response.json();
             return data.total_credits_available;
         } catch (error) {
@@ -1172,7 +1177,7 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
         try {
             // Return cached name immediately
             const currentCachedName = this.cachedUserName;
-            
+
             // Try to get the latest name from application data in the background
             this.getApplication().then(applicationData => {
                 if (applicationData && applicationData.profile_data && applicationData.profile_data.firstName) {
@@ -1184,7 +1189,7 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
             }).catch(error => {
                 console.error('Error updating user name in background:', error);
             });
-            
+
             // Return the cached name while the update happens in background
             return currentCachedName;
         } catch (error) {
@@ -1192,14 +1197,14 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
             return null;
         }
     }
-    
+
     /**
      * Clear cached user data (useful after logout)
      */
     public async clearUserCache(): Promise<void> {
         this.cachedUserName = "User";
         this.cachedUserData = null;
-        
+
         // Clear from persistent storage
         try {
             await this.removeStorageItem(this.USER_NAME_KEY);

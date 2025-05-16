@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import BackendManager from '../app/auth/BackendManager';
+import TokenManager from '../app/auth/TokenManager'; // Import TokenManager
 
 export function Header(props: { subtitle: string }) {
   const [showNav, setShowNav] = useState(false);
@@ -10,28 +11,48 @@ export function Header(props: { subtitle: string }) {
   const [userName, setUserName] = useState<string | null>(null);
   const router = useRouter();
   const backendManager = BackendManager.getInstance();
-  
+  const tokenManager = TokenManager.getInstance();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const role = await tokenManager.getUserRole();
+      setUserRole(role);
+    };
+
+    fetchUserRole();
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch credits
+  
+        // Try fetching credits
         const availableCredits = await backendManager.getAvailableCredits();
         setCredits(availableCredits);
-        
+  
         // Fetch user name
-        const application = await backendManager.getApplication();
+        // const application = await backendManager.getApplication();
         const name = await backendManager.getUserName();
         setUserName(name || 'User');
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setCredits(0); // Default to 0 on error
+
+      } catch (error: any) {
+        console.error('Exxrror fetching data:', error);
+  
+        // Check if token expired
+        if (error?.message?.includes('token is expired')) {
+          console.log('Token expired — redirecting to login');
+          backendManager.clearUserCache();
+          router.push('/auth/login');
+        } else {
+          setCredits(0); // Default credits on error
+        }
       } finally {
         setLoading(false);
       }
     };
-    
+  
     fetchData();
   }, []);
 
@@ -39,14 +60,26 @@ export function Header(props: { subtitle: string }) {
     <>
       <View style={styles.header}>
         <View style={styles.headerText}>
+          {userRole === 'mentor' && (
           <Text style={styles.greeting}>
-            Hi, {userName || backendManager.getCachedUserName()} <Text style={styles.wave}>👋</Text>
-          </Text>
+            Hi, Melissa <Text style={styles.wave}>👋</Text>
+          </Text>          )}
+          {userRole === 'mentee' && (
+            <Text style={styles.greeting}>
+              Hi, {userName || backendManager.getCachedUserName()} <Text style={styles.wave}>👋</Text>
+            </Text>            
+          )}
+          
           <Text style={styles.subtitle}>{props.subtitle}</Text>
         </View>
 
         <TouchableOpacity style={styles.profileSection} onPress={() => setShowNav(true)}>
-          <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
+          {userRole === 'mentor' && (
+            <Image source={require('../assets/images/stock_mentor2.jpg')} style={styles.profileImage} />
+          )}
+          {userRole === 'mentee' && (
+            <Image source={require('../assets/images/stock_pfp.jpeg')} style={styles.profileImage} />
+          )}
           {loading ? (
             <ActivityIndicator size="small" color="#666" style={styles.tokenLoader} />
           ) : (
@@ -57,7 +90,7 @@ export function Header(props: { subtitle: string }) {
 
       {/* Modal for Nav Options */}
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={showNav}
         onRequestClose={() => setShowNav(false)}
@@ -66,17 +99,30 @@ export function Header(props: { subtitle: string }) {
           <View style={styles.navContainer}>
             {/* <Text style={styles.navTitle}>Navigation</Text> */}
 
-            <TouchableOpacity onPress={() => { setShowNav(false); router.push('/mentee-matching'); }}>
-              <Text style={styles.navItem}>🤝  Matching</Text>
-            </TouchableOpacity>
+            {userRole === 'mentee' && (
+              <>
+                <TouchableOpacity onPress={() => { setShowNav(false); router.push('/mentee-matching'); }}>
+                  <Text style={styles.navItem}>🤝  Matching</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity onPress={() => { setShowNav(false); }}>
+                  <Text style={styles.navItem}>❤️  Liked</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {userRole === 'mentor' && (
+              <>
+                <TouchableOpacity onPress={() => { setShowNav(false); router.push('/mentee-matching'); }}>
+                  <Text style={styles.navItem}>🤝  Matching</Text>
+                </TouchableOpacity>
+              </>
+            )}
 
             <TouchableOpacity onPress={() => { setShowNav(false); router.push('/profile'); }}>
               <Text style={styles.navItem}>👤  Profile</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => { setShowNav(false); router.push('/settings'); }}>
-              <Text style={styles.navItem}>⚙️  Settings</Text>
-            </TouchableOpacity>
             <TouchableOpacity onPress={() => { 
               setShowNav(false); 
               // Clear user cache on logout

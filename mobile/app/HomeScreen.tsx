@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import ConfettiCannon from 'react-native-confetti-cannon';
@@ -14,6 +14,12 @@ export const HomeScreen = ({ goToCallScreen }: Props) => {
   const mentor = mentorString ? JSON.parse(mentorString as string) : null;
 
   const confettiRef = useRef<any>(null);
+
+  const [infoVisible, setInfoVisible] = useState(null);
+
+  const toggleInfo = (mentorId) => {
+    setInfoVisible(infoVisible === mentorId ? null : mentorId);
+  };
 
   useEffect(() => {
     confettiRef.current?.start();
@@ -43,8 +49,8 @@ export const HomeScreen = ({ goToCallScreen }: Props) => {
           <View style={styles.card}>
             <MenteeCard
               mentor={mentor}
-              infoVisible={undefined}
-              toggleInfo={undefined}
+              infoVisible={infoVisible}
+              toggleInfo={toggleInfo}
             />
 
 

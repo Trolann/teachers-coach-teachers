@@ -113,6 +113,16 @@ def fake_mentors_page():
 def generate_embeddings(cognito_sub: str, embedding_data: Dict[str, str]) -> Optional[Dict[str, List[float]]]:
     """
     Generate embeddings for a user - this is the function that will be threaded
+    
+    This function ONLY calls the OpenAI API and does not interact with the database.
+    
+    Args:
+        cognito_sub: The user's cognito sub ID
+        embedding_data: The data to generate embeddings from
+        
+    Returns:
+        Optional[Dict[str, List[float]]]: Dictionary with embedding types as keys and vector embeddings as values,
+                                         or None if there was an error
     """
     try:
         # Only call the OpenAI API part, not the database operations
@@ -170,7 +180,6 @@ def import_mentors_from_json():
         # Process all profiles and prepare data for threading
         users_to_add = []
         embedding_tasks = []
-
         for profile in profiles:
             try:
                 # Validate the profile has required fields

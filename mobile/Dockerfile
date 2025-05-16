@@ -5,10 +5,10 @@ FROM node:18
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY package.json package-lock.json /app/
+COPY package.json yarn.lock ./
 
 # Install dependencies
-RUN npm install
+RUN yarn install
 
 # Globally install required packages
 RUN npm install -g @expo/ngrok@^4.1.0

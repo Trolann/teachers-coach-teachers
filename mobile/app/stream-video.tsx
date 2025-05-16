@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { HomeScreen } from './HomeScreen';
 import { CallScreen } from './CallScreen';
+import 'react-native-gesture-handler';
+
 
 // 1. Import the StreamVideo and StreamVideoClient components
 import {
@@ -11,17 +13,17 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 
 // 2. Create a StreamVideoClient instance
-const apiKey = 'mmhfdzb5evj2'; // the API key can be found in the "Credentials" section
-const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3Byb250by5nZXRzdHJlYW0uaW8iLCJzdWIiOiJ1c2VyL0dlbmVyYWxfVmVlcnMiLCJ1c2VyX2lkIjoiR2VuZXJhbF9WZWVycyIsInZhbGlkaXR5X2luX3NlY29uZHMiOjYwNDgwMCwiaWF0IjoxNzQ3MDUzMjIxLCJleHAiOjE3NDc2NTgwMjF9.ndfW2RquLjDwzSNCOlJ6AqD0gPkobUNomOvrSSQeVPM'; // the token can be found in the "Credentials" section
-const userId = 'General_Veers'; // the user id can be found in the "Credentials" section
-const callId = 'v1pIDkbkpC0o';
+import { STREAM_DEMO_CREDS } from '../constants/StreamDemoCredentials';
+import { Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 
-// 3. Create a user object
+const { apiKey, userId, token, callId } = STREAM_DEMO_CREDS;
+
 const user = {
   id: userId,
-  name: 'John Malkovich',
-  image: `https://getstream.io/random_png/?id=${userId}&name=John+Malkovich`,
+  name: 'Random User',
+  image: 'https://getstream.io/random_png/?id=1&name=Random+User',
 };
+
 // 4. Create a StreamVideoClient instance
 const client = new StreamVideoClient({ apiKey, user, token });
 
@@ -40,6 +42,7 @@ export default function App() {
   };
   return (
     // 5. Wrap your app with the StreamVideo component
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <StreamVideo client={client}>
       <SafeAreaView style={styles.container}>
         {activeScreen === 'call-screen' ? (
@@ -49,6 +52,7 @@ export default function App() {
         )}
       </SafeAreaView>
     </StreamVideo>
+    </GestureHandlerRootView>
   );
 }
 

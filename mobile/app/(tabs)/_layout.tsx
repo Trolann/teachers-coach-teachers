@@ -22,10 +22,40 @@ export default function TabLayout() {
     const checkAuth = async () => {
       try {
         const hasToken = await TokenManager.getInstance().hasValidTokens();
+        
 
         if (hasToken && isMounted) {
           console.log("User is authenticated. Redirecting to pre-application.");
-          router.navigate('/mentee-matching');
+          const userRole = await TokenManager.getInstance().getUserRole();
+          // const userStatus = await TokenManager.getInstance().getUserStatus();
+
+          // if (userRole === 'mentor' && userStatus === 'approved') {
+          //   console.log("User is a mentor and approved. Redirecting to mentor landing.");
+          //   router.navigate('/mentor-landing');
+          // } else if (userRole === 'mentor' && userStatus === 'denied') {
+          //   console.log("User is a mentor and denied. Redirecting to mentor denied.");
+          //   router.navigate('/mentor-denied');
+          // } else if (userRole === 'mentor' && userStatus === 'pending') {
+          //   console.log("User is a mentor and pending. Redirecting to pre-application.");
+          //   router.navigate('/pre-application');
+          // } else if (userRole === 'mentee') {
+          //   console.log("User is a mentee. Redirecting to mentee matching."); 
+          //   router.navigate('/mentee-matching');
+          // } else {
+          //   console.log("User role is not recognized. Redirecting to pre-application.");
+          //   router.navigate('/pre-application');
+          // }
+          // if (userRole === 'mentor') {
+          //   console.log("User is a mentor. Redirecting to mentor landing."); 
+          //   router.navigate('/mentor-landing');
+          // } else if (userRole === 'mentee') {
+          //   console.log("User is a mentee. Redirecting to mentee matching."); 
+          //   router.navigate('/mentee-matching');
+          // }
+
+          
+          router.replace('/mentee-matching');
+          setIsAuthenticated(true);
         } else if (isMounted) {
           console.log("No valid token found. Showing signup.");
           setIsAuthenticated(false);

@@ -1,12 +1,11 @@
 // app/auth/login.tsx
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Alert, SafeAreaView, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import TokenManager from './TokenManager';
-import { Image } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -19,7 +18,15 @@ export default function LoginScreen() {
       const success = await TokenManager.getInstance().loginWithCredentials(email, password);
       console.log('Login status:', success);
       if (success) {
-        router.replace('/pre-application');
+        const role = await TokenManager.getInstance().getUserRole();
+        console.log('User role:', role);
+        if (role === 'mentor') {
+          router.replace('/mentor-landing');
+        } else if (role === 'mentee') {
+          router.replace('/mentee-matching');
+        } else {
+          router.replace('/pre-application');
+        }
       } else {
         Alert.alert('invalid credentials');
       }
@@ -29,19 +36,27 @@ export default function LoginScreen() {
 };
 
   return (
-    <ThemedView style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.card}>
+        <ScrollView 
+          style={styles.card} 
+          contentContainerStyle={styles.cardContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Logo/Icon placeholder */}
           <View style={styles.logoContainer}>
-        <Image
-          source={require('@/assets/images/logo.png')}
-          style={styles.logo}
-        />
-      </View>
-
+            <View style={styles.logo}>
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            </View>
+          </View>
 
           {/* Welcome Text */}
           <View style={styles.welcomeContainer}>
@@ -103,16 +118,16 @@ export default function LoginScreen() {
           >
             <ThemedText style={styles.signUpButtonText}>Sign Up</ThemedText>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
-    </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'white',
   },
   keyboardView: {
     flex: 1,
@@ -123,19 +138,22 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     padding: 20,
     flex: 1,
-    justifyContent: 'center',
+  },
+  cardContent: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 20,
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderWidth: 2,
-    borderColor: '#000',
     borderRadius: 16,
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 180,
+    height: 180,
   },
   welcomeContainer: {
     alignItems: 'center',
