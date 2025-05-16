@@ -3,6 +3,7 @@ import TokenManager from './TokenManager';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { MentorProfile, MenteeProfile } from '../utils/types';
 
 /**
  * Updates to BackendManager class to support mentor and mentee application submissions
@@ -389,18 +390,23 @@ class BackendManager {
     }
 
     /**
-     * Get a user picture
+     * Get a user's picture by their user_id
      * 
+     * @param userId - The Cognito ID of the user
      * @returns The user picture
      */
-    public async getPicture(): Promise<Blob> {
+    public async getPicture(userId: string): Promise<Blob> {
         try {
           const headers = await this.getAuthHeaders();
-          const response = await fetch(`${API_URL}/api/pictures/me`, {
+          const response = await fetch(`${API_URL}/api/pictures/${userId}`, {
             method: 'GET',
             headers,
           });
       
+          if (response.status === 404) {
+            return null;
+          }
+
           if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Failed to fetch profile picture');
@@ -409,7 +415,8 @@ class BackendManager {
           return await response.blob();
         } catch (error) {
           console.error('Error fetching profile picture:', error);
-          throw error;
+          return null;
+          // throw error;
         }
       }
 
@@ -1108,18 +1115,25 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
      */
     public async findMatches(searchCriteria: Record<string, string>, limit?: number): Promise<any> {
         try {
-            let url = '/matching/find_matches';
+            const headers = await this.getAuthHeaders();
+            headers.set('Content-Type', 'application/json');
+
+            let url = `${API_URL}/api/matching/find_matches`;
             if (limit) {
                 url += `?limit=${limit}`;
             }
-            
-            const response = await this.sendRequest(url, 'POST', searchCriteria);
-            
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(searchCriteria),
+            });
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to find matches');
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Error finding matches:', error);
@@ -1191,6 +1205,122 @@ public async submitApplication(applicationType: 'MENTOR' | 'MENTEE', application
             await this.removeStorageItem(this.USER_NAME_KEY);
         } catch (error) {
             console.error('Error clearing cached name:', error);
+        }
+    }
+
+    /**
+     * Get list of mentors who matched with the authenticated mentee
+     * 
+     * @returns Array of mentor profiles
+     */
+    public async getMatchesForMentee(): Promise<MentorProfile[]> {
+        try {
+          const headers = await this.getAuthHeaders();
+
+          const response = await fetch(`${API_URL}/api/matching/get_matches_for_mentee`, {
+            method: 'GET',
+            headers,
+          });
+      
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch matches');
+          }
+      
+          const data = await response.json();
+
+          // Debug
+          // console.log("Data Variable in Backend Manager: " + data.matches);
+
+          // For each mentor, fetch their picture and swipe card information
+          const mentors = await Promise.all(
+            data.matches.map(async (mentor: any) => {
+              const pictureBlob = await this.getPicture(mentor.user_id);
+              const pictureUrl = pictureBlob ? URL.createObjectURL(pictureBlob) : '';
+              
+              return {
+                ...mentor,
+                picture: pictureUrl,
+              } as MentorProfile;
+            })
+          );
+      
+          return mentors;
+
+        } catch (error) {
+          console.error('Error fetching matches for mentee:', error);
+          throw error;
+        }
+    }
+
+    /**
+     * Submit a mentee request to a mentor
+     * 
+     * @param mentorId The Cognito sub of the mentor
+     */
+    public async submitMenteeRequest(mentorId: string): Promise<void> {
+        try {
+        const headers = await this.getAuthHeaders();
+    
+        const response = await fetch(`${API_URL}/api/matching/mentee_request`, {
+            method: 'POST',
+            headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mentor_id: mentorId }),
+        });
+    
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to submit mentee request');
+        }
+    
+        } catch (error) {
+        console.error('Error submitting mentee request:', error);
+        throw error;
+        }
+    }
+
+    /**
+     * Get list of mentees who requested the authenticated mentor
+     * 
+     * @returns Array of mentee profiles
+     */
+    public async getRequestsForMentor(): Promise<MenteeProfile[]> {
+        try {
+        const headers = await this.getAuthHeaders();
+    
+        const response = await fetch(`${API_URL}/api/matching/get_mentee_requests`, {
+            method: 'GET',
+            headers,
+        });
+    
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch mentee requests');
+        }
+    
+        const data = await response.json();
+
+        // For each mentee, fetch their picture and swipe card information
+        const mentees = await Promise.all(
+            data.mentee_requests.map(async (mentee: any) => {
+              const pictureBlob = await this.getPicture(mentee.user_id);
+              const pictureUrl = pictureBlob ? URL.createObjectURL(pictureBlob) : '';
+      
+              return {
+                ...mentee,
+                picture: pictureUrl,
+              } as MenteeProfile;
+            })
+          );
+      
+          return mentees;
+    
+        } catch (error) {
+        console.error('Error fetching mentee requests:', error);
+        throw error;
         }
     }
 

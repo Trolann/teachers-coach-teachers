@@ -2,9 +2,6 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-
-
-
 const MenteeCard = ({
     mentor,
     infoVisible,
@@ -16,22 +13,32 @@ const MenteeCard = ({
             <View style={styles.onlineIndicator} />
 
             {/* Mentor Image */}
-            <Image source={mentor.image} style={styles.mentorImage} />
-
+            <Image source={typeof mentor.image === 'string' ? { uri: mentor.image } : mentor.image}
+                style={
+                    typeof mentor.image === 'string' && mentor.image.length > 0
+                        ? styles.mentorImageWith
+                        : styles.mentorImageWithout
+                }
+                resizeMode="cover"
+            />
+            
             {/* Info Icon */}
-            {infoVisible !== undefined && (
+            {/*
+            infoVisible !== undefined && (
                 <TouchableOpacity onPress={() => toggleInfo(mentor.id)} style={styles.infoButton}>
                     <Ionicons name="information-circle-outline" size={30} color="#666" />
                 </TouchableOpacity>
-            )}
-
+            )
+            */}
 
             {/* Info Bubble */}
-            {infoVisible === mentor.id && (
+            {/*
+            infoVisible === mentor.id && (
                 <View style={styles.infoBubble}>
                     <Text style={styles.infoText}>{mentor.bio}</Text>
                 </View>
-            )}
+            )
+            */}
 
 
             <View style={styles.overlay}>
@@ -39,15 +46,15 @@ const MenteeCard = ({
                 <Text style={styles.mentorLocation}>
                     <Ionicons name="location-outline" size={16} /> {mentor.location}
                 </Text>
+                {/*
                 <View style={styles.ratingContainer}>
                     <Text style={styles.mentorRating}>⭐️ {mentor.rating}</Text>
                 </View>
+                */}
             </View>
         </View>
     );
 };
-
-
 
 const styles = StyleSheet.create({
     card: {
@@ -63,9 +70,16 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         paddingBottom: 10,
     },
-    mentorImage: {
+    mentorImageWith: {
         width: '100%',
-        height: '75%',
+        height: '65%',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+    },
+    mentorImageWithout: {
+        width: '100%',
+        height: '55%',
+        marginTop: 30,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
     },

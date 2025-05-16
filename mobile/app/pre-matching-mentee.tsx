@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Header from '@/components/Header';
+import BackendManager from './auth/BackendManager';
 
 export default function FindMentorScreen() {
   const [goal, setGoal] = useState('');
@@ -51,12 +52,22 @@ export default function FindMentorScreen() {
     });
   };
 
-  const handleFindMentor = () => {
-    const requestData = { selectedCategories, selectedIssues, goal };
-    console.log("Mentor Matching Data:", JSON.stringify(requestData, null, 2));
-    router.push('/mentee-matching');
-  };
-
+  const handleFindMentor = async () => {
+    const requestData = {
+      categories: selectedCategories.join(', '),
+      issues: selectedIssues.join(', '),
+      goals: goal
+    };
+  
+    try {
+      console.log("Sending matching request:", requestData);
+      const matches = await BackendManager.getInstance().findMatches(requestData, 10);
+      console.log("Received matches:", matches);
+      router.push('/mentee-matching');
+    } catch (error) {
+      console.error("Failed to find matches:", error);
+    }
+  };  
 
   const renderOption = (item, list, setList, maxSelections, type) => {
     const backgroundColor = type === "categories" ? "#E6F9E6" : "#FDEDED";

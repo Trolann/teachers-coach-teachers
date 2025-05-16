@@ -27,20 +27,6 @@ def upload_picture():
 
     return jsonify({'message': 'Profile picture uploaded successfully'}), 200
 
-@picture_bp.route('/me', methods=['GET'])
-@require_auth
-def get_own_profile_picture():
-    user = get_user_from_token(request.headers)
-    user_id = user.cognito_sub
-
-    filename = f"{user_id}.png"
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-
-    if not os.path.exists(filepath):
-        return jsonify({'error': 'Profile picture not found'}), 404
-
-    return send_file(filepath, mimetype='image/png')
-
 @picture_bp.route('/<user_id>', methods=['GET'])
 def get_user_profile_picture(user_id):
     filename = f"{user_id}.png"
