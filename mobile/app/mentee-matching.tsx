@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, Animated, Platform, Pressable, Button, Linking } from 'react-native';
+import BackendManager from './auth/BackendManager';
 import SwipeCards from 'react-native-swipe-cards';
 import { Ionicons } from '@expo/vector-icons';
 import { Href, Link, useRouter } from 'expo-router';
@@ -19,6 +20,7 @@ export default function MenteeLandingScreen() {
     setInfoVisible(infoVisible === mentorId ? null : mentorId);
   };
 
+  /*
   const [mentorList, setMentorList] = useState([
     {
       id: 1, name: 'Melissa Gao', subject: 'Biology', location: 'Austin, Texas', rating: 4.8, image: require('../assets/images/stock_mentor2.jpg'),
@@ -33,15 +35,41 @@ export default function MenteeLandingScreen() {
       bio: "History geek with a knack for storytelling. Specializes in American and European history."
     },
   ]);
+  */
+
+
+  const [mentorList, setMentorList] = useState([]);
 
   useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const backend = BackendManager.getInstance();
+        const matches = await backend.getMatchesForMentee();
 
-    TokenManager.getInstance().getTokens().then(tokens => {
-      console.log('📦 Tokens from SecureStore:', tokens);
-    });
+        // Transform matches into format compatible with swipe cards
+        const formatted = matches.map((mentor, index) => ({
+          card_id: index + 1,
+          mentor_id: mentor.user_id,
+          name: `${mentor.firstName} ${mentor.lastName}`,
+          subject: mentor.primarySubject,
+          location: `${mentor.county}, ${mentor.state_province}, ${mentor.country}`,
+          image: mentor.picture
+          ? { uri: mentor.picture }
+          : require('../assets/images/user-without-picture.png')
+        }));
 
+        // Debug
+        console.log("Data Variable in mentee-matching: " + formatted);
+
+        setMentorList(formatted);
+      } catch (error) {
+        console.error('Failed to load mentor matches:', error);
+      }
+    };
+
+    fetchMatches();
   }, []);
-
+  
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   // Function to remove the first mentor from the list (mimics swiping)
@@ -49,16 +77,26 @@ export default function MenteeLandingScreen() {
     setMentorList((prevMentors) => prevMentors.slice(1));
   };
 
-  const handleLike = (card) => {
-    Animated.timing(animatedValue, {
-      toValue: 500,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      console.log(`Liked ${card.name}`);
-      setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.id !== card.id));
-      setMatchedMentor(card);
-    });
+  const handleLike = async (card) => {
+    try {
+      Animated.timing(animatedValue, {
+        toValue: 500,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        console.log(`Liked ${card.name}`);
+        setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.card_id !== card.card_id));
+        setMatchedMentor(card);
+      });
+  
+      const backend = BackendManager.getInstance();
+      // Call the API to submit a mentee request
+      await backend.submitMenteeRequest(card.mentor_id);
+  
+    } catch (error) {
+      console.error('Failed to submit mentee request:', error);
+      Alert.alert('Error', 'Could not send your match request. Please try again.');
+    }
 
     const handleJoin = () => {
       router.push({
@@ -67,7 +105,6 @@ export default function MenteeLandingScreen() {
           mentor: JSON.stringify(mentorList[0]),
         },
       });
-
     };
 
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -93,7 +130,7 @@ export default function MenteeLandingScreen() {
       useNativeDriver: true,
     }).start(() => {
       console.log(`Skipped ${card.name}`);
-      setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.id !== card.id));
+      setMentorList((prevMentors) => prevMentors.filter((mentor) => mentor.card_id !== card.card_id));
     });
   };
 
@@ -113,8 +150,6 @@ export default function MenteeLandingScreen() {
       </Animated.View>
     );
   }
-
-
 
   // Message when no cards are left
   const renderNoMoreCards = () => (
@@ -399,6 +434,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  
-
 });
